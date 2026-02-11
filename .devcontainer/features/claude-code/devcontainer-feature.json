@@ -1,0 +1,18 @@
+{
+  "id": "claude-code",
+  "version": "1.0.0",
+  "name": "Claude Code CLI",
+  "description": "Installs Anthropic Claude Code CLI for AI-assisted development",
+  "documentationURL": "https://code.claude.com/docs",
+  "options": {
+    "version": {
+      "type": "string",
+      "default": "latest",
+      "description": "Claude Code version (default: latest)"
+    }
+  },
+  "entrypoint": ["install.sh"],
+  "containerEnv": {
+    "PATH": "${PATH}:${containerWorkspaceFolder}/.local/bin:/home/vscode/.local/bin"
+  }
+}
