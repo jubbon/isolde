@@ -1,21 +1,16 @@
 ARG BASE_IMAGE=debian:bookworm-slim
 FROM ${BASE_IMAGE}
 
-# Proxy arguments for build time
-ARG HTTP_PROXY
-ARG HTTPS_PROXY
-ARG NO_PROXY
-
 # User arguments with defaults
 ARG USERNAME=user
 ARG USER_UID=1000
 ARG USER_GID=1000
 
-# Set proxy environment variables for build time
-ENV HTTP_PROXY=${HTTP_PROXY} \
-    HTTPS_PROXY=${HTTPS_PROXY} \
-    NO_PROXY=${NO_PROXY} \
-    DEBIAN_FRONTEND=noninteractive
+# Set DEBIAN_FRONTEND for non-interactive apt
+# Note: Proxy variables (HTTP_PROXY, HTTPS_PROXY, NO_PROXY) are passed as ARG
+# but NOT set as ENV to avoid affecting apt-get during build.
+# They will be used only by the claude-code feature install script.
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \

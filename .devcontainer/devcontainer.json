@@ -5,10 +5,7 @@
     "dockerfile": "Dockerfile",
     "context": "..",
     "args": {
-      "USERNAME": "${localEnv:USER}",
-      "HTTP_PROXY": "http://192.168.1.21:2080",
-      "HTTPS_PROXY": "http://192.168.1.21:2080",
-      "NO_PROXY": "localhost,127.0.0.1,.local"
+      "USERNAME": "${localEnv:USER}"
     }
   },
 
@@ -24,7 +21,10 @@
       "installOhMyZsh": false,
       "upgradePackages": false
     },
-    "./features/claude-code": {}
+    "./features/claude-code": {
+      "http_proxy": "http://192.168.1.21:2080",
+      "https_proxy": "http://192.168.1.21:2080"
+    }
   },
 
   "customizations": {

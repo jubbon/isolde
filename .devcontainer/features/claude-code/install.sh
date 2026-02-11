@@ -24,15 +24,20 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Export proxy variables for curl
-export http_proxy="$HTTP_PROXY"
-export https_proxy="$HTTPS_PROXY"
-export HTTP_PROXY="$HTTP_PROXY"
-export HTTPS_PROXY="$HTTPS_PROXY"
+# Proxy variables from feature options (for Claude Code installation ONLY)
+# These are explicitly passed to the feature, not inherited from global ENV
+FEATURE_HTTP_PROXY="${http_proxy:-$HTTP_PROXY}"
+FEATURE_HTTPS_PROXY="${https_proxy:-$HTTPS_PROXY}"
+
+# Export proxy variables for curl (only for Claude Code installation)
+export http_proxy="$FEATURE_HTTP_PROXY"
+export https_proxy="$FEATURE_HTTPS_PROXY"
+export HTTP_PROXY="$FEATURE_HTTP_PROXY"
+export HTTPS_PROXY="$FEATURE_HTTPS_PROXY"
 
 # Check if proxy is set
-if [ -n "$HTTP_PROXY" ] || [ -n "$HTTPS_PROXY" ]; then
-    log_info "Proxy detected - HTTP_PROXY=$HTTP_PROXY, HTTPS_PROXY=$HTTPS_PROXY"
+if [ -n "$FEATURE_HTTP_PROXY" ] || [ -n "$FEATURE_HTTPS_PROXY" ]; then
+    log_info "Proxy detected for Claude Code installation - HTTP_PROXY=$FEATURE_HTTP_PROXY, HTTPS_PROXY=$FEATURE_HTTPS_PROXY"
 fi
 
 # Check if running as root or with sudo
@@ -65,14 +70,14 @@ if [ "$(id -u)" -eq 0 ]; then
     log_info "Installing Claude Code CLI for user: $TARGET_USER (HOME: $TARGET_HOME)"
 
     # Download and install as the target user with proxy environment
-    # Pass proxy variables explicitly via env
-    if [ -n "$HTTP_PROXY" ] || [ -n "$HTTPS_PROXY" ]; then
+    # Pass proxy variables explicitly via env (using feature options)
+    if [ -n "$FEATURE_HTTP_PROXY" ] || [ -n "$FEATURE_HTTPS_PROXY" ]; then
         log_info "Using proxy - passing to install command"
         su - "$TARGET_USER" -c "
-            export HTTP_PROXY='$HTTP_PROXY'
-            export HTTPS_PROXY='$HTTPS_PROXY'
-            export http_proxy='$HTTP_PROXY'
-            export https_proxy='$HTTPS_PROXY'
+            export HTTP_PROXY='$FEATURE_HTTP_PROXY'
+            export HTTPS_PROXY='$FEATURE_HTTPS_PROXY'
+            export http_proxy='$FEATURE_HTTP_PROXY'
+            export https_proxy='$FEATURE_HTTPS_PROXY'
             curl -vL --http1.1 --tlsv1.2 https://claude.ai/install.sh | bash
         "
     else
