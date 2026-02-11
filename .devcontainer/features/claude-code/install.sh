@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Claude Code CLI Installer for Dev Containers
-# This script installs the Anthropic Claude Code CLI
+# This script installs Anthropic Claude Code CLI
 #
 
 set -e
@@ -24,9 +24,20 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Export proxy variables for curl
+export http_proxy="$HTTP_PROXY"
+export https_proxy="$HTTPS_PROXY"
+export HTTP_PROXY="$HTTP_PROXY"
+export HTTPS_PROXY="$HTTPS_PROXY"
+
+# Check if proxy is set
+if [ -n "$HTTP_PROXY" ] || [ -n "$HTTPS_PROXY" ]; then
+    log_info "Proxy detected - HTTP_PROXY=$HTTP_PROXY, HTTPS_PROXY=$HTTPS_PROXY"
+fi
+
 # Check if running as root or with sudo
 if [ "$(id -u)" -eq 0 ]; then
-    # Running as root, install for the vscode user
+    # Running as root, install for vscode user
     TARGET_USER="vscode"
     TARGET_HOME="/home/vscode"
 
@@ -37,18 +48,25 @@ if [ "$(id -u)" -eq 0 ]; then
 
     log_info "Installing Claude Code CLI for user: $TARGET_USER"
 
-    # Download and install as the target user
-    su - "$TARGET_USER" -c 'curl -fsSL https://claude.ai/install.sh | bash'
+    # Download and install as the target user with proxy environment
+    # Pass proxy variables explicitly via env
+    if [ -n "$HTTP_PROXY" ] || [ -n "$HTTPS_PROXY" ]; then
+        log_info "Using proxy - passing to install command"
+        su - "$TARGET_USER" -c "
+            export HTTP_PROXY='$HTTP_PROXY'
+            export HTTPS_PROXY='$HTTPS_PROXY'
+            export http_proxy='$HTTP_PROXY'
+            export https_proxy='$HTTPS_PROXY'
+            curl -fsSL https://claude.ai/install.sh | bash
+        "
+    else
+        su - "$TARGET_USER" -c 'curl -fsSL https://claude.ai/install.sh | bash'
+    fi
 else
     # Running as non-root, install for current user
     log_info "Installing Claude Code CLI for current user: $(whoami)"
 
-    # Check if proxy is set
-    if [ -n "$HTTP_PROXY" ] || [ -n "$HTTPS_PROXY" ]; then
-        log_info "Proxy detected - installation will use proxy settings"
-    fi
-
-    # Download and install Claude Code CLI
+    # Download and install Claude Code CLI (proxy vars already exported)
     curl -fsSL https://claude.ai/install.sh | bash
 fi
 

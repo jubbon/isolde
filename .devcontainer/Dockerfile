@@ -9,7 +9,8 @@ ARG NO_PROXY
 # Set proxy environment variables for build time
 ENV HTTP_PROXY=${HTTP_PROXY} \
     HTTPS_PROXY=${HTTPS_PROXY} \
-    NO_PROXY=${NO_PROXY}
+    NO_PROXY=${NO_PROXY} \
+    DEBIAN_FRONTEND=noninteractive
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -23,7 +24,10 @@ RUN apt-get update && apt-get install -y \
     gosu \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /workspace
+WORKDIR /workspaces
+
+# Pre-install sudo to avoid conffile prompts later
+RUN apt-get update && apt-get install -y sudo python3.11 python3-pip python3-venv && rm -rf /var/lib/apt/lists/*
 
 # Create vscode user with sudo access
 RUN groupadd --gid 1000 vscode \
@@ -31,7 +35,7 @@ RUN groupadd --gid 1000 vscode \
     && echo "vscode ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # Set ownership for workspace directory
-RUN chown -R vscode:vscode /workspace
+RUN chown -R vscode:vscode /workspaces
 
 # Switch to vscode user
 USER vscode
