@@ -37,9 +37,9 @@ fi
 
 # Check if running as root or with sudo
 if [ "$(id -u)" -eq 0 ]; then
-    # Running as root, install for vscode user
-    TARGET_USER="vscode"
-    TARGET_HOME="/home/vscode"
+    # Running as root, install for user
+    TARGET_USER="user"
+    TARGET_HOME="/home/user"
 
     if ! id "$TARGET_USER" &>/dev/null; then
         log_error "User '$TARGET_USER' does not exist. Creating..."

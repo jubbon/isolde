@@ -13,6 +13,6 @@
   },
   "entrypoint": ["install.sh"],
   "containerEnv": {
-    "PATH": "${PATH}:${containerWorkspaceFolder}/.local/bin:/home/vscode/.local/bin"
+    "PATH": "${PATH}:${containerWorkspaceFolder}/.local/bin:/home/user/.local/bin"
   }
 }
