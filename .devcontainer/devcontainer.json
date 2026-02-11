@@ -19,11 +19,6 @@
   },
 
   "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {
-      "version": "latest",
-      "moby": true,
-      "dockerDashComposeVersion": "v2"
-    },
     "ghcr.io/devcontainers/features/common-utils:2": {
       "installZsh": false,
       "installOhMyZsh": false,
@@ -46,6 +41,7 @@
   },
 
   "mounts": [
+    "source=${localEnv:HOME}/.claude,target=/home/${localEnv:USER}/.claude,type=bind,consistency=cached",
     "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
   ],
 

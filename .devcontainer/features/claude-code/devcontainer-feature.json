@@ -11,8 +11,5 @@
       "description": "Claude Code version (default: latest)"
     }
   },
-  "entrypoint": ["install.sh"],
-  "containerEnv": {
-    "PATH": "${PATH}:${containerWorkspaceFolder}/.local/bin:/home/user/.local/bin"
-  }
+  "entrypoint": "install.sh"
 }
