@@ -96,7 +96,15 @@ log_info "Claude Code CLI installation completed!"
 # Add ~/.local/bin to PATH for all users
 # This ensures claude is available regardless of which user runs the container
 if [ "$(id -u)" -eq 0 ]; then
-    echo 'export PATH="$HOME/.local/bin:$PATH"' > /etc/profile.d/claude-code-path.sh
+    cat > /etc/profile.d/claude-code-path.sh << 'EOF'
+# Add Claude Code CLI to PATH
+export PATH="$HOME/.local/bin:$PATH"
+
+# Set Anthropic auth token from mounted file (if exists)
+if [ -f "$HOME/.claude/auth" ]; then
+    export ANTHROPIC_AUTH_TOKEN="$(cat "$HOME/.claude/auth")"
+fi
+EOF
     chmod +x /etc/profile.d/claude-code-path.sh
-    log_info "Added ~/.local/bin to system PATH"
+    log_info "Added ~/.local/bin to system PATH and auth token configuration"
 fi
