@@ -6,6 +6,11 @@ ARG HTTP_PROXY
 ARG HTTPS_PROXY
 ARG NO_PROXY
 
+# User arguments with defaults
+ARG USERNAME=user
+ARG USER_UID=1000
+ARG USER_GID=1000
+
 # Set proxy environment variables for build time
 ENV HTTP_PROXY=${HTTP_PROXY} \
     HTTPS_PROXY=${HTTPS_PROXY} \
@@ -29,13 +34,13 @@ WORKDIR /workspaces
 # Pre-install sudo to avoid conffile prompts later
 RUN apt-get update && apt-get install -y sudo python3.11 python3-pip python3-venv && rm -rf /var/lib/apt/lists/*
 
-# Create vscode user with sudo access
-RUN groupadd --gid 1000 vscode \
-    && useradd --uid 1000 --gid vscode --shell /bin/bash --create-home vscode \
-    && echo "vscode ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+# Create user with sudo access
+RUN groupadd --gid ${USER_GID} ${USERNAME} \
+    && useradd --uid ${USER_UID} --gid ${USERNAME} --shell /bin/bash --create-home ${USERNAME} \
+    && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # Set ownership for workspace directory
-RUN chown -R vscode:vscode /workspaces
+RUN chown -R ${USERNAME}:${USERNAME} /workspaces
 
-# Switch to vscode user
-USER vscode
+# Switch to user
+USER ${USERNAME}
