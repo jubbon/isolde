@@ -41,7 +41,7 @@
     }
   },
 
-  "postCreateCommand": "bash -c 'sed -i \\\"s#local provider=\\\\\\\\\\\"#local provider=\\\\\\\\\\\"\\\\\\$(cat ~/.config/devcontainer/provider)\\\\\\\\\\\"#\\\" ~/.bashrc'",
+  "postCreateCommand": "bash -c 'if [ -f ~/.config/devcontainer/provider ]; then sed -i \"s#local provider=\\\\\\\"#local provider=\\\\\\\"\\$(cat ~/.config/devcontainer/provider)\\\\\\\"#\" ~/.bashrc; fi'",
 
   "mounts": [
     "source=${localEnv:HOME}/.claude,target=/home/${localEnv:USER}/.claude,type=bind,consistency=cached",

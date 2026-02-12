@@ -86,39 +86,44 @@ if [ "$(id -u)" -eq 0 ]; then
 else
     # Running as non-root, install for current user
     log_info "Installing Claude Code CLI for current user: $(whoami)"
-    
+
     # Download and install Claude Code CLI (proxy vars already exported)
     curl -fsSL https://claude.ai/install.sh | bash
 fi
-fi
-# Provider configuration (runs for both root and non-root)
-# Use $HOME instead of $TARGET_HOME since we are running as non-root here
-PROVIDER="${provider:-}"
-if [ -n "$PROVIDER" ]; then
-    mkdir -p "$HOME/.config/devcontainer"
-    echo "$PROVIDER" > "$HOME/.config/devcontainer/provider"
 log_info "Claude Code CLI installation completed!"
 
-# Provider configuration
-log_info "DEBUG: provider option = '${provider:-NOT_SET}'"
-PROVIDER="${provider:-}"
+# Provider configuration (runs for both root and non-root)
+# Devcontainers converts option names to uppercase, so 'provider' becomes 'PROVIDER'
+log_info "DEBUG: provider option = '${PROVIDER:-NOT_SET}' (was: ${provider:-NOT_SET})"
+
+# Try both PROVIDER (devcontainers standard) and provider (fallback)
+if [ -n "${PROVIDER:-}" ]; then
+    FINAL_PROVIDER="$PROVIDER"
+elif [ -n "${provider:-}" ]; then
+    FINAL_PROVIDER="$provider"
+else
+    FINAL_PROVIDER=""
+fi
 
 # Save provider name for postCreateCommand (container-local, not in mounted .claude)
-if [ -n "$PROVIDER" ]; then
+if [ -n "$FINAL_PROVIDER" ]; then
     mkdir -p "$TARGET_HOME/.config/devcontainer"
-    echo "$PROVIDER" > "$TARGET_HOME/.config/devcontainer/provider"
-    log_info "Saved provider config: $PROVIDER → $TARGET_HOME/.config/devcontainer/provider"
+    echo "$FINAL_PROVIDER" > "$TARGET_HOME/.config/devcontainer/provider"
+    log_info "Saved provider config: $FINAL_PROVIDER → $TARGET_HOME/.config/devcontainer/provider"
 fi
 
 # Configure PATH and provider for target user
 # Write to ~/.bashrc instead of /etc/profile.d (VS Code uses non-login shell)
+# IMPORTANT: Insert at BEGINNING of .bashrc (before interactive check) to ensure vars are always available
 if [ "$(id -u)" -eq 0 ]; then
     BASHRC_FILE="$TARGET_HOME/.bashrc"
 
     # Remove old configuration if exists
     sed -i '/# Claude Code CLI - START/,/# Claude Code CLI - END/d' "$BASHRC_FILE" 2>/dev/null || true
 
-    cat >> "$BASHRC_FILE" << 'EOF'
+    # Create temp file with new configuration
+    TEMP_RC=$(mktemp)
+    cat > "$TEMP_RC" << 'EOF'
 
 # Claude Code CLI - START
 export PATH="$HOME/.local/bin:$PATH"
@@ -150,12 +155,16 @@ configure_claude_provider
 # Claude Code CLI - END
 EOF
 
-    # Replace placeholder with actual provider value
-    sed -i "s|__PROVIDER_PLACEHOLDER__|$PROVIDER|g" "$BASHRC_FILE"
+    # Replace placeholder with actual provider value in temp file
+    sed -i "s|__PROVIDER_PLACEHOLDER__|$FINAL_PROVIDER|g" "$TEMP_RC"
+
+    # Append original bashrc content to temp file, then move over original
+    cat "$BASHRC_FILE" >> "$TEMP_RC"
+    mv "$TEMP_RC" "$BASHRC_FILE"
     chown "$TARGET_USER:$TARGET_USER" "$BASHRC_FILE"
 
-    if [ -n "$PROVIDER" ]; then
-        log_info "Configured LLM provider: $PROVIDER (reads from ~/.claude/providers/$PROVIDER/)"
+    if [ -n "$FINAL_PROVIDER" ]; then
+        log_info "Configured LLM provider: $FINAL_PROVIDER (reads from ~/.claude/providers/$FINAL_PROVIDER/)"
     else
         log_info "Using default Anthropic provider"
     fi
