@@ -15,13 +15,19 @@ Installs Anthropic Claude Code CLI with multi-provider support.
 
 ### How it works
 
-When `provider` is specified, the feature reads configuration from:
+When `provider` is specified, the feature:
+
+1. **During build:** Creates `~/.config/devcontainer/provider` with the provider name
+2. **At first startup:** `postCreateCommand` updates `~/.bashrc` to read from that file
+3. **Every shell:** Credentials are loaded from:
 
 ```
 ~/.claude/providers/{provider}/
 ├── auth       # API token
 └── base_url   # API endpoint URL
 ```
+
+**Note:** The provider file is stored in `~/.config/devcontainer/` (container-local) to avoid race conditions when `~/.claude` is mounted between multiple containers.
 
 ### Available Providers
 
@@ -91,6 +97,30 @@ Then use in devcontainer.json:
 ## Environment Variables
 
 After container start, the following variables are automatically set:
+
+- `ANTHROPIC_AUTH_TOKEN` — loaded from provider's `auth` file
+- `ANTHROPIC_BASE_URL` — loaded from provider's `base_url` file (optional)
+
+## Troubleshooting
+
+### Environment variables not set
+
+**Problem:** `ANTHROPIC_AUTH_TOKEN` or `ANTHROPIC_BASE_URL` are empty in new shells.
+
+**Solution:**
+
+1. Check if `~/.config/devcontainer/provider` file exists:
+   ```bash
+   cat ~/.config/devcontainer/provider
+   ```
+
+2. Check if `~/.bashrc` was updated correctly:
+   ```bash
+   grep "local provider=" ~/.bashrc
+   ```
+   Should show: `local provider="$(cat ~/.config/devcontainer/provider)"`
+
+3. If not, rebuild the devcontainer to trigger `postCreateCommand` again.
 
 - `ANTHROPIC_AUTH_TOKEN` — loaded from provider's `auth` file
 - `ANTHROPIC_BASE_URL` — loaded from provider's `base_url` file (optional)

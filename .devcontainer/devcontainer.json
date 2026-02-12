@@ -41,6 +41,8 @@
     }
   },
 
+  "postCreateCommand": "bash -c 'sed -i \\\"s#local provider=\\\\\\\\\\\"#local provider=\\\\\\\\\\\"\\\\\\$(cat ~/.config/devcontainer/provider)\\\\\\\\\\\"#\\\" ~/.bashrc'",
+
   "mounts": [
     "source=${localEnv:HOME}/.claude,target=/home/${localEnv:USER}/.claude,type=bind,consistency=cached",
     "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"

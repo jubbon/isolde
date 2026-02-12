@@ -97,6 +97,13 @@ log_info "Claude Code CLI installation completed!"
 log_info "DEBUG: provider option = '${provider:-NOT_SET}'"
 PROVIDER="${provider:-}"
 
+# Save provider name for postCreateCommand (container-local, not in mounted .claude)
+if [ -n "$PROVIDER" ]; then
+    mkdir -p "$TARGET_HOME/.config/devcontainer"
+    echo "$PROVIDER" > "$TARGET_HOME/.config/devcontainer/provider"
+    log_info "Saved provider config: $PROVIDER → $TARGET_HOME/.config/devcontainer/provider"
+fi
+
 # Configure PATH and provider for target user
 # Write to ~/.bashrc instead of /etc/profile.d (VS Code uses non-login shell)
 if [ "$(id -u)" -eq 0 ]; then
