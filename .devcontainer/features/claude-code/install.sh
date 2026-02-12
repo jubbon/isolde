@@ -94,6 +94,7 @@ fi
 log_info "Claude Code CLI installation completed!"
 
 # Provider configuration
+log_info "DEBUG: provider option = '${provider:-NOT_SET}'"
 PROVIDER="${provider:-}"
 
 # Configure PATH and provider for target user
