@@ -1,14 +1,19 @@
 {
   "id": "claude-code",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "name": "Claude Code CLI",
-  "description": "Installs Anthropic Claude Code CLI for AI-assisted development",
+  "description": "Installs Anthropic Claude Code CLI for AI-assisted development with multi-provider support",
   "documentationURL": "https://code.claude.com/docs",
   "options": {
     "version": {
       "type": "string",
       "default": "latest",
       "description": "Claude Code version (default: latest)"
+    },
+    "provider": {
+      "type": "string",
+      "default": "",
+      "description": "LLM provider name (e.g., 'z.ai', 'anthropic'). Reads auth/base_url from ~/.claude/providers/{provider}/. Empty = use Anthropic defaults"
     },
     "http_proxy": {
       "type": "string",

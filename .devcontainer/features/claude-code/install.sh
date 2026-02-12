@@ -93,6 +93,10 @@ fi
 
 log_info "Claude Code CLI installation completed!"
 
+# Provider configuration
+PROVIDER="${provider:-}"
+PROVIDERS_DIR="$HOME/.claude/providers"
+
 # Add ~/.local/bin to PATH for all users
 # This ensures claude is available regardless of which user runs the container
 if [ "$(id -u)" -eq 0 ]; then
@@ -100,11 +104,59 @@ if [ "$(id -u)" -eq 0 ]; then
 # Add Claude Code CLI to PATH
 export PATH="$HOME/.local/bin:$PATH"
 
-# Set Anthropic auth token from mounted file (if exists)
-if [ -f "$HOME/.claude/auth" ]; then
-    export ANTHROPIC_AUTH_TOKEN="$(cat "$HOME/.claude/auth")"
-fi
+# Provider configuration
+PROVIDER="__PROVIDER_PLACEHOLDER__"
+PROVIDERS_DIR="$HOME/.claude/providers"
+
+configure_provider() {
+    local provider="$1"
+    local provider_dir="$PROVIDERS_DIR/$provider"
+    local auth_file="$provider_dir/auth"
+    local url_file="$provider_dir/base_url"
+
+    if [ -z "$provider" ]; then
+        # Default: use Anthropic defaults
+        if [ -f "$HOME/.claude/auth" ]; then
+            export ANTHROPIC_AUTH_TOKEN="$(cat "$HOME/.claude/auth")"
+        fi
+        return 0
+    fi
+
+    # Check if provider directory exists
+    if [ ! -d "$provider_dir" ]; then
+        echo "[WARN] Provider directory not found: $provider_dir" >&2
+        return 1
+    fi
+
+    # Load auth token
+    if [ -f "$auth_file" ]; then
+        export ANTHROPIC_AUTH_TOKEN="$(cat "$auth_file")"
+    else
+        echo "[WARN] Auth file not found: $auth_file" >&2
+        return 1
+    fi
+
+    # Load base_url (optional)
+    if [ -f "$url_file" ]; then
+        export ANTHROPIC_BASE_URL="$(cat "$url_file" | tr -d '\n\r ')"
+    fi
+
+    echo "[INFO] Configured provider: $provider"
+    return 0
+}
+
+# Auto-configure provider on shell startup
+configure_provider "$PROVIDER"
 EOF
+
+    # Replace placeholder with actual provider value
+    sed -i "s|__PROVIDER_PLACEHOLDER__|${PROVIDER}|g" /etc/profile.d/claude-code-path.sh
     chmod +x /etc/profile.d/claude-code-path.sh
-    log_info "Added ~/.local/bin to system PATH and auth token configuration"
+
+    if [ -n "$PROVIDER" ]; then
+        log_info "Configured LLM provider: $PROVIDER (reads from $PROVIDERS_DIR/$PROVIDER/)"
+    else
+        log_info "Using default Anthropic provider"
+    fi
+    log_info "Added ~/.local/bin to system PATH"
 fi
