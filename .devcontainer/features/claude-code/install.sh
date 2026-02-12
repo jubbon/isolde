@@ -107,8 +107,15 @@ fi
 
 # Save provider name for postCreateCommand (container-local, not in mounted .claude)
 if [ -n "$FINAL_PROVIDER" ]; then
+    # Ensure .config exists with proper permissions
+    if [ ! -d "$TARGET_HOME/.config" ]; then
+        mkdir -p "$TARGET_HOME/.config"
+        chmod 755 "$TARGET_HOME/.config"
+    fi
     mkdir -p "$TARGET_HOME/.config/devcontainer"
     echo "$FINAL_PROVIDER" > "$TARGET_HOME/.config/devcontainer/provider"
+    chown -R "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/.config/devcontainer"
+    log_info "Fixed ownership for $TARGET_HOME/.config/devcontainer"
     log_info "Saved provider config: $FINAL_PROVIDER → $TARGET_HOME/.config/devcontainer/provider"
 fi
 
