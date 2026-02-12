@@ -145,7 +145,7 @@ configure_claude_provider
 EOF
 
     # Replace placeholder with actual provider value
-    sed -i "s|__PROVIDER_PLACEHOLDER__|${PROVIDER}|g" "$BASHRC_FILE"
+    sed -i "s|__PROVIDER_PLACEHOLDER__|$PROVIDER|g" "$BASHRC_FILE"
     chown "$TARGET_USER:$TARGET_USER" "$BASHRC_FILE"
 
     if [ -n "$PROVIDER" ]; then
