@@ -86,11 +86,17 @@ if [ "$(id -u)" -eq 0 ]; then
 else
     # Running as non-root, install for current user
     log_info "Installing Claude Code CLI for current user: $(whoami)"
-
+    
     # Download and install Claude Code CLI (proxy vars already exported)
     curl -fsSL https://claude.ai/install.sh | bash
 fi
-
+fi
+# Provider configuration (runs for both root and non-root)
+# Use $HOME instead of $TARGET_HOME since we are running as non-root here
+PROVIDER="${provider:-}"
+if [ -n "$PROVIDER" ]; then
+    mkdir -p "$HOME/.config/devcontainer"
+    echo "$PROVIDER" > "$HOME/.config/devcontainer/provider"
 log_info "Claude Code CLI installation completed!"
 
 # Provider configuration
