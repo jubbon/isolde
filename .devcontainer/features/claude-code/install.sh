@@ -95,24 +95,23 @@ log_info "Claude Code CLI installation completed!"
 
 # Provider configuration
 PROVIDER="${provider:-}"
-PROVIDERS_DIR="$HOME/.claude/providers"
 
-# Add ~/.local/bin to PATH for all users
-# This ensures claude is available regardless of which user runs the container
+# Configure PATH and provider for target user
+# Write to ~/.bashrc instead of /etc/profile.d (VS Code uses non-login shell)
 if [ "$(id -u)" -eq 0 ]; then
-    cat > /etc/profile.d/claude-code-path.sh << 'EOF'
-# Add Claude Code CLI to PATH
+    BASHRC_FILE="$TARGET_HOME/.bashrc"
+
+    # Remove old configuration if exists
+    sed -i '/# Claude Code CLI - START/,/# Claude Code CLI - END/d' "$BASHRC_FILE" 2>/dev/null || true
+
+    cat >> "$BASHRC_FILE" << 'EOF'
+
+# Claude Code CLI - START
 export PATH="$HOME/.local/bin:$PATH"
 
-# Provider configuration
-PROVIDER="__PROVIDER_PLACEHOLDER__"
-PROVIDERS_DIR="$HOME/.claude/providers"
-
-configure_provider() {
-    local provider="$1"
-    local provider_dir="$PROVIDERS_DIR/$provider"
-    local auth_file="$provider_dir/auth"
-    local url_file="$provider_dir/base_url"
+configure_claude_provider() {
+    local provider="__PROVIDER_PLACEHOLDER__"
+    local provider_dir="$HOME/.claude/providers/$provider"
 
     if [ -z "$provider" ]; then
         # Default: use Anthropic defaults
@@ -122,41 +121,29 @@ configure_provider() {
         return 0
     fi
 
-    # Check if provider directory exists
-    if [ ! -d "$provider_dir" ]; then
-        echo "[WARN] Provider directory not found: $provider_dir" >&2
-        return 1
+    # Load from provider directory
+    if [ -d "$provider_dir" ]; then
+        if [ -f "$provider_dir/auth" ]; then
+            export ANTHROPIC_AUTH_TOKEN="$(cat "$provider_dir/auth")"
+        fi
+        if [ -f "$provider_dir/base_url" ]; then
+            export ANTHROPIC_BASE_URL="$(cat "$provider_dir/base_url" | tr -d '\n\r ')"
+        fi
     fi
-
-    # Load auth token
-    if [ -f "$auth_file" ]; then
-        export ANTHROPIC_AUTH_TOKEN="$(cat "$auth_file")"
-    else
-        echo "[WARN] Auth file not found: $auth_file" >&2
-        return 1
-    fi
-
-    # Load base_url (optional)
-    if [ -f "$url_file" ]; then
-        export ANTHROPIC_BASE_URL="$(cat "$url_file" | tr -d '\n\r ')"
-    fi
-
-    echo "[INFO] Configured provider: $provider"
-    return 0
 }
 
-# Auto-configure provider on shell startup
-configure_provider "$PROVIDER"
+configure_claude_provider
+# Claude Code CLI - END
 EOF
 
     # Replace placeholder with actual provider value
-    sed -i "s|__PROVIDER_PLACEHOLDER__|${PROVIDER}|g" /etc/profile.d/claude-code-path.sh
-    chmod +x /etc/profile.d/claude-code-path.sh
+    sed -i "s|__PROVIDER_PLACEHOLDER__|${PROVIDER}|g" "$BASHRC_FILE"
+    chown "$TARGET_USER:$TARGET_USER" "$BASHRC_FILE"
 
     if [ -n "$PROVIDER" ]; then
-        log_info "Configured LLM provider: $PROVIDER (reads from $PROVIDERS_DIR/$PROVIDER/)"
+        log_info "Configured LLM provider: $PROVIDER (reads from ~/.claude/providers/$PROVIDER/)"
     else
         log_info "Using default Anthropic provider"
     fi
-    log_info "Added ~/.local/bin to system PATH"
+    log_info "Added ~/.local/bin to PATH in ~/.bashrc"
 fi
