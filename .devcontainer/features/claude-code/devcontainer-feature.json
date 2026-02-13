@@ -26,9 +26,9 @@
       "description": "HTTPS proxy URL for Claude Code installation only"
     },
     "models": {
-      "type": "object",
-      "default": {},
-      "description": "Claude models as object: {\"haiku\": \"model-name\", \"sonnet\": \"model-name\", \"opus\": \"model-name\"}"
+      "type": "string",
+      "default": "",
+      "description": "Claude models as comma-separated values: haiku:model,sonnet:model,opus:model"
     }
   },
   "entrypoint": "install.sh"

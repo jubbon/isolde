@@ -127,13 +127,13 @@ if [ -n "${MODELS:-}" ]; then
     fi
     mkdir -p "$TARGET_HOME/.config/devcontainer"
 
-    log_info "Creating model configuration from models object"
+    log_info "Creating model configuration from models string"
 
-    # Parse JSON object to extract model values
-    # MODELS is expected to be like: {"haiku": "model", "sonnet": "model", "opus": "model"}
-    HAIKU_MODEL=$(echo "$MODELS" | grep -oP '"haiku"\s*:\s*"\([^"]+)"' | sed 's/.*"haiku"[[:space:]]*"\([^"]*\)".*/\1/')
-    SONNET_MODEL=$(echo "$MODELS" | grep -oP '"sonnet"\s*:\s*"\([^"]+)"' | sed 's/.*"sonnet"[[:space:]]*"\([^"]*\)".*/\1/')
-    OPUS_MODEL=$(echo "$MODELS" | grep -oP '"opus"\s*:\s*"\([^"]+)"' | sed 's/.*"opus"[[:space:]]*"\([^"]*\)".*/\1/')
+    # Parse comma-separated string to extract model values
+    # MODELS is expected to be like: haiku:model,sonnet:model,opus:model
+    HAIKU_MODEL=$(echo "$MODELS" | grep -o 'haiku:[^,]*' | cut -d: -f2)
+    SONNET_MODEL=$(echo "$MODELS" | grep -o 'sonnet:[^,]*' | cut -d: -f2)
+    OPUS_MODEL=$(echo "$MODELS" | grep -o 'opus:[^,]*' | cut -d: -f2)
 
     # Save model configurations
     cat > "$TARGET_HOME/.config/devcontainer/models" << EOF
