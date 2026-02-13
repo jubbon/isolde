@@ -120,7 +120,18 @@ if [ -n "$FINAL_PROVIDER" ]; then
 fi
 
 # Save model configurations if models is set
+# Devcontainers converts option names to uppercase, so 'models' becomes 'MODELS'
+log_info "DEBUG: models option = '${MODELS:-NOT_SET}' (was: ${models:-NOT_SET})"
+# Try both MODELS (devcontainers standard) and models (fallback)
 if [ -n "${MODELS:-}" ]; then
+    FINAL_MODELS="$MODELS"
+elif [ -n "${models:-}" ]; then
+    FINAL_MODELS="$models"
+else
+    FINAL_MODELS=""
+fi
+
+if [ -n "$FINAL_MODELS" ]; then
     if [ ! -d "$TARGET_HOME/.config" ]; then
         mkdir -p "$TARGET_HOME/.config"
         chown -R "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/.config"
@@ -130,10 +141,10 @@ if [ -n "${MODELS:-}" ]; then
     log_info "Creating model configuration from models string"
 
     # Parse comma-separated string to extract model values
-    # MODELS is expected to be like: haiku:model,sonnet:model,opus:model
-    HAIKU_MODEL=$(echo "$MODELS" | grep -o 'haiku:[^,]*' | cut -d: -f2)
-    SONNET_MODEL=$(echo "$MODELS" | grep -o 'sonnet:[^,]*' | cut -d: -f2)
-    OPUS_MODEL=$(echo "$MODELS" | grep -o 'opus:[^,]*' | cut -d: -f2)
+    # FINAL_MODELS is expected to be like: haiku:model,sonnet:model,opus:model
+    HAIKU_MODEL=$(echo "$FINAL_MODELS" | grep -o 'haiku:[^,]*' | cut -d: -f2)
+    SONNET_MODEL=$(echo "$FINAL_MODELS" | grep -o 'sonnet:[^,]*' | cut -d: -f2)
+    OPUS_MODEL=$(echo "$FINAL_MODELS" | grep -o 'opus:[^,]*' | cut -d: -f2)
 
     # Save model configurations
     cat > "$TARGET_HOME/.config/devcontainer/models" << EOF
