@@ -1,6 +1,6 @@
 {
   "id": "claude-code",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "name": "Claude Code CLI",
   "description": "Installs Anthropic Claude Code CLI for AI-assisted development with multi-provider support",
   "documentationURL": "https://code.claude.com/docs",
@@ -8,7 +8,7 @@
     "version": {
       "type": "string",
       "default": "latest",
-      "description": "Claude Code version (default: latest)"
+      "description": "Claude Code version: 'latest' (default, auto-updates enabled), 'stable', or specific version like '1.2.41' (auto-updates disabled)"
     },
     "provider": {
       "type": "string",

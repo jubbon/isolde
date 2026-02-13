@@ -24,6 +24,62 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Configure auto-update settings in settings.local.json
+# Usage: configure_auto_update <settings_path> <disabled_boolean>
+# Returns: 0 on success, 1 on failure
+configure_auto_update() {
+    local settings_local="$1"
+    local disabled="$2"
+
+    if [ -z "$settings_local" ]; then
+        log_error "settings_local path is required"
+        return 1
+    fi
+
+    if [ "$disabled" != "true" ]; then
+        return 0
+    fi
+
+    mkdir -p "$(dirname "$settings_local")"
+
+    if [ ! -f "$settings_local" ]; then
+        # Create new file with env section
+        echo '{"env": {"DISABLE_AUTOUPDATER": "1"}}' > "$settings_local"
+        log_info "Created settings.local.json with auto-updates disabled"
+    else
+        # Merge with existing file
+        if command -v jq >/dev/null 2>&1; then
+            # Use jq for proper merge
+            local tmp_file=$(mktemp)
+            if jq --arg key "DISABLE_AUTOUPDATER" --arg value "1" '
+                if .env == null then .env = {} end;
+                .env[$key] = $value
+            ' "$settings_local" > "$tmp_file" && mv "$tmp_file" "$settings_local"; then
+                log_info "Merged DISABLE_AUTOUPDATER into existing settings.local.json"
+            else
+                rm -f "$tmp_file"
+                log_error "Failed to merge settings.local.json - jq processing failed"
+                return 1
+            fi
+        else
+            # Fallback: append using sed (may not be perfect JSON)
+            if ! grep -q '"DISABLE_AUTOUPDATER"' "$settings_local"; then
+                if grep -q '"env"' "$settings_local"; then
+                    # env section exists, add to it
+                    sed -i 's/"env": { */"env": { "DISABLE_AUTOUPDATER": "1",/' "$settings_local"
+                else
+                    # no env section, prepend before closing brace
+                    # Only add at end, before last closing brace
+                    sed -i '$ s/}\n,"env":{"DISABLE_AUTOUPDATER":"1"}\n}/' "$settings_local"
+                fi
+                log_info "Added DISABLE_AUTOUPDATER to settings.local.json (fallback merge)"
+            fi
+        fi
+    fi
+
+    return 0
+}
+
 # Proxy variables from feature options (for Claude Code installation ONLY)
 # These are explicitly passed to the feature, not inherited from global ENV
 FEATURE_HTTP_PROXY="${http_proxy:-$HTTP_PROXY}"
@@ -34,6 +90,10 @@ export http_proxy="$FEATURE_HTTP_PROXY"
 export https_proxy="$FEATURE_HTTPS_PROXY"
 export HTTP_PROXY="$FEATURE_HTTP_PROXY"
 export HTTPS_PROXY="$FEATURE_HTTPS_PROXY"
+
+# Version option from feature (default: latest)
+VERSION_OPTION="${VERSION:-latest}"
+log_info "Claude Code version: $VERSION_OPTION"
 
 # Check if proxy is set
 if [ -n "$FEATURE_HTTP_PROXY" ] || [ -n "$FEATURE_HTTPS_PROXY" ]; then
@@ -78,19 +138,31 @@ if [ "$(id -u)" -eq 0 ]; then
             export HTTPS_PROXY='$FEATURE_HTTPS_PROXY'
             export http_proxy='$FEATURE_HTTP_PROXY'
             export https_proxy='$FEATURE_HTTPS_PROXY'
-            curl -vL --http1.1 --tlsv1.2 https://claude.ai/install.sh | bash
+            curl -vL --http1.1 --tlsv1.2 https://claude.ai/install.sh | bash -s -- \"$VERSION_OPTION\"
         "
     else
-        su - "$TARGET_USER" -c 'curl -vL --http1.1 --tlsv1.2 https://claude.ai/install.sh | bash'
+        su - "$TARGET_USER" -c 'curl -vL --http1.1 --tlsv1.2 https://claude.ai/install.sh | bash -s -- "$VERSION_OPTION"'
     fi
 else
     # Running as non-root, install for current user
     log_info "Installing Claude Code CLI for current user: $(whoami)"
 
     # Download and install Claude Code CLI (proxy vars already exported)
-    curl -fsSL https://claude.ai/install.sh | bash
+    curl -fsSL https://claude.ai/install.sh | bash -s -- "$VERSION_OPTION"
 fi
 log_info "Claude Code CLI installation completed!"
+
+# Disable auto-updates for pinned versions (not latest)
+# Find .claude directory by searching upward from feature directory
+FEATURE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_CLAUDE_SETTINGS="$(find "$FEATURE_DIR/../.." -maxdepth 2 -name ".claude" -type d | head -1)/settings.local.json"
+
+if [ "$VERSION_OPTION" != "latest" ]; then
+    configure_auto_update "$PROJECT_CLAUDE_SETTINGS" "true"
+    log_info "Auto-updates disabled for pinned version: $VERSION_OPTION"
+else
+    log_info "Auto-updates enabled for latest version"
+fi
 
 # Provider configuration (runs for both root and non-root)
 # Devcontainers converts option names to uppercase, so 'provider' becomes 'PROVIDER'

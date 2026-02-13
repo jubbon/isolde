@@ -23,6 +23,40 @@ make shell
 make clean
 ```
 
+### Version Control
+
+Control which Claude Code CLI version is installed in your devcontainer.
+
+| Version | Behavior |
+|---------|-----------|
+| `latest` (default) | Most recent release, auto-updates enabled |
+| `stable` | Latest stable release, auto-updates disabled |
+| `1.2.41` | Specific version, auto-updates disabled |
+
+#### Use Specific Version
+```json
+{
+  "features": {
+    "claude-code": {
+      "version": "1.2.41"
+    }
+  }
+}
+```
+
+#### Use Latest (Default)
+```json
+{
+  "features": {
+    "claude-code": {
+      // "version": "latest"  // or omit entirely
+    }
+  }
+}
+```
+
+See also: [Version Control Documentation](docs/claude-version-control.md)
+
 ### Git Operations
 ```bash
 # The project uses git with worktrees for feature branches
