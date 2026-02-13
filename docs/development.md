@@ -208,29 +208,6 @@ make test-runtime   # Test Claude Code CLI functionality
 | **Config Test** | Verifies environment variables are set correctly | `make test-config` |
 | **Runtime Test** | Verifies Claude Code CLI is functional | `make test-runtime` |
 
-### Pre-commit Verification
-
-**Before committing, verify the devcontainer builds and environment is correct:**
-
-1. **Build test:**
-```bash
-cd .devcontainer && docker build -t claude-code-dev .
-```
-
-2. **Environment verification** (after container starts):
-```bash
-# Verify critical variables are set:
-echo $HTTP_PROXY
-echo $HTTPS_PROXY
-echo $NO_PROXY
-
-# Verify Anthropic provider variables:
-echo $ANTHROPIC_AUTH_TOKEN
-echo $ANTHROPIC_BASE_URL  # if custom provider is used
-```
-
-If build fails or environment variables are not correctly set, fix issues before committing.
-
 ### Adding New Tests
 
 To add a new test category:
