@@ -21,6 +21,11 @@
       "installOhMyZsh": false,
       "upgradePackages": false
     },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts",
+      "nodeGypDependencies": true,
+      "npxInstallCachedPackages": true
+    },
     "./features/claude-code": {
       "provider": "z.ai",
       "http_proxy": "http://192.168.1.21:2080",
