@@ -27,6 +27,7 @@
       "npxInstallCachedPackages": true
     },
     "./features/claude-code": {
+      "version": "latest",
       "provider": "z.ai",
       "http_proxy": "http://192.168.1.21:2080",
       "https_proxy": "http://192.168.1.21:2080",
