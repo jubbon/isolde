@@ -154,6 +154,70 @@ The container mounts `/var/run/docker.sock` for Docker-in-Docker support, enabli
 4. **Feature Development**: Use worktrees for isolated development branches
 5. **Testing**: Run tests within the container environment
 
+## Git Commit Standards
+
+**CRITICAL: All commits must be atomic.**
+
+### Pre-Commit Verification
+**Before committing, verify the devcontainer builds and environment is correct:**
+
+1. **Build test:**
+```bash
+cd .devcontainer && docker build -t claude-code-dev .
+```
+
+2. **Environment verification** (after container starts):
+```bash
+# Start container and verify environment variables
+make devcontainer
+# Or: docker run -it --rm claude-code-dev bash
+
+# Inside container, verify critical variables are set:
+echo $HTTP_PROXY
+echo $HTTPS_PROXY
+echo $NO_PROXY
+
+# Verify Anthropic provider variables (after configure_claude_provider):
+echo $ANTHROPIC_AUTH_TOKEN
+echo $ANTHROPIC_BASE_URL  # if custom provider is used
+
+# Verify Anthropic model configuration:
+echo $ANTHROPIC_MODELS
+```
+
+If the build fails or environment variables are not correctly set, fix the issues before committing. Never commit broken configuration.
+
+### Atomic Commits Rule
+- **One logical change per commit** - Each commit must contain only logically related changes
+- **No unrelated changes** - Never bundle unrelated fixes, refactoring, or features in a single commit
+- **Minimal scope** - A commit should do exactly one thing and do it completely
+
+### Commit Chain Ordering
+When multiple changes are needed, commits must form a proper dependency chain:
+- **Dependencies first** - If change B depends on change A, commit A before B
+- **Buildable state** - Each commit should leave the codebase in a working state when possible
+- **Reversible** - Each commit should be independently revertible without breaking unrelated functionality
+
+### Examples
+
+**Good atomic commits:**
+```
+feat: add provider configuration system
+fix: resolve proxy timeout issue
+docs: update installation instructions
+```
+
+**Bad - multiple unrelated changes:**
+```
+feat: add provider config and fix proxy bug and update docs
+```
+
+**Bad - wrong order (depends on later commit):**
+```
+feat: use provider config function (requires function that doesn't exist yet)
+feat: add provider config function (should be committed first)
+```
+
 ## Troubleshooting
 
 ### Provider Issues
