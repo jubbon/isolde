@@ -119,21 +119,21 @@ if [ -n "$FINAL_PROVIDER" ]; then
     log_info "Saved provider config: $FINAL_PROVIDER → $TARGET_HOME/.config/devcontainer/provider"
 fi
 
-# Save model configurations if default-model is set
-if [ -n "${DEFAULT_MODEL:-}" ]; then
+# Save model configurations if models is set
+if [ -n "${MODELS:-}" ]; then
     if [ ! -d "$TARGET_HOME/.config" ]; then
         mkdir -p "$TARGET_HOME/.config"
         chown -R "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/.config"
     fi
     mkdir -p "$TARGET_HOME/.config/devcontainer"
 
-    log_info "Creating model configuration from default-model object"
+    log_info "Creating model configuration from models object"
 
     # Parse JSON object to extract model values
-    # DEFAULT_MODEL is expected to be like: {"haiku": "model", "sonnet": "model", "opus": "model"}
-    HAIKU_MODEL=$(echo "$DEFAULT_MODEL" | grep -oP '"haiku"\s*:\s*"\([^"]+)"' | sed 's/.*"haiku"[[:space:]]*"\([^"]*\)".*/\1/')
-    SONNET_MODEL=$(echo "$DEFAULT_MODEL" | grep -oP '"sonnet"\s*:\s*"\([^"]+)"' | sed 's/.*"sonnet"[[:space:]]*"\([^"]*\)".*/\1/')
-    OPUS_MODEL=$(echo "$DEFAULT_MODEL" | grep -oP '"opus"\s*:\s*"\([^"]+)"' | sed 's/.*"opus"[[:space:]]*"\([^"]*\)".*/\1/')
+    # MODELS is expected to be like: {"haiku": "model", "sonnet": "model", "opus": "model"}
+    HAIKU_MODEL=$(echo "$MODELS" | grep -oP '"haiku"\s*:\s*"\([^"]+)"' | sed 's/.*"haiku"[[:space:]]*"\([^"]*\)".*/\1/')
+    SONNET_MODEL=$(echo "$MODELS" | grep -oP '"sonnet"\s*:\s*"\([^"]+)"' | sed 's/.*"sonnet"[[:space:]]*"\([^"]*\)".*/\1/')
+    OPUS_MODEL=$(echo "$MODELS" | grep -oP '"opus"\s*:\s*"\([^"]+)"' | sed 's/.*"opus"[[:space:]]*"\([^"]*\)".*/\1/')
 
     # Save model configurations
     cat > "$TARGET_HOME/.config/devcontainer/models" << EOF
