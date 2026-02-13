@@ -119,39 +119,40 @@ if [ -n "$FINAL_PROVIDER" ]; then
     log_info "Saved provider config: $FINAL_PROVIDER → $TARGET_HOME/.config/devcontainer/provider"
 fi
 
-# Save model configurations if they are set
-if [ -n "${DEFAULT_HAIKU_MODEL:-}" ] || [ -n "${DEFAULT_SONNET_MODEL:-}" ] || [ -n "${DEFAULT_OPUS_MODEL:-}" ]; then
+# Save model configurations if default-model is set
+if [ -n "${DEFAULT_MODEL:-}" ]; then
     if [ ! -d "$TARGET_HOME/.config" ]; then
         mkdir -p "$TARGET_HOME/.config"
         chown -R "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/.config"
     fi
     mkdir -p "$TARGET_HOME/.config/devcontainer"
 
-    # Create or update model config file
-    if [ -f "$TARGET_HOME/.config/devcontainer/models" ]; then
-        log_info "Updating existing model configuration"
-    else
-        log_info "Creating model configuration"
-    fi
+    log_info "Creating model configuration from default-model object"
+
+    # Parse JSON object to extract model values
+    # DEFAULT_MODEL is expected to be like: {"haiku": "model", "sonnet": "model", "opus": "model"}
+    HAIKU_MODEL=$(echo "$DEFAULT_MODEL" | grep -oP '"haiku"\s*:\s*"\([^"]+)"' | sed 's/.*"haiku"[[:space:]]*"\([^"]*\)".*/\1/')
+    SONNET_MODEL=$(echo "$DEFAULT_MODEL" | grep -oP '"sonnet"\s*:\s*"\([^"]+)"' | sed 's/.*"sonnet"[[:space:]]*"\([^"]*\)".*/\1/')
+    OPUS_MODEL=$(echo "$DEFAULT_MODEL" | grep -oP '"opus"\s*:\s*"\([^"]+)"' | sed 's/.*"opus"[[:space:]]*"\([^"]*\)".*/\1/')
 
     # Save model configurations
     cat > "$TARGET_HOME/.config/devcontainer/models" << EOF
 # Claude Code Model Configuration
-ANTHROPIC_DEFAULT_HAIKU_MODEL="${DEFAULT_HAIKU_MODEL:-}"
-ANTHROPIC_DEFAULT_SONNET_MODEL="${DEFAULT_SONNET_MODEL:-}"
-ANTHROPIC_DEFAULT_OPUS_MODEL="${DEFAULT_OPUS_MODEL:-}"
+ANTHROPIC_DEFAULT_HAIKU_MODEL="${HAIKU_MODEL:-}"
+ANTHROPIC_DEFAULT_SONNET_MODEL="${SONNET_MODEL:-}"
+ANTHROPIC_DEFAULT_OPUS_MODEL="${OPUS_MODEL:-}"
 EOF
 
     chown -R "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/.config/devcontainer"
     log_info "Fixed ownership for model configuration"
-    if [ -n "${DEFAULT_HAIKU_MODEL:-}" ]; then
-        log_info "Saved Haiku model: ${DEFAULT_HAIKU_MODEL}"
+    if [ -n "$HAIKU_MODEL" ]; then
+        log_info "Saved Haiku model: $HAIKU_MODEL"
     fi
-    if [ -n "${DEFAULT_SONNET_MODEL:-}" ]; then
-        log_info "Saved Sonnet model: ${DEFAULT_SONNET_MODEL}"
+    if [ -n "$SONNET_MODEL" ]; then
+        log_info "Saved Sonnet model: $SONNET_MODEL"
     fi
-    if [ -n "${DEFAULT_OPUS_MODEL:-}" ]; then
-        log_info "Saved Opus model: ${DEFAULT_OPUS_MODEL}"
+    if [ -n "$OPUS_MODEL" ]; then
+        log_info "Saved Opus model: $OPUS_MODEL"
     fi
 fi
 
