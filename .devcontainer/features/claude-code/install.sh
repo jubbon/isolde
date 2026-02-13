@@ -110,13 +110,49 @@ if [ -n "$FINAL_PROVIDER" ]; then
     # Ensure .config exists with proper permissions
     if [ ! -d "$TARGET_HOME/.config" ]; then
         mkdir -p "$TARGET_HOME/.config"
-        chmod 755 "$TARGET_HOME/.config"
+        chown -R "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/.config"
     fi
     mkdir -p "$TARGET_HOME/.config/devcontainer"
     echo "$FINAL_PROVIDER" > "$TARGET_HOME/.config/devcontainer/provider"
     chown -R "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/.config/devcontainer"
     log_info "Fixed ownership for $TARGET_HOME/.config/devcontainer"
     log_info "Saved provider config: $FINAL_PROVIDER → $TARGET_HOME/.config/devcontainer/provider"
+fi
+
+# Save model configurations if they are set
+if [ -n "${DEFAULT_HAIKU_MODEL:-}" ] || [ -n "${DEFAULT_SONNET_MODEL:-}" ] || [ -n "${DEFAULT_OPUS_MODEL:-}" ]; then
+    if [ ! -d "$TARGET_HOME/.config" ]; then
+        mkdir -p "$TARGET_HOME/.config"
+        chown -R "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/.config"
+    fi
+    mkdir -p "$TARGET_HOME/.config/devcontainer"
+
+    # Create or update model config file
+    if [ -f "$TARGET_HOME/.config/devcontainer/models" ]; then
+        log_info "Updating existing model configuration"
+    else
+        log_info "Creating model configuration"
+    fi
+
+    # Save model configurations
+    cat > "$TARGET_HOME/.config/devcontainer/models" << EOF
+# Claude Code Model Configuration
+ANTHROPIC_DEFAULT_HAIKU_MODEL="${DEFAULT_HAIKU_MODEL:-}"
+ANTHROPIC_DEFAULT_SONNET_MODEL="${DEFAULT_SONNET_MODEL:-}"
+ANTHROPIC_DEFAULT_OPUS_MODEL="${DEFAULT_OPUS_MODEL:-}"
+EOF
+
+    chown -R "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/.config/devcontainer"
+    log_info "Fixed ownership for model configuration"
+    if [ -n "${DEFAULT_HAIKU_MODEL:-}" ]; then
+        log_info "Saved Haiku model: ${DEFAULT_HAIKU_MODEL}"
+    fi
+    if [ -n "${DEFAULT_SONNET_MODEL:-}" ]; then
+        log_info "Saved Sonnet model: ${DEFAULT_SONNET_MODEL}"
+    fi
+    if [ -n "${DEFAULT_OPUS_MODEL:-}" ]; then
+        log_info "Saved Opus model: ${DEFAULT_OPUS_MODEL}"
+    fi
 fi
 
 # Configure PATH and provider for target user
@@ -136,7 +172,7 @@ if [ "$(id -u)" -eq 0 ]; then
 export PATH="$HOME/.local/bin:$PATH"
 
 configure_claude_provider() {
-    local provider="__PROVIDER_PLACEHOLDER__"
+    local provider=$1
     local provider_dir="$HOME/.claude/providers/$provider"
 
     if [ -z "$provider" ]; then
@@ -157,13 +193,15 @@ configure_claude_provider() {
         fi
     fi
 }
+llm_provider=$(cat "$HOME/.config/devcontainer/provider")
+configure_claude_provider $llm_provider
 
-configure_claude_provider
+# Load model configurations if they exist
+if [ -f "$HOME/.config/devcontainer/models" ]; then
+    source "$HOME/.config/devcontainer/models"
+fi
 # Claude Code CLI - END
 EOF
-
-    # Replace placeholder with actual provider value in temp file
-    sed -i "s|__PROVIDER_PLACEHOLDER__|$FINAL_PROVIDER|g" "$TEMP_RC"
 
     # Append original bashrc content to temp file, then move over original
     cat "$BASHRC_FILE" >> "$TEMP_RC"

@@ -27,7 +27,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /workspaces
 
 # Pre-install sudo to avoid conffile prompts later
-RUN apt-get update && apt-get install -y sudo python3.11 python3-pip python3-venv && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y sudo && rm -rf /var/lib/apt/lists/*
 
 # Create user with sudo access
 RUN groupadd --gid ${USER_GID} ${USERNAME} \

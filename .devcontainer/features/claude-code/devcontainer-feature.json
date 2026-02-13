@@ -24,6 +24,21 @@
       "type": "string",
       "default": "",
       "description": "HTTPS proxy URL for Claude Code installation only"
+    },
+    "default_haiku_model": {
+      "type": "string",
+      "default": "",
+      "description": "Default Anthropic Haiku model"
+    },
+    "default_sonnet_model": {
+      "type": "string",
+      "default": "",
+      "description": "Default Anthropic Sonnet model"
+    },
+    "default_opus_model": {
+      "type": "string",
+      "default": "",
+      "description": "Default Anthropic Opus model"
     }
   },
   "entrypoint": "install.sh"
