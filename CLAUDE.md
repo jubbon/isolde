@@ -192,6 +192,13 @@ If the build fails or environment variables are not correctly set, fix the issue
 - **No unrelated changes** - Never bundle unrelated fixes, refactoring, or features in a single commit
 - **Minimal scope** - A commit should do exactly one thing and do it completely
 
+### Commit Message Format
+- **English only** - All commit messages must be written in English language
+- **Conventional commits** - Use format: `<type>: <description>`
+  - Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
+  - Description: lowercase, no period at end
+- **Imperative mood** - Use "add" not "added", "fix" not "fixed"
+
 ### Commit Chain Ordering
 When multiple changes are needed, commits must form a proper dependency chain:
 - **Dependencies first** - If change B depends on change A, commit A before B
