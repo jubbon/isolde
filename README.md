@@ -1,13 +1,13 @@
 # Claude Code Dev Container
 
-Docker-based development environment for [Claude Code CLI](https://code.claude.com) with Dev Containers support.
+Docker-based development environment for [Claude Code CLI](https://code.claude.com) with Dev Containers support. Features multi-provider LLM support and enterprise proxy configuration.
 
 ## Quick Start
 
-### VS Code / Cursor (Recommended)
+### VS Code (Recommended)
 
 1. Open this folder in VS Code
-2. Install the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+2. Install [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
 3. Press `F1` → `Dev Containers: Reopen in Container`
 
 That's it! Claude Code is ready to use.
@@ -21,7 +21,7 @@ make build
 # Run in interactive mode
 make devcontainer
 
-# Get a shell
+# Get a shell inside the container
 make shell
 ```
 
@@ -29,43 +29,101 @@ make shell
 
 - ✅ Claude Code CLI pre-installed
 - ✅ Docker-in-Docker support
-- ✅ Python 3.11
+- ✅ Multi-provider LLM support (Anthropic, Z.ai, custom)
+- ✅ Enterprise proxy configuration
+- ✅ Version control options
 - ✅ Common utilities (git, vim, jq, curl, wget)
-- ✅ VS Code extensions pre-configured
+
+## Documentation
+
+For detailed documentation, see the [docs/](docs/) directory:
+
+| Topic | Description |
+|-------|-------------|
+| [Setup Guide](docs/setup.md) | Installation and configuration |
+| [Architecture](docs/architecture.md) | System design and components |
+| [Development](docs/development.md) | Contributing workflow |
+| [Proxy Configuration](docs/proxy.md) | Enterprise proxy setup |
+| [LLM Providers](docs/providers.md) | Provider configuration |
+| [Version Control](docs/claude-version-control.md) | Managing Claude Code versions |
 
 ## Project Structure
 
 ```
 .
 ├── .devcontainer/           # Dev Container configuration
-│   ├── devcontainer.json    # Main config file
-│   ├── Dockerfile           # Container image definition
-│   └── features/            # Custom Dev Container features
-│       └── claude-code/
-├── image/                   # Standalone base image
-│   └── Dockerfile
-├── config/                  # Configuration files
-│   └── models.env           # Model configuration
-├── Makefile                 # Build commands
-└── README.md
+│   ├── devcontainer.json    # Main config (proxy, mounts, features)
+│   ├── Dockerfile           # Base image definition
+│   ├── PROXY_ARCHITECTURE.md # Proxy architecture docs
+│   └── features/
+│       └── claude-code/     # Custom Claude Code feature
+│           ├── devcontainer-feature.json
+│           ├── install.sh
+│           └── README.md
+├── docs/                    # Project documentation
+├── .claude/                 # Claude Code local settings
+├── .worktrees/              # Git worktree storage
+├── CLAUDE.md                 # Project instructions for Claude Code
+├── README.md                 # This file
+└── Makefile                  # Build commands
 ```
 
 ## Configuration
 
-### Model Configuration
+### LLM Provider
 
-Edit `config/models.env` or create `~/docker-claude-code.env`:
+Configure your LLM provider in `.devcontainer/devcontainer.json`:
 
-```bash
-ANTHROPIC_BASE_URL=https://api.anthropic.com
-ANTHROPIC_DEFAULT_HAIKU_MODEL=claude-3-5-haiku-20241022
-ANTHROPIC_DEFAULT_SONNET_MODEL=claude-3-5-sonnet-20241022
-ANTHROPIC_DEFAULT_OPUS_MODEL=claude-3-5-sonnet-20241022
+```json
+{
+  "features": {
+    "./features/claude-code": {
+      "provider": "anthropic"  // or "z.ai", or custom
+      "version": "latest"
+    }
+  }
+}
 ```
 
-### Custom Features
+See [docs/providers.md](docs/providers.md) for detailed setup.
 
-Add custom features in `.devcontainer/features/`. See [Dev Container Features spec](https://devcontainers.github.io/implementors/features/) for details.
+### Proxy Configuration
+
+For enterprise environments, configure proxy in `.devcontainer/devcontainer.json`:
+
+```json
+{
+  "containerEnv": {
+    "HTTP_PROXY": "http://proxy.example.com:8080",
+    "HTTPS_PROXY": "http://proxy.example.com:8080",
+    "NO_PROXY": "localhost,127.0.0.1,.local"
+  },
+  "features": {
+    "./features/claude-code": {
+      "http_proxy": "http://proxy.example.com:8080",
+      "https_proxy": "http://proxy.example.com:8080"
+    }
+  }
+}
+```
+
+See [docs/proxy.md](docs/proxy.md) for details.
+
+### Version Control
+
+Choose which Claude Code version to install:
+
+```json
+{
+  "features": {
+    "./features/claude-code": {
+      "version": "latest"    // or "stable", or "1.2.41"
+    }
+  }
+}
+```
+
+See [docs/claude-version-control.md](docs/claude-version-control.md) for details.
 
 ## Make Commands
 
@@ -74,13 +132,29 @@ Add custom features in `.devcontainer/features/`. See [Dev Container Features sp
 | `make help` | Show available commands |
 | `make build` | Build the Docker image |
 | `make devcontainer` | Run container with current workspace |
-| `make shell` | Get shell in container |
-| `make push` | Push image to registry |
+| `make shell` | Get shell in running container |
 | `make clean` | Remove running containers |
 
-## Docker Socket Access
+## Docker-in-Docker
 
-The container mounts `/var/run/docker.sock` for Docker-in-Docker support. Ensure your user has Docker permissions on the host.
+The container mounts `/var/run/docker.sock` for Docker-in-Docker support:
+
+- Build containers within the dev container
+- Run docker commands without sudo
+- Test Docker-based projects in isolation
+
+Ensure your user has Docker permissions on the host machine.
+
+## Development
+
+This project follows specific conventions documented in [CLAUDE.md](CLAUDE.md):
+
+- **Atomic commits** - One logical change per commit
+- **Conventional commits** - Structured commit message format
+- **Pre-commit verification** - Build testing before commits
+- **English documentation** - All docs in English
+
+See [docs/development.md](docs/development.md) for contributing guidelines.
 
 ## License
 
