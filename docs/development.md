@@ -182,6 +182,79 @@ Test with each provider:
 - Code fences with language
 - Relative links: `[Link](other-file.md)`
 
+## Testing
+
+### Running Tests
+
+The project includes a Makefile-based testing system to verify changes don't break functionality.
+
+**Run all tests:**
+```bash
+make test
+```
+
+**Run individual test categories:**
+```bash
+make test-build    # Test container builds
+make test-config   # Test environment configuration
+make test-runtime   # Test Claude Code CLI functionality
+```
+
+### Test Categories
+
+| Test Category | Purpose | Command |
+|---------------|---------|---------|
+| **Build Test** | Verifies container builds without errors | `make test-build` |
+| **Config Test** | Verifies environment variables are set correctly | `make test-config` |
+| **Runtime Test** | Verifies Claude Code CLI is functional | `make test-runtime` |
+
+### Pre-commit Verification
+
+**Before committing, verify the devcontainer builds and environment is correct:**
+
+1. **Build test:**
+```bash
+cd .devcontainer && docker build -t claude-code-dev .
+```
+
+2. **Environment verification** (after container starts):
+```bash
+# Verify critical variables are set:
+echo $HTTP_PROXY
+echo $HTTPS_PROXY
+echo $NO_PROXY
+
+# Verify Anthropic provider variables:
+echo $ANTHROPIC_AUTH_TOKEN
+echo $ANTHROPIC_BASE_URL  # if custom provider is used
+```
+
+If build fails or environment variables are not correctly set, fix issues before committing.
+
+### Adding New Tests
+
+To add a new test category:
+
+1. **Add target to Makefile:**
+```makefile
+test-new-category:
+	@echo "Testing: New category..."
+	# Test logic here
+	@if [ $$? -eq 0 ]; then \
+		echo "✓ New category test PASSED"; \
+	else \
+		echo "✗ New category test FAILED"; \
+		exit 1; \
+	fi
+```
+
+2. **Add to test target dependencies:**
+```makefile
+test: test-build test-config test-runtime test-new-category
+```
+
+3. **Document in this file** - Add to test categories table above
+
 ## Common Tasks
 
 ### Adding a New Provider Option
