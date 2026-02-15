@@ -1,45 +1,63 @@
 # Proxy Configuration Architecture
 
 ## Overview
-Proxy settings are now separated by scope to ensure they're used only where needed.
+Proxy settings are managed by a standalone `proxy` feature that creates shared state for other features to consume.
 
-## Scopes
+## Components
 
-### 1. Dockerfile Build (NO PROXY)
-- **File**: `.devcontainer/Dockerfile`
-- **Behavior**: `apt-get update/install` commands run **without proxy**
-- **Reason**: Debian package downloads should use direct connection
-
-### 2. Feature Installation (WITH PROXY)
+### 1. Proxy Feature (`./features/proxy`)
 - **Files**:
-  - `.devcontainer/features/claude-code/devcontainer-feature.json` (defines options)
-  - `.devcontainer/features/claude-code/install.sh` (uses options)
-  - `.devcontainer/devcontainer.json` (passes options to feature)
-- **Behavior**: Claude Code installation via `curl https://claude.ai/install.sh` uses proxy
-- **Reason**: Claude Code download requires proxy for network access
+  - `.devcontainer/features/proxy/devcontainer-feature.json` - Feature manifest
+  - `.devcontainer/features/proxy/install.sh` - Creates shared state file
+  - `.devcontainer/features/proxy/proxy.sh` - Utility functions for consuming features
+  - `.devcontainer/features/proxy/README.md` - Feature documentation
+- **Behavior**: Creates `~/.config/devcontainer/proxy` state file with proxy configuration
+- **Shared State**: `HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY` variables
+- **Optional**: Apt proxy configuration (`/etc/apt/apt.conf.d/proxy.conf`)
 
-### 3. Container Runtime (WITH PROXY)
+### 2. Consuming Features (e.g., claude-code)
+- **File**: `.devcontainer/features/claude-code/install.sh`
+- **Behavior**: Sources `~/.config/devcontainer/proxy` if exists
+- **Fallback**: Uses deprecated direct options for backward compatibility
+
+### 3. Container Runtime
 - **File**: `.devcontainer/devcontainer.json` → `containerEnv`
-- **Behavior**: Proxy environment variables are set in the running container
-- **Reason**: Claude Code needs proxy for API calls when running
+- **Behavior**: Proxy environment variables set in running container
+- **Reason**: Claude Code needs proxy for API calls at runtime
 
 ## Configuration Flow
 
 ```
 devcontainer.json
-├── build.args → Only USERNAME (proxy args removed)
 ├── containerEnv → HTTP_PROXY, HTTPS_PROXY, NO_PROXY (runtime)
 └── features
+    ├── ./features/proxy
+    │   ├── http_proxy → Creates state file
+    │   ├── https_proxy →
+    │   └── no_proxy →
     └── ./features/claude-code
-        ├── http_proxy → passed to install.sh
-        └── https_proxy → passed to install.sh
+        └── (reads from ~/.config/devcontainer/proxy)
 ```
 
-## Changes Made
+## State File Format
 
-| File | Change |
-|------|--------|
-| Dockerfile | Removed `ENV HTTP_PROXY=...` (was global, affected all RUN commands) |
-| devcontainer.json | Removed proxy from `build.args`, added to feature options |
-| devcontainer-feature.json | Added `http_proxy`, `https_proxy` options |
-| install.sh | Uses feature options instead of global ENV |
+`~/.config/devcontainer/proxy`:
+```bash
+# DevContainer Proxy Configuration
+HTTP_PROXY='http://proxy.example.com:8080'
+HTTPS_PROXY='http://proxy.example.com:8080'
+NO_PROXY='localhost,127.0.0.1,.local'
+```
+
+## Feature Interaction
+
+1. **Proxy feature runs first** - Creates shared state file
+2. **Other features consume** - Source state file or use utility functions
+3. **Runtime vars available** - Via containerEnv in devcontainer.json
+
+## Backward Compatibility
+
+The claude-code feature maintains deprecated `http_proxy`/`https_proxy` options:
+- If state file exists: uses state (recommended)
+- If state file missing: falls back to direct options (deprecated)
+- Warning logged when using deprecated options

@@ -18,12 +18,12 @@
     "http_proxy": {
       "type": "string",
       "default": "",
-      "description": "HTTP proxy URL for Claude Code installation only"
+      "description": "DEPRECATED: Use ./features/proxy feature instead. HTTP proxy URL for Claude Code installation only"
     },
     "https_proxy": {
       "type": "string",
       "default": "",
-      "description": "HTTPS proxy URL for Claude Code installation only"
+      "description": "DEPRECATED: Use ./features/proxy feature instead. HTTPS proxy URL for Claude Code installation only"
     },
     "models": {
       "type": "string",

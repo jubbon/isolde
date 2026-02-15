@@ -26,11 +26,15 @@
       "nodeGypDependencies": true,
       "npxInstallCachedPackages": true
     },
+    "./features/proxy": {
+      "http_proxy": "http://192.168.1.21:2080",
+      "https_proxy": "http://192.168.1.21:2080",
+      "no_proxy": "localhost,127.0.0.1,.local",
+      "enabled": true
+    },
     "./features/claude-code": {
       "version": "latest",
       "provider": "z.ai",
-      "http_proxy": "http://192.168.1.21:2080",
-      "https_proxy": "http://192.168.1.21:2080",
       "models": "haiku:glm-4.5-air,sonnet:glm-4.7,opus:glm-4.7"
     }
   },

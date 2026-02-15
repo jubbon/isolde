@@ -80,10 +80,26 @@ configure_auto_update() {
     return 0
 }
 
-# Proxy variables from feature options (for Claude Code installation ONLY)
-# These are explicitly passed to the feature, not inherited from global ENV
-FEATURE_HTTP_PROXY="${http_proxy:-$HTTP_PROXY}"
-FEATURE_HTTPS_PROXY="${https_proxy:-$HTTPS_PROXY}"
+# Proxy variables from shared state or feature options (for Claude Code installation ONLY)
+# Priority: 1) Shared state file (~/.config/devcontainer/proxy) 2) Feature options (deprecated) 3) Global ENV
+STATE_FILE="${HOME}/.config/devcontainer/proxy"
+if [ -f "$STATE_FILE" ]; then
+    # Read from shared state (recommended approach)
+    source "$STATE_FILE"
+    FEATURE_HTTP_PROXY="$HTTP_PROXY"
+    FEATURE_HTTPS_PROXY="$HTTPS_PROXY"
+elif [ -n "${http_proxy:-}" ] || [ -n "${https_proxy:-}" ]; then
+    # Fallback: use direct feature options (deprecated for backward compatibility)
+    FEATURE_HTTP_PROXY="${http_proxy:-$HTTP_PROXY}"
+    FEATURE_HTTPS_PROXY="${https_proxy:-$HTTPS_PROXY}"
+    if [ -n "$FEATURE_HTTP_PROXY" ] || [ -n "$FEATURE_HTTPS_PROXY" ]; then
+        log_warn "Using deprecated proxy options in claude-code feature. Add ./features/proxy feature instead."
+    fi
+else
+    # Fallback: use global ENV
+    FEATURE_HTTP_PROXY="$HTTP_PROXY"
+    FEATURE_HTTPS_PROXY="$HTTPS_PROXY"
+fi
 
 # Export proxy variables for curl (only for Claude Code installation)
 export http_proxy="$FEATURE_HTTP_PROXY"

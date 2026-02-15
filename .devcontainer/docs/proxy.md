@@ -36,7 +36,24 @@ Proxy settings are **separated by scope** to ensure they're used only where need
 
 ## Configuration
 
-### Step 1: Set Runtime Proxy
+### Step 1: Add Proxy Feature
+
+Add proxy feature to `.devcontainer/devcontainer.json`:
+
+```json
+{
+  "features": {
+    "./features/proxy": {
+      "http_proxy": "http://proxy.example.com:8080",
+      "https_proxy": "http://proxy.example.com:8080",
+      "no_proxy": "localhost,127.0.0.1,.local,192.168.0.0/16",
+      "enabled": true
+    }
+  }
+}
+```
+
+### Step 2: Set Runtime Proxy
 
 Add proxy variables to `.devcontainer/devcontainer.json`:
 
@@ -65,24 +82,18 @@ Add proxy variables to `.devcontainer/devcontainer.json`:
 - `.local` - Bonjour/mDNS
 - `192.168.0.0/16` - Private network ranges
 
-### Step 2: Set Installation Proxy
+### Step 3: Configure Consuming Features (Optional)
 
-Add proxy options to the claude-code feature:
+The claude-code feature automatically reads proxy from shared state. If you're using a custom feature, source the state file:
 
-```json
-{
-  "features": {
-    "./features/claude-code": {
-      "provider": "",
-      "version": "latest",
-      "http_proxy": "http://proxy.example.com:8080",
-      "https_proxy": "http://proxy.example.com:8080"
-    }
-  }
-}
+```bash
+# In your feature's install.sh
+if [ -f ~/.config/devcontainer/proxy ]; then
+    source ~/.config/devcontainer/proxy
+fi
 ```
 
-### Step 3: Build Container
+### Step 4: Build Container
 
 ```bash
 # Rebuild to apply proxy settings
@@ -137,16 +148,17 @@ RUN apt-get update && apt-get install -y git
 - `curl https://claude.ai/install.sh` times out
 - install.sh script fails
 
-**Cause:** Feature installation proxy not configured
+**Cause:** Proxy feature not configured
 
-**Solution:** Ensure proxy options are set in `devcontainer.json`:
+**Solution:** Ensure proxy feature is enabled in `devcontainer.json`:
 
 ```json
 {
   "features": {
-    "./features/claude-code": {
+    "./features/proxy": {
       "http_proxy": "http://proxy:8080",
-      "https_proxy": "http://proxy:8080"
+      "https_proxy": "http://proxy:8080",
+      "enabled": true
     }
   }
 }
@@ -242,7 +254,7 @@ Different proxies for different protocols:
     "HTTPS_PROXY": "http://https-proxy.example.com:8080"
   },
   "features": {
-    "./features/claude-code": {
+    "./features/proxy": {
       "http_proxy": "http://http-proxy.example.com:8080",
       "https_proxy": "http://https-proxy.example.com:8080"
     }
