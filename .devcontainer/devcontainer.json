@@ -10,9 +10,7 @@
   },
 
   "containerEnv": {
-    "HTTP_PROXY": "http://192.168.1.21:2080",
-    "HTTPS_PROXY": "http://192.168.1.21:2080",
-    "NO_PROXY": "localhost,127.0.0.1,.local"
+    // Proxy now configured via ./features/proxy only - creates /etc/profile.d/devcontainer-proxy.sh
   },
 
   "features": {

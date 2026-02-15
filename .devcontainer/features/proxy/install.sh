@@ -122,6 +122,26 @@ EOF
     fi
 fi
 
+# Create runtime environment export script for containerEnv
+# This allows proxy feature to populate containerEnv automatically
+PROFILE_D_DIR="/etc/profile.d"
+PROFILE_SCRIPT="$PROFILE_D_DIR/devcontainer-proxy.sh"
+
+if [ "$(id -u)" -eq 0 ] && [ -n "$FINAL_HTTP_PROXY" ]; then
+    mkdir -p "$PROFILE_D_DIR"
+    cat > "$PROFILE_SCRIPT" << EOF
+# DevContainer Proxy Configuration
+# Source this file to use proxy in shell sessions
+export HTTP_PROXY='$FINAL_HTTP_PROXY'
+export HTTPS_PROXY='$FINAL_HTTPS_PROXY'
+export NO_PROXY='$FINAL_NO_PROXY'
+export http_proxy='$FINAL_HTTP_PROXY'
+export https_proxy='$FINAL_HTTPS_PROXY'
+EOF
+    chmod +x "$PROFILE_SCRIPT"
+    log_info "Created runtime proxy export script: $PROFILE_SCRIPT"
+fi
+
 # Log summary
 if [ -n "$FINAL_HTTP_PROXY" ]; then
     log_info "Proxy configured - HTTP: $FINAL_HTTP_PROXY, HTTPS: $FINAL_HTTPS_PROXY"
