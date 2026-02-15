@@ -60,7 +60,7 @@ make test-config       # Config test only
 
 ### Bats Tests
 
-Located in `tests/` directory using [Bats](https://github.com/bats-core/bats-core).
+Located in `../tests/` directory using [Bats](https://github.com/bats-core/bats-core).
 
 **Advantages:**
 - Unit-level testing
@@ -82,7 +82,7 @@ cd bats-core && sudo ./install.sh /usr/local
 
 **Run:**
 ```bash
-cd tests
+cd ../tests
 bats .                    # Run all
 bats install.bats          # Run specific file
 bats -v .                 # Verbose output
@@ -96,13 +96,14 @@ bats --pretty .            # Pretty formatting
 1. **Before committing changes:**
    ```bash
    make test              # Run all Makefile tests
-   cd tests && bats .     # Run Bats tests
+   cd ../tests && bats .     # Run Bats tests
    ```
 
 2. **Quick iteration:**
    ```bash
    make test-build       # Just test build
    make test-bats        # Just run Bats
+   # Note: Bats are now in .devcontainer/tests/
    ```
 
 3. **Full verification:**
@@ -149,7 +150,7 @@ test: test-build test-config test-runtime test-new-feature
 
 ### Bats Tests
 
-Create new `.bats` file in `tests/`:
+Create new `.bats` file in `../tests/`:
 
 ```bash
 #!/usr/bin/env bats
@@ -171,7 +172,7 @@ load bats/core
 }
 ```
 
-**Available helpers** (in `tests/bats/core.bash`):
+**Available helpers** (in `../tests/bats/core.bash`):
 - `assert_valid_json <file>` - Check JSON validity
 - `assert_shellcheck_pass <script>` - Run shellcheck
 - `assert_contains <file> <string>` - Check file contains string

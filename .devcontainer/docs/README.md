@@ -33,12 +33,12 @@ Claude Code Dev Container is a Docker-based development environment that provide
 │   ├── devcontainer.json    # Main config (proxy, mounts, features)
 │   ├── Dockerfile           # Base image (Debian + system deps)
 │   ├── PROXY_ARCHITECTURE.md # Proxy architecture docs
+│   ├── docs/                # This documentation
 │   └── features/
 │       └── claude-code/     # Custom Claude Code feature
 │           ├── devcontainer-feature.json
 │           ├── install.sh
 │           └── README.md
-├── docs/                    # This documentation
 ├── .claude/                 # Claude Code local settings
 ├── .worktrees/              # Git worktree storage
 ├── CLAUDE.md                 # Project instructions for Claude Code

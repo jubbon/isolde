@@ -79,4 +79,4 @@ These tests run automatically via GitHub Actions:
 - On every pull request
 - Manual trigger via workflow dispatch
 
-See `.github/workflows/test.yml` for configuration.
+See `../../.github/workflows/test.yml` for configuration.

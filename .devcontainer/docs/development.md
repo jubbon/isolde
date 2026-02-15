@@ -32,12 +32,12 @@ make devcontainer
 │   ├── devcontainer.json       # Main configuration
 │   ├── Dockerfile              # Base image
 │   ├── PROXY_ARCHITECTURE.md   # Proxy documentation
+│   ├── docs/                  # Documentation (this folder)
 │   └── features/
 │       └── claude-code/         # Claude Code feature
 │           ├── devcontainer-feature.json
 │           ├── install.sh
 │           └── README.md
-├── docs/                       # Documentation (this folder)
 ├── .claude/                    # Claude Code settings
 ├── CLAUDE.md                   # Project instructions
 ├── README.md                   # Project overview

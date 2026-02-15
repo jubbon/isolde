@@ -4,17 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Documentation
 
-For detailed project documentation, see the [docs/](docs/) directory:
+For detailed project documentation, see the [.devcontainer/docs/](.devcontainer/docs/) directory:
 
 | Document | Description |
 |----------|-------------|
-| [docs/README.md](docs/README.md) | Documentation index and navigation |
-| [docs/setup.md](docs/setup.md) | Installation and configuration guide |
-| [docs/architecture.md](docs/architecture.md) | System architecture and design |
-| [docs/development.md](docs/development.md) | Contributing and development workflow |
-| [docs/proxy.md](docs/proxy.md) | Proxy configuration for enterprise |
-| [docs/providers.md](docs/providers.md) | LLM provider setup |
-| [docs/claude-version-control.md](docs/claude-version-control.md) | Version control options |
+| [.devcontainer/docs/README.md](.devcontainer/docs/README.md) | Documentation index and navigation |
+| [.devcontainer/docs/setup.md](.devcontainer/docs/setup.md) | Installation and configuration guide |
+| [.devcontainer/docs/architecture.md](.devcontainer/docs/architecture.md) | System architecture and design |
+| [.devcontainer/docs/development.md](.devcontainer/docs/development.md) | Contributing and development workflow |
+| [.devcontainer/docs/proxy.md](.devcontainer/docs/proxy.md) | Proxy configuration for enterprise |
+| [.devcontainer/docs/providers.md](.devcontainer/docs/providers.md) | LLM provider setup |
+| [.devcontainer/docs/claude-version-control.md](.devcontainer/docs/claude-version-control.md) | Version control options |
 
 ## Quick Reference
 
@@ -74,7 +74,7 @@ Control which Claude Code CLI version is installed via `devcontainer.json`:
 }
 ```
 
-See: [docs/claude-version-control.md](docs/claude-version-control.md)
+See: [.devcontainer/docs/claude-version-control.md](.devcontainer/docs/claude-version-control.md)
 
 ## Architecture Overview
 
@@ -103,7 +103,7 @@ See: [docs/claude-version-control.md](docs/claude-version-control.md)
 
 **Provider Selection:** Set `provider` option in `devcontainer.json`
 
-See: [docs/providers.md](docs/providers.md)
+See: [.devcontainer/docs/providers.md](.devcontainer/docs/providers.md)
 
 ### Proxy Architecture
 
@@ -115,7 +115,7 @@ Proxy settings are separated by scope:
 | Feature Installation | Yes | Claude Code download requires proxy |
 | Container Runtime | Yes | API calls to LLM provider |
 
-See: [docs/proxy.md](docs/proxy.md)
+See: [.devcontainer/docs/proxy.md](.devcontainer/docs/proxy.md)
 
 ## Development Workflow
 
@@ -203,14 +203,14 @@ feat: add provider config function (should be committed first)
 - Verify API token is present: `cat ~/.claude/providers/{provider}/auth`
 - Ensure ANTHROPIC_AUTH_TOKEN is set: `echo $ANTHROPIC_AUTH_TOKEN`
 
-See: [docs/providers.md](docs/providers.md#troubleshooting)
+See: [.devcontainer/docs/providers.md](.devcontainer/docs/providers.md#troubleshooting)
 
 ### Proxy Issues
 - Confirm proxy is configured for runtime: `echo $HTTP_PROXY`
 - Check feature installation used correct proxy: `curl -v https://claude.ai/install.sh`
 - Verify no proxy conflicts in build vs runtime
 
-See: [docs/proxy.md](docs/proxy.md#troubleshooting)
+See: [.devcontainer/docs/proxy.md](.devcontainer/docs/proxy.md#troubleshooting)
 
 ### Permission Issues
 - Ensure user has Docker access on host
