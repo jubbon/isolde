@@ -184,20 +184,26 @@ Test with each provider:
 
 ## Testing
 
-### Running Tests
+For comprehensive testing documentation, see [testing.md](testing.md).
 
-The project includes a Makefile-based testing system to verify changes don't break functionality.
+### Quick Test Reference
+
+The project includes a multi-layered testing system:
 
 **Run all tests:**
 ```bash
-make test
+make test              # Run all Makefile tests
+make test-bats          # Run Bats unit tests
 ```
 
 **Run individual test categories:**
 ```bash
-make test-build    # Test container builds
-make test-config   # Test environment configuration
-make test-runtime   # Test Claude Code CLI functionality
+make test-build       # Test container builds
+make test-config      # Test environment configuration
+make test-runtime     # Test Claude Code CLI functionality
+make test-shell       # Test shell script syntax (requires shellcheck)
+make test-lint        # Test JSON validity (requires jq)
+make test-bats        # Run Bats unit tests (requires bats)
 ```
 
 ### Test Categories
@@ -207,6 +213,9 @@ make test-runtime   # Test Claude Code CLI functionality
 | **Build Test** | Verifies container builds without errors | `make test-build` |
 | **Config Test** | Verifies environment variables are set correctly | `make test-config` |
 | **Runtime Test** | Verifies Claude Code CLI is functional | `make test-runtime` |
+| **Shell Test** | Verifies shell script syntax with shellcheck | `make test-shell` |
+| **Lint Test** | Verifies JSON files are valid | `make test-lint` |
+| **Bats Test** | Runs unit tests in `tests/` directory | `make test-bats` |
 
 ### Adding New Tests
 

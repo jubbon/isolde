@@ -1,0 +1,178 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+  workflow_dispatch:
+
+env:
+  DOCKER_BUILDKIT: 1
+
+jobs:
+  # ============================================================================
+  # Lint Job - Fast checks that don't require Docker
+  # ============================================================================
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+      - name: Lint shell scripts
+        run: |
+          echo "Checking shell scripts with shellcheck..."
+          find .devcontainer -name "*.sh" -type f -exec shellcheck {} +
+
+      - name: Install jq
+        run: |
+          sudo apt-get install -y jq
+
+      - name: Lint JSON files
+        run: |
+          echo "Validating JSON files..."
+          for json in $(find .devcontainer -name "*.json" -type f); do
+            echo "Checking $json"
+            jq empty "$json"
+          done
+
+      - name: Install Bats
+        run: |
+          sudo npm install -g bats
+
+      - name: Run Bats tests
+        run: |
+          cd tests
+          bats --formatter pretty .
+
+  # ============================================================================
+  # Build Job - Test container builds successfully
+  # ============================================================================
+  build:
+    name: Build Container
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Dev Container image
+        run: |
+          echo "Building Dev Container image..."
+          cd .devcontainer
+          docker build -t claude-code-dev-test .
+
+      - name: Verify image exists
+        run: |
+          docker images | grep claude-code-dev-test
+
+  # ============================================================================
+  # Config Job - Test environment configuration
+  # ============================================================================
+  config:
+    name: Configuration Test
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        run: |
+          cd .devcontainer
+          docker build -t claude-code-dev-test .
+
+      - name: Test HTTP_PROXY
+        run: |
+          docker run --rm \
+            -e HTTP_PROXY=http://proxy.example.com:2080 \
+            -e HTTPS_PROXY=http://proxy.example.com:2080 \
+            -e NO_PROXY=localhost,127.0.0.1,.local \
+            claude-code-dev-test \
+            bash -c 'test -n "$$HTTP_PROXY" && echo "HTTP_PROXY=$$HTTP_PROXY"'
+
+      - name: Test HTTPS_PROXY
+        run: |
+          docker run --rm \
+            -e HTTP_PROXY=http://proxy.example.com:2080 \
+            -e HTTPS_PROXY=http://proxy.example.com:2080 \
+            -e NO_PROXY=localhost,127.0.0.1,.local \
+            claude-code-dev-test \
+            bash -c 'test -n "$$HTTPS_PROXY" && echo "HTTPS_PROXY=$$HTTPS_PROXY"'
+
+      - name: Test NO_PROXY
+        run: |
+          docker run --rm \
+            -e HTTP_PROXY=http://proxy.example.com:2080 \
+            -e HTTPS_PROXY=http://proxy.example.com:2080 \
+            -e NO_PROXY=localhost,127.0.0.1,.local \
+            claude-code-dev-test \
+            bash -c 'test -n "$$NO_PROXY" && echo "NO_PROXY=$$NO_PROXY"'
+
+  # ============================================================================
+  # Provider Job - Test provider configuration
+  # ============================================================================
+  provider:
+    name: Provider Test
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      matrix:
+        provider: [anthropic, z.ai, custom]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image with ${{ matrix.provider }}
+        run: |
+          cd .devcontainer
+          docker build \
+            --build-arg PROVIDER=${{ matrix.provider }} \
+            -t claude-code-dev-test-${{ matrix.provider }} \
+            .
+
+      - name: Test provider directory creation
+        run: |
+          docker run --rm claude-code-dev-test-${{ matrix.provider }} \
+            bash -c 'mkdir -p ~/.claude/providers/test-provider && echo "OK"'
+
+  # ============================================================================
+  # Runtime Job - Test Docker-in-Docker functionality
+  # ============================================================================
+  runtime:
+    name: Runtime Test
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        run: |
+          cd .devcontainer
+          docker build -t claude-code-dev-test .
+
+      - name: Test Docker-in-Docker
+        run: |
+          docker run --rm \
+            --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock \
+            claude-code-dev-test \
+            docker ps
