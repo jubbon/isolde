@@ -49,7 +49,7 @@ jobs:
 
       - name: Run Bats tests
         run: |
-          cd tests
+          cd .devcontainer/tests
           bats --formatter pretty .
 
   # ============================================================================

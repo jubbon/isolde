@@ -185,16 +185,16 @@ test-bats:
 	@echo "$(CYAN)Testing:$(RESET) Bats unit tests..."
 	@echo ""
 	@if command -v bats >/dev/null 2>&1; then \
-		cd tests && bats --formatter pretty .; \
+		cd .devcontainer/tests && bats --formatter pretty .; \
 		echo "  $(GREEN)Bats tests PASSED$(CHECK)$(RESET)"; \
 	else \
 		echo "  $(YELLOW)bats not found, using npx...$(RESET)"; \
 		if command -v npx >/dev/null 2>&1; then \
-			cd tests && npx bats --formatter pretty .; \
+			cd .devcontainer/tests && npx bats --formatter pretty .; \
 			echo "  $(GREEN)Bats tests PASSED$(CHECK)$(RESET)"; \
 		else \
 			echo "  $(RED)Neither bats nor npx found$(CROSS)$(RESET)"; \
-			echo "  $(YELLOW)Install bats: npm install -g bats or see tests/README.md$(RESET)"; \
+			echo "  $(YELLOW)Install bats: npm install -g bats or see .devcontainer/tests/README.md$(RESET)"; \
 			exit 1; \
 		fi; \
 	fi
