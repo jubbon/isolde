@@ -36,43 +36,40 @@ make shell
 
 ## Documentation
 
-For detailed documentation, see the [.devcontainer/docs/](.devcontainer/docs/) directory:
+For detailed documentation, see the [docs/](docs/) directory:
 
 | Topic | Description |
 |-------|-------------|
-| [Setup Guide](.devcontainer/docs/setup.md) | Installation and configuration |
-| [Architecture](.devcontainer/docs/architecture.md) | System design and components |
-| [Development](.devcontainer/docs/development.md) | Contributing workflow |
-| [Proxy Configuration](.devcontainer/docs/proxy.md) | Enterprise proxy setup |
-| [LLM Providers](.devcontainer/docs/providers.md) | Provider configuration |
-| [Version Control](.devcontainer/docs/claude-version-control.md) | Managing Claude Code versions |
+| [Setup Guide](docs/setup.md) | Installation and configuration |
+| [Architecture](docs/architecture.md) | System design and components |
+| [Development](docs/development.md) | Contributing workflow |
+| [Proxy Configuration](docs/proxy.md) | Enterprise proxy setup |
+| [LLM Providers](docs/providers.md) | Provider configuration |
+| [Version Control](docs/claude-version-control.md) | Managing Claude Code versions |
 
 ## Project Structure
 
 ```
-.
-├── .devcontainer/           # Dev Container configuration
-│   ├── devcontainer.json    # Main config (proxy, mounts, features)
-│   ├── Dockerfile           # Base image definition
-│   ├── PROXY_ARCHITECTURE.md # Proxy architecture docs
-│   ├── docs/                # Project documentation
-│   └── features/
-│       └── claude-code/     # Custom Claude Code feature
-│           ├── devcontainer-feature.json
-│           ├── install.sh
-│           └── README.md
-├── .claude/                 # Claude Code local settings
-├── .worktrees/              # Git worktree storage
-├── CLAUDE.md                 # Project instructions for Claude Code
-├── README.md                 # This file
-└── Makefile                  # Build commands
+.devcontainer/
+├── devcontainer.json       # Main config (proxy, mounts, features)
+├── Dockerfile              # Base image definition
+├── PROXY_ARCHITECTURE.md  # Proxy architecture docs
+├── docs/                  # Project documentation
+├── features/
+│   └── claude-code/         # Custom Claude Code feature
+│       ├── devcontainer-feature.json
+│       ├── install.sh
+│       └── README.md
+├── CLAUDE.md              # Project instructions for Claude Code
+├── README.md               # This file
+└── Makefile                # Build commands
 ```
 
 ## Configuration
 
 ### LLM Provider
 
-Configure your LLM provider in `.devcontainer/devcontainer.json`:
+Configure your LLM provider in `devcontainer.json`:
 
 ```json
 {
@@ -85,11 +82,11 @@ Configure your LLM provider in `.devcontainer/devcontainer.json`:
 }
 ```
 
-See [.devcontainer/docs/providers.md](.devcontainer/docs/providers.md) for detailed setup.
+See [docs/providers.md](docs/providers.md) for detailed setup.
 
 ### Proxy Configuration
 
-For enterprise environments, configure proxy in `.devcontainer/devcontainer.json`:
+For enterprise environments, configure proxy in `devcontainer.json`:
 
 ```json
 {
@@ -107,7 +104,7 @@ For enterprise environments, configure proxy in `.devcontainer/devcontainer.json
 }
 ```
 
-See [.devcontainer/docs/proxy.md](.devcontainer/docs/proxy.md) for details.
+See [docs/proxy.md](docs/proxy.md) for details.
 
 ### Version Control
 
@@ -123,7 +120,7 @@ Choose which Claude Code version to install:
 }
 ```
 
-See [.devcontainer/docs/claude-version-control.md](.devcontainer/docs/claude-version-control.md) for details.
+See [docs/claude-version-control.md](docs/claude-version-control.md) for details.
 
 ## Make Commands
 
@@ -147,14 +144,14 @@ Ensure your user has Docker permissions on the host machine.
 
 ## Development
 
-This project follows specific conventions documented in [CLAUDE.md](CLAUDE.md):
+This project follows specific conventions documented in [CLAUDE.md](.devcontainer/CLAUDE.md):
 
 - **Atomic commits** - One logical change per commit
 - **Conventional commits** - Structured commit message format
 - **Pre-commit verification** - Build testing before commits
 - **English documentation** - All docs in English
 
-See [.devcontainer/docs/development.md](.devcontainer/docs/development.md) for contributing guidelines.
+See [docs/development.md](docs/development.md) for contributing guidelines.
 
 ## License
 

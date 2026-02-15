@@ -26,7 +26,7 @@ all: build
 # Build Dev Container image
 build:
 	@echo "$(CYAN)Building Dev Container image...$(RESET)"
-	cd .devcontainer && docker build -t claude-code-dev .
+	docker build -t claude-code-dev .
 	@echo "$(GREEN)Build complete $(CHECK)$(RESET)"
 
 # Run in development mode (interactive with workspace)
@@ -72,7 +72,7 @@ test: test-build test-config test-runtime test-shell test-lint test-bats
 # Test: Dev Container builds successfully
 test-build:
 	@echo "$(CYAN)Testing:$(RESET) Dev Container builds without errors..."
-	@cd .devcontainer && docker build -t claude-code-dev-test . > /tmp/build-test.log 2>&1; \
+	@docker build -t claude-code-dev-test . > /tmp/build-test.log 2>&1; \
 	if [ $$? -eq 0 ]; then \
 		echo "  $(GREEN)Build test PASSED$(CHECK)$(RESET)"; \
 	else \
@@ -131,7 +131,7 @@ test-shell:
 
 	@if command -v shellcheck >/dev/null 2>&1; then \
 		echo "  $(YELLOW)Checking with shellcheck...$(RESET)"; \
-		for script in $$(find .devcontainer -name "*.sh" -type f); do \
+		for script in $$(find . -name "*.sh" -type f); do \
 			if shellcheck "$$script" > /dev/null 2>&1; then \
 				echo "  $(GREEN)$$script$(CHECK)$(RESET)"; \
 			else \
@@ -151,7 +151,7 @@ test-lint:
 	@echo ""
 
 	@if command -v jq >/dev/null 2>&1; then \
-		for json in $$(find .devcontainer -name "*.json" -type f); do \
+		for json in $$(find . -name "*.json" -type f); do \
 			if jq empty "$$json" > /dev/null 2>&1; then \
 				echo "  $(GREEN)$$json$(CHECK)$(RESET)"; \
 			else \
@@ -185,16 +185,16 @@ test-bats:
 	@echo "$(CYAN)Testing:$(RESET) Bats unit tests..."
 	@echo ""
 	@if command -v bats >/dev/null 2>&1; then \
-		cd .devcontainer/tests && bats --formatter pretty .; \
+		cd tests && bats --formatter pretty .; \
 		echo "  $(GREEN)Bats tests PASSED$(CHECK)$(RESET)"; \
 	else \
 		echo "  $(YELLOW)bats not found, using npx...$(RESET)"; \
 		if command -v npx >/dev/null 2>&1; then \
-			cd .devcontainer/tests && npx bats --formatter pretty .; \
+			cd tests && npx bats --formatter pretty .; \
 			echo "  $(GREEN)Bats tests PASSED$(CHECK)$(RESET)"; \
 		else \
 			echo "  $(RED)Neither bats nor npx found$(CROSS)$(RESET)"; \
-			echo "  $(YELLOW)Install bats: npm install -g bats or see .devcontainer/tests/README.md$(RESET)"; \
+			echo "  $(YELLOW)Install bats: npm install -g bats or see tests/README.md$(RESET)"; \
 			exit 1; \
 		fi; \
 	fi
