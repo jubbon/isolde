@@ -2,6 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Language Policy
+
+**ALL documentation MUST be in English.** This project is intended to be open-sourced on GitHub.
+
+- All documentation files (CLAUDE.md, README.md, docs/, etc.) must be written in English
+- All commit messages must be in English
+- All code comments should be in English
+- This policy applies to all markdown, documentation, and text files in the repository
+
 ## Project Overview
 
 **Claude Code Devcontainer Templates** - A template-based system for creating isolated development environments with Claude Code CLI support. The project has two main components:
