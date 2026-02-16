@@ -1,25 +1,16 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1771141638484,
-  "projectRoot": "/workspace/sandbox/devcontainers/claude-code",
+  "lastScanned": 1771156255456,
+  "projectRoot": "/workspaces/claude-code",
   "techStack": {
-    "languages": [
-      {
-        "name": "C/C++",
-        "version": null,
-        "confidence": "high",
-        "markers": [
-          "Makefile"
-        ]
-      }
-    ],
+    "languages": [],
     "frameworks": [],
     "packageManager": null,
     "runtime": null
   },
   "build": {
-    "buildCommand": "make build",
-    "testCommand": "make test",
+    "buildCommand": null,
+    "testCommand": null,
     "lintCommand": null,
     "devCommand": null,
     "scripts": {}
@@ -33,143 +24,126 @@
   "structure": {
     "isMonorepo": false,
     "workspaces": [],
-    "mainDirectories": [
-      "docs",
-      "tests"
-    ],
+    "mainDirectories": [],
     "gitBranches": null
   },
   "customNotes": [],
   "directoryMap": {
-    "docs": {
-      "path": "docs",
-      "purpose": "Documentation",
-      "fileCount": 10,
-      "lastAccessed": 1771141638481,
-      "keyFiles": [
-        "README.md",
-        "architecture.md",
-        "claude-version-control.md",
-        "development.md",
-        "llm-provider-proposals.md"
-      ]
-    },
     "project": {
       "path": "project",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1771141638483,
+      "lastAccessed": 1771156255455,
       "keyFiles": []
-    },
-    "tests": {
-      "path": "tests",
-      "purpose": "Test files",
-      "fileCount": 4,
-      "lastAccessed": 1771141638483,
-      "keyFiles": [
-        "README.md",
-        "install.bats",
-        "json.bats",
-        "provider.bats"
-      ]
     }
   },
   "hotPaths": [
     {
-      "path": ".devcontainer/CLAUDE.md",
-      "accessCount": 11,
-      "lastAccessed": 1771143305584,
-      "type": "file"
-    },
-    {
-      "path": ".devcontainer/README.md",
-      "accessCount": 11,
-      "lastAccessed": 1771143309768,
-      "type": "file"
-    },
-    {
-      "path": "",
-      "accessCount": 7,
-      "lastAccessed": 1771141989330,
-      "type": "directory"
-    },
-    {
-      "path": ".devcontainer/docs/testing.md",
-      "accessCount": 7,
-      "lastAccessed": 1771142922556,
-      "type": "file"
-    },
-    {
-      "path": ".devcontainer/Makefile",
-      "accessCount": 7,
-      "lastAccessed": 1771143300021,
-      "type": "file"
-    },
-    {
-      "path": ".devcontainer/docs/development.md",
-      "accessCount": 3,
-      "lastAccessed": 1771143376393,
-      "type": "file"
-    },
-    {
       "path": ".devcontainer/features/claude-code/install.sh",
-      "accessCount": 2,
-      "lastAccessed": 1771141983016,
-      "type": "file"
-    },
-    {
-      "path": ".devcontainer/docs/README.md",
-      "accessCount": 2,
-      "lastAccessed": 1771142912852,
-      "type": "file"
-    },
-    {
-      "path": "docs/testing.md",
-      "accessCount": 1,
-      "lastAccessed": 1771141936724,
-      "type": "file"
-    },
-    {
-      "path": "docs/README.md",
-      "accessCount": 1,
-      "lastAccessed": 1771141936726,
-      "type": "file"
-    },
-    {
-      "path": "docs/development.md",
-      "accessCount": 1,
-      "lastAccessed": 1771141936734,
-      "type": "file"
-    },
-    {
-      "path": "docs/plans/2025-02-13-claude-version-control.md",
-      "accessCount": 1,
-      "lastAccessed": 1771141945625,
-      "type": "file"
-    },
-    {
-      "path": ".devcontainer/tests/README.md",
-      "accessCount": 1,
-      "lastAccessed": 1771142922639,
+      "accessCount": 62,
+      "lastAccessed": 1771223026155,
       "type": "file"
     },
     {
       "path": ".devcontainer/devcontainer.json",
+      "accessCount": 22,
+      "lastAccessed": 1771223347170,
+      "type": "file"
+    },
+    {
+      "path": ".devcontainer/features/proxy/install.sh",
+      "accessCount": 21,
+      "lastAccessed": 1771223287858,
+      "type": "file"
+    },
+    {
+      "path": ".devcontainer/docs/proxy.md",
+      "accessCount": 14,
+      "lastAccessed": 1771221777810,
+      "type": "file"
+    },
+    {
+      "path": ".devcontainer/features/proxy/proxy.sh",
+      "accessCount": 9,
+      "lastAccessed": 1771221755313,
+      "type": "file"
+    },
+    {
+      "path": ".devcontainer/Dockerfile",
+      "accessCount": 9,
+      "lastAccessed": 1771223320684,
+      "type": "file"
+    },
+    {
+      "path": ".devcontainer/features/proxy/devcontainer-feature.json",
+      "accessCount": 9,
+      "lastAccessed": 1771223320689,
+      "type": "file"
+    },
+    {
+      "path": ".devcontainer/features/claude-code/devcontainer-feature.json",
+      "accessCount": 8,
+      "lastAccessed": 1771223320685,
+      "type": "file"
+    },
+    {
+      "path": "",
+      "accessCount": 5,
+      "lastAccessed": 1771221768463,
+      "type": "directory"
+    },
+    {
+      "path": ".devcontainer/PROXY_ARCHITECTURE.md",
+      "accessCount": 3,
+      "lastAccessed": 1771157196850,
+      "type": "file"
+    },
+    {
+      "path": ".devcontainer/features/proxy/README.md",
+      "accessCount": 3,
+      "lastAccessed": 1771220747955,
+      "type": "file"
+    },
+    {
+      "path": ".devcontainer/features/claude-code/README.md",
+      "accessCount": 2,
+      "lastAccessed": 1771161328319,
+      "type": "file"
+    },
+    {
+      "path": ".devcontainer/features",
+      "accessCount": 2,
+      "lastAccessed": 1771220727173,
+      "type": "directory"
+    },
+    {
+      "path": ".devcontainer/tests/install.bats",
+      "accessCount": 2,
+      "lastAccessed": 1771220744186,
+      "type": "file"
+    },
+    {
+      "path": ".devcontainer/Makefile",
       "accessCount": 1,
-      "lastAccessed": 1771143287287,
+      "lastAccessed": 1771166689851,
       "type": "file"
     },
     {
       "path": ".devcontainer",
       "accessCount": 1,
-      "lastAccessed": 1771143315748,
+      "lastAccessed": 1771220737572,
       "type": "directory"
-    }
-  ],
-  "userDirectives": []
-}tainer/docs/claude-version-control.md",
+    },
+    {
+      "path": ".devcontainer/docs/architecture.md",
       "accessCount": 1,
-      "lastAccessed": 1771143376393,
+      "lastAccessed": 1771220743838,
+      "type": "file"
+    },
+    {
+      "path": ".devcontainer/docs/setup.md",
+      "accessCount": 1,
+      "lastAccessed": 1771221773096,
       "type": "file"
     }
   ],

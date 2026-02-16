@@ -33,7 +33,9 @@
     "./features/claude-code": {
       "version": "latest",
       "provider": "z.ai",
-      "models": "haiku:glm-4.5-air,sonnet:glm-4.7,opus:glm-4.7"
+      "models": "haiku:glm-4.5-air,sonnet:glm-4.7,opus:glm-4.7",
+      "http_proxy": "http://192.168.1.21:2080",
+      "https_proxy": "http://192.168.1.21:2080"
     }
   },
 
