@@ -1,0 +1,5 @@
+[behave]
+paths      = tests/e2e/features
+format     = pretty
+show_source = true
+stop       = false
