@@ -29,7 +29,7 @@ Claude Code Dev Container is a Docker-based development environment that provide
 
 ```
 .
-├── .devcontainer/           # Dev Container configuration
+├── .devcontainer/           # Dev Container configuration (for this repo)
 │   ├── devcontainer.json    # Main config (proxy, mounts, features)
 │   ├── Dockerfile           # Base image (Debian + system deps)
 │   ├── PROXY_ARCHITECTURE.md # Proxy architecture docs
@@ -39,11 +39,27 @@ Claude Code Dev Container is a Docker-based development environment that provide
 │           ├── devcontainer-feature.json
 │           ├── install.sh
 │           └── README.md
+├── core/                    # Shared components for templates
+│   ├── features/            # Reusable devcontainer features
+│   └── base-Dockerfile      # Base container image
+├── templates/               # Language templates
+│   ├── python/
+│   ├── nodejs/
+│   ├── rust/
+│   ├── go/
+│   └── generic/
+├── scripts/                 # Project creation tools
+│   ├── init-project.sh      # Main script
+│   └── lib/                 # Helper libraries
+├── docs/                    # Template system documentation
+│   ├── usage.md
+│   ├── templates.md
+│   ├── presets.md
+│   └── backlog.md
 ├── .claude/                 # Claude Code local settings
-├── .worktrees/              # Git worktree storage
-├── CLAUDE.md                 # Project instructions for Claude Code
-├── README.md                 # Project overview
-└── Makefile                  # Build commands
+├── CLAUDE.md                # Project instructions for Claude Code
+├── README.md                # Project overview
+└── presets.yaml             # Built-in presets
 ```
 
 ## Getting Started
@@ -57,15 +73,33 @@ Claude Code Dev Container is a Docker-based development environment that provide
 ### For CLI Users
 
 ```bash
+# From the repository root
 # Build the image
-make build
+docker build -t claude-code-dev .devcontainer
 
-# Run in interactive mode
-make devcontainer
-
-# Get a shell inside the container
-make shell
+# Run with current workspace mounted
+docker run -it --rm \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v "$PWD:/workspaces/$(basename "$PWD")" \
+  claude-code-dev
 ```
+
+### Creating New Projects
+
+Use the template system to create new projects:
+
+```bash
+# Interactive wizard
+./scripts/init-project.sh
+
+# With preset
+./scripts/init-project.sh my-app --preset=python-ml
+
+# With template
+./scripts/init-project.sh my-api --template=nodejs --lang-version=22
+```
+
+See [Template System Documentation](../../docs/) for more details.
 
 ## Documentation Sections
 
@@ -77,7 +111,7 @@ make shell
 
 ## Conventions
 
-This project follows specific conventions documented in [CLAUDE.md](../CLAUDE.md):
+This project follows specific conventions documented in [CLAUDE.md](../CLAUDE.md) (in .devcontainer directory):
 
 - **Atomic Commits** - One logical change per commit
 - **Conventional Commits** - Structured commit message format
@@ -91,6 +125,7 @@ For issues or questions:
 1. Check existing documentation in this directory
 2. Review [CLAUDE.md](../CLAUDE.md) for project-specific guidance
 3. Consult the [troubleshooting section](setup.md#troubleshooting) in setup guide
+4. See [Template System Documentation](../../docs/) for template-related issues
 
 ## License
 

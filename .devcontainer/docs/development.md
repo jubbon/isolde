@@ -13,15 +13,16 @@ Guide for contributing to and developing the Claude Code Dev Container project.
 ### Getting Started
 
 ```bash
-# Fork and clone repository
-git clone https://github.com/your-username/claude-code-devcontainer.git
-cd claude-code-devcontainer
+# Clone repository
+git clone <repository-url>
+cd claude-code-templates
 
 # Create a feature branch
 git checkout -b feat/my-new-feature
 
-# Start development container
-make devcontainer
+# Open in VS Code and use Dev Containers extension
+code .
+# Press F1 → Dev Containers: Reopen in Container
 ```
 
 ## Project Structure
@@ -38,10 +39,17 @@ make devcontainer
 │           ├── devcontainer-feature.json
 │           ├── install.sh
 │           └── README.md
+├── core/                       # Shared components
+│   ├── features/               # Reusable features
+│   └── base-Dockerfile         # Base image
+├── templates/                  # Language templates
+├── scripts/                    # Project creation tools
+│   ├── init-project.sh
+│   └── lib/
+├── docs/                       # Template system docs
 ├── .claude/                    # Claude Code settings
 ├── CLAUDE.md                   # Project instructions
-├── README.md                   # Project overview
-└── Makefile                    # Build commands
+└── README.md                   # Project overview
 ```
 
 ## Making Changes
@@ -54,7 +62,7 @@ make devcontainer
 vim .devcontainer/Dockerfile
 
 # Test build
-make build
+docker build -t claude-code-dev .devcontainer
 ```
 
 **Feature Changes:**
@@ -71,11 +79,10 @@ docker build -t claude-code-dev .devcontainer
 ### 2. Test Your Changes
 
 ```bash
-# Run container with changes
-make devcontainer
+# Reopen in VS Code container or use CLI
+# In VS Code: F1 → Dev Containers: Rebuild Container
 
-# Verify inside container
-docker exec -it claude-code-dev bash
+# Verify inside container (open terminal in VS Code)
 claude --version
 docker ps  # Test DinD
 ```
@@ -90,8 +97,8 @@ This project enforces **atomic commits**. See [CLAUDE.md](../CLAUDE.md) for full
 cd .devcontainer && docker build -t claude-code-dev .
 
 # Environment verification
-make devcontainer
-# Inside container:
+# Rebuild container in VS Code: F1 → Dev Containers: Rebuild Container
+# Inside container terminal:
 echo $HTTP_PROXY
 echo $ANTHROPIC_AUTH_TOKEN
 ```
@@ -137,10 +144,10 @@ Test full container build:
 
 ```bash
 # Full build test
-make build
+docker build -t claude-code-dev .devcontainer
 
-# Runtime test
-make devcontainer
+# Runtime test - rebuild container in VS Code
+# F1 → Dev Containers: Rebuild Container
 
 # Inside container:
 # - Verify Claude Code works
@@ -188,58 +195,38 @@ For comprehensive testing documentation, see [testing.md](testing.md).
 
 ### Quick Test Reference
 
-The project includes a multi-layered testing system:
+The project uses manual testing with VS Code Dev Containers:
 
-**Run all tests:**
+**Build Test:**
 ```bash
-make test              # Run all Makefile tests
-make test-bats          # Run Bats unit tests
+# Test container builds
+docker build -t claude-code-dev .devcontainer
 ```
 
-**Run individual test categories:**
+**Runtime Test:**
 ```bash
-make test-build       # Test container builds
-make test-config      # Test environment configuration
-make test-runtime     # Test Claude Code CLI functionality
-make test-shell       # Test shell script syntax (requires shellcheck)
-make test-lint        # Test JSON validity (requires jq)
-make test-bats        # Run Bats unit tests (requires bats)
+# Rebuild container in VS Code: F1 → Dev Containers: Rebuild Container
+# Then open terminal and verify:
+claude --version
+echo $ANTHROPIC_AUTH_TOKEN
+docker ps
 ```
 
-### Test Categories
-
-| Test Category | Purpose | Command |
-|---------------|---------|---------|
-| **Build Test** | Verifies container builds without errors | `make test-build` |
-| **Config Test** | Verifies environment variables are set correctly | `make test-config` |
-| **Runtime Test** | Verifies Claude Code CLI is functional | `make test-runtime` |
-| **Shell Test** | Verifies shell script syntax with shellcheck | `make test-shell` |
-| **Lint Test** | Verifies JSON files are valid | `make test-lint` |
-| **Bats Test** | Runs unit tests in `tests/` directory | `make test-bats` |
-
-### Adding New Tests
-
-To add a new test category:
-
-1. **Add target to Makefile:**
-```makefile
-test-new-category:
-	@echo "Testing: New category..."
-	# Test logic here
-	@if [ $$? -eq 0 ]; then \
-		echo "✓ New category test PASSED"; \
-	else \
-		echo "✗ New category test FAILED"; \
-		exit 1; \
-	fi
+**Script Syntax Test:**
+```bash
+# Test shell scripts (if shellcheck is installed)
+shellcheck scripts/init-project.sh
+shellcheck scripts/lib/*.sh
+shellcheck .devcontainer/features/claude-code/install.sh
 ```
 
-2. **Add to test target dependencies:**
-```makefile
-test: test-build test-config test-runtime test-new-category
+**JSON Lint Test:**
+```bash
+# Validate JSON files (if jq is available)
+jq < .devcontainer/devcontainer.json
+jq < .devcontainer/features/claude-code/devcontainer-feature.json
+jq < presets.yaml  # Note: this is YAML
 ```
-
-3. **Document in this file** - Add to test categories table above
 
 ## Common Tasks
 
@@ -260,20 +247,20 @@ test: test-build test-config test-runtime test-new-category
 ```
 
 2. Update `install.sh` to handle provider
-3. Update documentation in `docs/providers.md`
+3. Update documentation in `.devcontainer/docs/providers.md`
 4. Test with provider configured
 5. Commit: `feat: add support for new-provider`
 
 ### Adding a New Feature
 
-1. Create feature directory:
+1. Create feature directory in `core/features/`:
 ```bash
-mkdir .devcontainer/features/new-feature
+mkdir core/features/new-feature
 ```
 
 2. Create `devcontainer-feature.json`
 3. Create `install.sh`
-4. Document in `docs/architecture.md`
+4. Document in `.devcontainer/docs/architecture.md`
 5. Test and commit
 
 ### Debugging Container Issues
@@ -297,9 +284,9 @@ docker exec claude-code-dev env | sort
 ### Version Bump
 
 Update version in relevant files:
-- `.devcontainer/features/claude-code/devcontainer-feature.json`
+- `core/features/claude-code/devcontainer-feature.json`
 - `README.md` if needed
-- `docs/setup.md` if user-facing
+- `.devcontainer/docs/setup.md` if user-facing
 
 ### Changelog
 

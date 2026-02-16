@@ -19,6 +19,8 @@ templates/python/
     └── devcontainer.json  # Devcontainer config
 ```
 
+The `template-info.yaml` file defines template properties, supported versions, and features.
+
 ## Template Metadata
 
 Each template has a `template-info.yaml`:
@@ -168,7 +170,7 @@ devcontainer_features:
   - ghcr.io/devcontainers/features/common-utils:2
 ```
 
-3. Create `.devcontainer/Dockerfile`:
+3. Create `.devcontainer/Dockerfile` based on `core/base-Dockerfile`:
 
 ```dockerfile
 ARG BASE_IMAGE=debian:bookworm-slim
@@ -192,7 +194,9 @@ RUN apt-get update && apt-get install -y \
 
 4. Create `.devcontainer/devcontainer.json` with placeholders
 
-5. Test the template:
+5. Add template processing logic to `scripts/lib/templates.sh` if needed
+
+6. Test the template:
 
 ```bash
 ./scripts/init-project.sh test --template=my-language
@@ -200,9 +204,9 @@ RUN apt-get update && apt-get install -y \
 
 ## Template Features
 
-Templates use devcontainer features for modular functionality. The `features/` directory contains:
+Templates use devcontainer features for modular functionality. The `core/features/` directory contains:
 
-### claude-code
+### claude-code (`core/features/claude-code/`)
 
 Installs Claude Code CLI with multi-provider support.
 
@@ -212,7 +216,7 @@ Installs Claude Code CLI with multi-provider support.
 - `models`: Model mapping string
 - `http_proxy`, `https_proxy`: Proxy for build-time downloads
 
-### proxy
+### proxy (`core/features/proxy/`)
 
 Configures HTTP proxy for the container.
 
@@ -225,15 +229,12 @@ Configures HTTP proxy for the container.
 
 ## Feature Paths in Projects
 
-Projects use symlinks to reference features from the template repository:
+Projects copy features from the core template repository:
 
 ```
 my-project/.devcontainer/features/
-├── claude-code -> ../../../../../templates/../../core/features/claude-code
-└── proxy -> ../../../../../templates/../../core/features/proxy
+├── claude-code/    # Copied from core/features/claude-code
+└── proxy/          # Copied from core/features/proxy
 ```
 
-This allows:
-- Shared feature code across projects
-- Easy updates from the template repository
-- Smaller project footprints
+Note: Features are copied rather than symlinked because Docker cannot follow symlinks outside the build context. Each project gets its own copy of the features.

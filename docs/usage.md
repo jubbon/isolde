@@ -5,6 +5,7 @@
 The simplest way to create a project is using the interactive wizard:
 
 ```bash
+# From the repository root
 ./scripts/init-project.sh
 ```
 
@@ -20,6 +21,7 @@ The wizard will guide you through:
 ### Basic Usage
 
 ```bash
+# From the repository root
 # Create a project with default template (generic)
 ./scripts/init-project.sh my-project
 

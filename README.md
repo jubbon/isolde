@@ -1,38 +1,30 @@
-# Claude Code Devcontainer Templates - Documentation
+# Claude Code Devcontainer Templates
 
-Welcome to the documentation for the Claude Code Devcontainer Template System.
-
-This system provides templates and tools for quickly setting up isolated development environments with Claude Code CLI support.
-
-## Quick Links
-
-| Document | Description |
-|----------|-------------|
-| [Usage Guide](usage.md) | Detailed usage instructions for init-project.sh |
-| [Template Reference](templates.md) | Template customization and metadata |
-| [Preset Reference](presets.md) | Available presets and creating custom ones |
-| [Backlog](backlog.md) | Planned features and improvements |
+A template-based system for creating development environments with Claude Code CLI support.
 
 ## Overview
 
-This template system provides:
+This repository provides templates and tools for quickly setting up isolated development environments. Each project gets:
 
-- **Multiple Language Templates** - Python, Node.js, Rust, Go, and generic
-- **Pre-configured Presets** - Common setups for ML, web, API, CLI development
-- **Multi-Provider LLM Support** - Anthropic, Z.ai, and custom providers
-- **Proxy Configuration** - Enterprise network support
-- **Interactive Wizard** - Easy project creation with prompts
+- A dedicated devcontainer with custom configurations
+- Language-specific tooling and dependencies
+- Isolated git repositories for project code and devcontainer config
+- Pre-configured Claude Code CLI with multi-provider support
 
 ## Quick Start
 
 ```bash
-# From the repository root
+# Clone the repository
+git clone <repository-url>
+cd claude-code-templates
+
+# Run the interactive wizard
 ./scripts/init-project.sh
 
-# Or with a preset
+# Or create a project with a preset
 ./scripts/init-project.sh my-ml-app --preset=python-ml
 
-# Or with specific template
+# Or create with specific template
 ./scripts/init-project.sh my-api --template=nodejs --lang-version=22
 ```
 
@@ -77,10 +69,19 @@ After creating a project, your workspace will look like:
 
 ## Documentation
 
-- [Usage Guide](usage.md) - Detailed usage instructions
-- [Template Reference](templates.md) - Template customization
-- [Preset Reference](presets.md) - Available presets and creating custom ones
-- [Architecture](architecture.md) - System design
+### Template System Documentation
+- [Usage Guide](docs/usage.md) - Detailed usage instructions
+- [Template Reference](docs/templates.md) - Template customization
+- [Preset Reference](docs/presets.md) - Available presets and creating custom ones
+- [Backlog](docs/backlog.md) - Planned features and improvements
+
+### Devcontainer Documentation
+- [Devcontainer Setup](.devcontainer/docs/setup.md) - Installation and configuration
+- [Architecture](.devcontainer/docs/architecture.md) - System architecture and design
+- [Development](.devcontainer/docs/development.md) - Contributing and workflow
+- [LLM Providers](.devcontainer/docs/providers.md) - Multi-provider LLM support
+- [Proxy Configuration](.devcontainer/docs/proxy.md) - Proxy settings and architecture
+- [Version Control](.devcontainer/docs/claude-version-control.md) - Managing Claude Code versions
 
 ## Repository Structure
 
@@ -101,13 +102,17 @@ claude-code-templates/
 │   ├── init-project.sh    # Main script
 │   └── lib/               # Helper libraries
 ├── presets.yaml           # Built-in presets
-└── docs/                  # Documentation
+├── docs/                  # Template system documentation
+├── .devcontainer/         # Self devcontainer setup
+│   ├── docs/              # Devcontainer documentation
+│   └── features/          # Feature implementations
+└── README.md              # This file
 ```
 
 ## Requirements
 
 - Docker
-- VS Code with Dev Containers extension
+- VS Code with Dev Containers extension (recommended)
 - Bash shell
 - Git
 

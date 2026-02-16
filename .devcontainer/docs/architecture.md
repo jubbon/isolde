@@ -45,7 +45,8 @@ This document describes the architecture of the Claude Code Dev Container projec
 |------|---------|
 | `devcontainer.json` | Main configuration - mounts, environment, features |
 | `Dockerfile` | Base image definition |
-| `PROXY_ARCHITECTURE.md` | Proxy configuration documentation |
+| `PROXY_ARCHITECTURE.md` | Proxy architecture documentation |
+| `docs/` | Devcontainer-specific documentation |
 
 **Key Responsibilities:**
 - Define container image and build arguments
@@ -55,7 +56,7 @@ This document describes the architecture of the Claude Code Dev Container projec
 
 ### 2. Claude Code Feature
 
-**Location:** `.devcontainer/features/claude-code/`
+**Location:** `core/features/claude-code/` (copied to `.devcontainer/features/` in projects)
 
 | File | Purpose |
 |------|---------|
@@ -200,7 +201,7 @@ Proxy settings are separated to ensure they're used only where needed:
 2. **Feature Installation** - With proxy (Claude Code download)
 3. **Container Runtime** - With proxy (API calls)
 
-See [PROXY_ARCHITECTURE.md](../.devcontainer/PROXY_ARCHITECTURE.md) for details.
+See [PROXY_ARCHITECTURE.md](../PROXY_ARCHITECTURE.md) for details.
 
 ### Why Docker-in-Docker?
 
@@ -232,14 +233,14 @@ Mounting `/var/run/docker.sock` enables:
 
 ### Adding New Features
 
-Create features under `.devcontainer/features/` following the [Dev Containers Feature specification](https://devcontainers.github.io/implementors/features/).
+Create features under `core/features/` following the [Dev Containers Feature specification](https://devcontainers.github.io/implementors/features/).
 
 ### Adding New Providers
 
 1. Create provider directory: `~/.claude/providers/{provider}/`
 2. Add `auth` file with API token
 3. Add `base_url` file with API endpoint (optional)
-4. Configure in `devcontainer.json`:
+4. Configure in project's `devcontainer.json`:
 
 ```json
 {
@@ -253,7 +254,7 @@ Create features under `.devcontainer/features/` following the [Dev Containers Fe
 
 ### Custom Base Images
 
-Modify `.devcontainer/Dockerfile` to add:
+Modify the template's Dockerfile or create a custom base image in `core/base-Dockerfile` to add:
 - System dependencies
 - Base image changes
 - Global configuration
