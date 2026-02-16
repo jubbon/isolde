@@ -109,24 +109,22 @@ else
     TARGET_HOME="$HOME"
 fi
 
-# Proxy variables from shared state or feature options (for Claude Code installation ONLY)
-# Priority: 1) Shared state file  2) Feature options (deprecated) 3) Global ENV
+# Proxy variables for Claude Code installation
+# Priority: 1) Shared state file (preferred)  2) Direct options  3) Global ENV
 # NOTE: Must read state file AFTER determining TARGET_USER and TARGET_HOME
 STATE_FILE="$TARGET_HOME/.config/devcontainer/proxy"
 if [ -f "$STATE_FILE" ]; then
-    # Read from shared state (recommended approach)
     source "$STATE_FILE"
     FEATURE_HTTP_PROXY="$HTTP_PROXY"
     FEATURE_HTTPS_PROXY="$HTTPS_PROXY"
-elif [ -n "${http_proxy:-}" ] || [ -n "${https_proxy:-}" ]; then
-    # Fallback: use direct feature options (deprecated for backward compatibility)
-    FEATURE_HTTP_PROXY="${http_proxy:-$HTTP_PROXY}"
-    FEATURE_HTTPS_PROXY="${https_proxy:-$HTTPS_PROXY}"
-    if [ -n "$FEATURE_HTTP_PROXY" ] || [ -n "$FEATURE_HTTPS_PROXY" ]; then
-        log_warn "Using deprecated proxy options in claude-code feature. Add ./features/proxy feature instead."
-    fi
+    log_info "Using proxy from shared state file"
+elif [ -n "$OPTION_HTTP_PROXY" ] || [ -n "$OPTION_HTTPS_PROXY" ]; then
+    # Use direct options for build-time downloads (Docker build phase)
+    FEATURE_HTTP_PROXY="$OPTION_HTTP_PROXY"
+    FEATURE_HTTPS_PROXY="$OPTION_HTTPS_PROXY"
+    log_info "Using proxy from direct options (build-time)"
 else
-    # Fallback: use global ENV
+    log_info "Proxy state file not found at $STATE_FILE, using global ENV"
     FEATURE_HTTP_PROXY="$HTTP_PROXY"
     FEATURE_HTTPS_PROXY="$HTTPS_PROXY"
 fi

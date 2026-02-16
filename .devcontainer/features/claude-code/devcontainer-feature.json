@@ -15,20 +15,20 @@
       "default": "",
       "description": "LLM provider name (e.g., 'z.ai', 'anthropic'). Reads auth/base_url from ~/.claude/providers/{provider}/. Empty = use Anthropic defaults"
     },
-    "http_proxy": {
-      "type": "string",
-      "default": "",
-      "description": "DEPRECATED: Use ./features/proxy feature instead. HTTP proxy URL for Claude Code installation only"
-    },
-    "https_proxy": {
-      "type": "string",
-      "default": "",
-      "description": "DEPRECATED: Use ./features/proxy feature instead. HTTPS proxy URL for Claude Code installation only"
-    },
     "models": {
       "type": "string",
       "default": "",
       "description": "Claude models as comma-separated values: haiku:model,sonnet:model,opus:model"
+    },
+    "http_proxy": {
+      "type": "string",
+      "default": "",
+      "description": "HTTP proxy for build-time downloads only (e.g., 'http://proxy.example.com:8080'). Runtime proxy is read from shared state file."
+    },
+    "https_proxy": {
+      "type": "string",
+      "default": "",
+      "description": "HTTPS proxy for build-time downloads only (e.g., 'http://proxy.example.com:8080'). Runtime proxy is read from shared state file."
     }
   },
   "entrypoint": "install.sh"

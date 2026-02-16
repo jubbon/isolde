@@ -57,7 +57,22 @@ NO_PROXY='localhost,127.0.0.1,.local'
 
 ## Backward Compatibility
 
-The claude-code feature maintains deprecated `http_proxy`/`https_proxy` options:
-- If state file exists: uses state (recommended)
-- If state file missing: falls back to direct options (deprecated)
-- Warning logged when using deprecated options
+The claude-code feature uses a hybrid proxy approach:
+
+### Build-Time (Docker Build Phase)
+During container image build, when the shared state file doesn't exist yet:
+- Uses direct `http_proxy`/`https_proxy` options from devcontainer.json
+- These options are required for downloading Claude Code installer behind a proxy
+- Falls back to global environment variables if options not set
+
+### Runtime (Container Running)
+After container starts, when shared state file exists:
+- Reads from shared state file at `~/.config/devcontainer/proxy` (created by `./features/proxy`)
+- This is the recommended approach for runtime proxy configuration
+
+### Proxy Priority in install.sh
+1. Shared state file (preferred - created by proxy feature)
+2. Direct options (build-time fallback - required for Docker builds)
+3. Global ENV (ultimate fallback)
+
+**Note:** Direct proxy options in devcontainer.json are necessary for Docker builds even when using the proxy feature, because each feature runs in isolated layers during the build process.

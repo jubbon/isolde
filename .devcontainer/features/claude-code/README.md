@@ -8,8 +8,40 @@ Installs Anthropic Claude Code CLI with multi-provider support.
 |--------|------|---------|-------------|
 | `version` | string | `latest` | Claude Code version |
 | `provider` | string | `""` | LLM provider name (e.g., `z.ai`, `anthropic`) |
-| `http_proxy` | string | `""` | HTTP proxy for installation |
-| `https_proxy` | string | `""` | HTTPS proxy for installation |
+| `models` | string | `""` | Model mapping: `haiku:model,sonnet:model,opus:model` |
+| `http_proxy` | string | `""` | HTTP proxy for build-time downloads only |
+| `https_proxy` | string | `""` | HTTPS proxy for build-time downloads only |
+
+## Proxy Configuration
+
+The claude-code feature supports a hybrid proxy approach:
+
+### Build-Time (Docker Image Build)
+During the Docker build phase, proxy settings are needed for downloading the Claude Code installer:
+- **Source:** Direct `http_proxy`/`https_proxy` options in devcontainer.json
+- **Required when:** Building behind a corporate proxy
+- **Example:**
+  ```json
+  {
+    "features": {
+      "./features/claude-code": {
+        "http_proxy": "http://proxy.example.com:8080",
+        "https_proxy": "http://proxy.example.com:8080"
+      }
+    }
+  }
+  ```
+
+### Runtime (Container Running)
+During container runtime, proxy settings are used for Claude Code API calls:
+- **Source:** Shared state file at `~/.config/devcontainer/proxy` (created by `./features/proxy`)
+- **Recommended:** Use the `./features/proxy` feature for consistent proxy management
+
+### Proxy Priority
+The install script uses this priority order:
+1. Shared state file (`~/.config/devcontainer/proxy`) - preferred
+2. Direct options (`http_proxy`, `https_proxy`) - build-time fallback
+3. Global environment variables (`HTTP_PROXY`, `HTTPS_PROXY`) - ultimate fallback
 
 ## Provider Configuration
 
