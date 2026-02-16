@@ -34,8 +34,8 @@ get_template_versions() {
         return 1
     fi
 
-    # Parse supported_versions from YAML
-    awk '/^supported_versions:/,/^[a-z]+:/ {print}' "$info_file" | grep '^  -' | sed 's/^  - //' | tr '\n' ' '
+    # Parse supported_versions from YAML (exclude devcontainer_features, strip quotes)
+    awk '/^supported_versions:/,/^devcontainer_features:/ {print}' "$info_file" | grep '^  -' | sed 's/^  - //' | sed 's/"//g' | tr '\n' ' '
 }
 
 # Validate language version

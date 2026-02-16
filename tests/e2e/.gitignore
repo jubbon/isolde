@@ -1,0 +1,12 @@
+# Python virtual environment
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Test output
+pretty.output
+reports/
+
+# Behave cache
+.behave_test_cache/
