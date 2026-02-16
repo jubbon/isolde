@@ -285,9 +285,9 @@ if [ -n "$FINAL_MODELS" ]; then
     # Save model configurations
     cat > "$TARGET_HOME/.config/devcontainer/models" << EOF
 # Claude Code Model Configuration
-ANTHROPIC_DEFAULT_HAIKU_MODEL="${HAIKU_MODEL:-}"
-ANTHROPIC_DEFAULT_SONNET_MODEL="${SONNET_MODEL:-}"
-ANTHROPIC_DEFAULT_OPUS_MODEL="${OPUS_MODEL:-}"
+export ANTHROPIC_DEFAULT_HAIKU_MODEL="${HAIKU_MODEL:-}"
+export ANTHROPIC_DEFAULT_SONNET_MODEL="${SONNET_MODEL:-}"
+export ANTHROPIC_DEFAULT_OPUS_MODEL="${OPUS_MODEL:-}"
 EOF
 
     chown -R "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/.config/devcontainer"
