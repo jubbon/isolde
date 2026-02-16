@@ -46,7 +46,7 @@ _Recently reported issues_
 _Potential future features_
 
 - [ ] **clog** - Single binary CLI (Go/Rust) replacing shell scripts
-  - Name: **clog** (Claude Log + similar to `cog`)
+  - Name: **clog** (alternatives: clodck, clodock)
   - Read TOML configuration file
   - Deploy devcontainer project structure
   - Single executable, no shell dependencies
