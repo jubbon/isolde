@@ -30,7 +30,9 @@
     "{{FEATURES_CLAUDE_CODE}}": {
       "version": "{{CLAUDE_VERSION}}",
       "provider": "{{CLAUDE_PROVIDER}}",
-      "models": "{{CLAUDE_MODELS}}"
+      "models": "{{CLAUDE_MODELS}}",
+      "http_proxy": "{{HTTP_PROXY}}",
+      "https_proxy": "{{HTTPS_PROXY}}"
     }
   },
 
