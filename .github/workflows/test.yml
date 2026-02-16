@@ -176,3 +176,50 @@ jobs:
             --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock \
             claude-code-dev-test \
             docker ps
+
+  # ============================================================================
+  # E2E Tests Job - Full end-to-end testing with Behave
+  # ============================================================================
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Install Python dependencies
+        run: |
+          pip install --break-system-packages -r tests/e2e/requirements.txt
+
+      - name: Run E2E tests (Docker-based)
+        run: |
+          cd tests/e2e
+          behave --tags=~cli --format pretty
+
+      - name: Run E2E tests with Dev Containers CLI
+        run: |
+          npm install -g @devcontainers/cli
+          cd tests/e2e
+          behave --tags=cli --format pretty
+        continue-on-error: true  # CLI tests may fail if CLI unavailable
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: e2e-test-reports
+          path: tests/e2e/reports/
+
+      - name: Cleanup test resources
+        if: always()
+        run: |
+          docker system prune -f --volumes
+          rm -rf /tmp/e2e-*
