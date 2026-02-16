@@ -21,6 +21,14 @@ RUN apt-get update && apt-get install -y \
     gosu \
     && rm -rf /var/lib/apt/lists/*
 
+# Install Go (latest version)
+RUN GO_VERSION=$(curl -s https://go.dev/dl/?mode=json | grep -o '"version"[^,]*' | head -1 | cut -d'"' -f4) && \
+    GO_VERSION=${GO_VERSION#go} && \
+    wget -q https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzf go${GO_VERSION}.linux-amd64.tar.gz && \
+    rm go${GO_VERSION}.linux-amd64.tar.gz
+ENV PATH="/usr/local/go/bin:${PATH}"
+
 WORKDIR /workspaces
 
 # Pre-install sudo

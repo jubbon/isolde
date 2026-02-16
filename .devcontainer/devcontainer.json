@@ -10,7 +10,6 @@
   },
 
   "containerEnv": {
-    // Proxy now configured via ./features/proxy only - creates /etc/profile.d/devcontainer-proxy.sh
   },
 
   "features": {

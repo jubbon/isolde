@@ -15,8 +15,7 @@ Feature: Node.js Template
 
   Scenario: Node.js API preset includes TypeScript
     Given I am using the "shell-script" generator
-    When I create a project named "test-api" using template "nodejs" with version "22"
-    And I use preset "node-api"
+    When I create a project named "test-api" using template "nodejs" with version "22" and preset "node-api"
     Then the project should be created successfully
     And the devcontainer should build successfully
     And TypeScript should be installed

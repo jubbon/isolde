@@ -21,6 +21,11 @@ RUN apt-get update && apt-get install -y \
     gosu \
     && rm -rf /var/lib/apt/lists/*
 
+# Install Rust (rustup) for all users
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile minimal && \
+    /root/.cargo/bin/rustup default stable
+ENV PATH="/root/.cargo/bin:${PATH}"
+
 WORKDIR /workspaces
 
 # Pre-install sudo
@@ -34,4 +39,14 @@ RUN groupadd --gid ${USER_GID} ${USERNAME} \
 # Set ownership for workspace directory
 RUN chown -R ${USERNAME}:${USERNAME} /workspaces
 
+# Copy Rust installation to user home
+RUN cp -r /root/.cargo /home/${USERNAME}/ && \
+    chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.cargo
+
 USER ${USERNAME}
+
+# Add cargo to PATH for non-root user
+ENV PATH="/home/${USERNAME}/.cargo/bin:${PATH}"
+
+# Set default toolchain for the non-root user
+RUN rustup default stable
