@@ -146,25 +146,65 @@ if [ "$(id -u)" -eq 0 ]; then
     log_info "Installing Claude Code CLI for user: $TARGET_USER (HOME: $TARGET_HOME)"
 
     # Download and install as the target user with proxy environment
-    # Pass proxy variables explicitly via env (using feature options)
-    if [ -n "$FEATURE_HTTP_PROXY" ] || [ -n "$FEATURE_HTTPS_PROXY" ]; then
-        log_info "Using proxy - passing to install command"
-        su - "$TARGET_USER" -c "
-            export HTTP_PROXY='$FEATURE_HTTP_PROXY'
-            export HTTPS_PROXY='$FEATURE_HTTPS_PROXY'
-            export http_proxy='$FEATURE_HTTP_PROXY'
-            export https_proxy='$FEATURE_HTTPS_PROXY'
-            curl -vL --http1.1 --tlsv1.2 https://claude.ai/install.sh | bash -s -- \"$VERSION_OPTION\"
-        "
-    else
-        su - "$TARGET_USER" -c 'curl -vL --http1.1 --tlsv1.2 https://claude.ai/install.sh | bash -s -- "$VERSION_OPTION"'
+    # Download to temp file first to handle redirects properly before piping to bash
+    # Create a temporary install script that accepts proxy as explicit argument
+    INSTALL_SCRIPT_FILE="/tmp/claude-install-$TARGET_USER-$$.sh"
+    cat > "$INSTALL_SCRIPT_FILE" << 'INSTALL_SCRIPT_EOF'
+#!/bin/bash
+set -e
+
+# Accept version and proxy as arguments
+CLAUDE_VERSION_OPTION="${1:-latest}"
+PROXY_URL="${2:-}"
+
+INSTALL_SCRIPT=$(mktemp)
+echo "[INFO] Downloading Claude Code installer..."
+
+# Download installer - pass proxy directly to curl for reliable operation
+if [ -n "$PROXY_URL" ]; then
+    echo "[INFO] Using proxy: $PROXY_URL"
+    curl --proxy "$PROXY_URL" -fsSL --http1.1 --tlsv1.2 https://claude.ai/install.sh -o "$INSTALL_SCRIPT"
+else
+    curl -fsSL --http1.1 --tlsv1.2 https://claude.ai/install.sh -o "$INSTALL_SCRIPT"
+fi
+echo "[INFO] Running Claude Code installer..."
+bash "$INSTALL_SCRIPT" "$CLAUDE_VERSION_OPTION"
+rm -f "$INSTALL_SCRIPT"
+INSTALL_SCRIPT_EOF
+    chmod +x "$INSTALL_SCRIPT_FILE"
+    chown "$TARGET_USER:$TARGET_USER" "$INSTALL_SCRIPT_FILE"
+
+    # Determine proxy URL to pass (prefer HTTPS_PROXY, fallback to HTTP_PROXY)
+    PROXY_TO_USE="$FEATURE_HTTPS_PROXY"
+    if [ -z "$PROXY_TO_USE" ] && [ -n "$FEATURE_HTTP_PROXY" ]; then
+        PROXY_TO_USE="$FEATURE_HTTP_PROXY"
     fi
+
+    if [ -n "$PROXY_TO_USE" ]; then
+        log_info "Using proxy: $PROXY_TO_USE"
+        # Pass proxy as explicit argument to avoid environment inheritance issues
+        su - "$TARGET_USER" -c "bash '$INSTALL_SCRIPT_FILE' '$VERSION_OPTION' '$PROXY_TO_USE'"
+    else
+        su - "$TARGET_USER" -c "bash '$INSTALL_SCRIPT_FILE' '$VERSION_OPTION' ''"
+    fi
+    rm -f "$INSTALL_SCRIPT_FILE"
 else
     # Running as non-root, install for current user
     log_info "Installing Claude Code CLI for current user: $(whoami)"
 
-    # Download and install Claude Code CLI (proxy vars already exported)
-    curl -fsSL https://claude.ai/install.sh | bash -s -- "$VERSION_OPTION"
+    # Determine proxy URL to use (prefer HTTPS_PROXY, fallback to HTTP_PROXY)
+    PROXY_TO_USE="$FEATURE_HTTPS_PROXY"
+    if [ -z "$PROXY_TO_USE" ] && [ -n "$FEATURE_HTTP_PROXY" ]; then
+        PROXY_TO_USE="$FEATURE_HTTP_PROXY"
+    fi
+
+    # Download and install Claude Code CLI with explicit proxy handling
+    if [ -n "$PROXY_TO_USE" ]; then
+        log_info "Using proxy: $PROXY_TO_USE"
+        curl --proxy "$PROXY_TO_USE" -fsSL --http1.1 --tlsv1.2 https://claude.ai/install.sh | bash -s -- "$VERSION_OPTION"
+    else
+        curl -fsSL --http1.1 --tlsv1.2 https://claude.ai/install.sh | bash -s -- "$VERSION_OPTION"
+    fi
 fi
 log_info "Claude Code CLI installation completed!"
 
