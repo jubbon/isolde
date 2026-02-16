@@ -1,0 +1,35 @@
+{
+  "id": "proxy",
+  "version": "1.0.0",
+  "name": "HTTP Proxy Configuration",
+  "description": "Configures HTTP proxy for devcontainer features and runtime. Creates shared state at ~/.config/devcontainer/proxy for other features to consume.",
+  "documentationURL": "https://github.com/devcontainers/spec",
+  "options": {
+    "http_proxy": {
+      "type": "string",
+      "default": "",
+      "description": "HTTP proxy URL (e.g., http://proxy.example.com:8080)"
+    },
+    "https_proxy": {
+      "type": "string",
+      "default": "",
+      "description": "HTTPS proxy URL (defaults to http_proxy if not set)"
+    },
+    "no_proxy": {
+      "type": "string",
+      "default": "localhost,127.0.0.1,.local",
+      "description": "Comma-separated list of hosts to bypass proxy"
+    },
+    "apt_proxy": {
+      "type": "boolean",
+      "default": false,
+      "description": "Configure apt to use proxy (creates /etc/apt/apt.conf.d/proxy.conf)"
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Enable proxy configuration (set to false to disable)"
+    }
+  },
+  "entrypoint": "install.sh"
+}

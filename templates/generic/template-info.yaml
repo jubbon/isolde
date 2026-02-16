@@ -1,0 +1,8 @@
+name: Generic
+description: Minimal devcontainer environment for any project
+version: 1.0.0
+lang_version_default: ""
+features: []
+supported_versions: []
+devcontainer_features:
+  - ghcr.io/devcontainers/features/common-utils:2

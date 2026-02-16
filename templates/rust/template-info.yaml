@@ -1,0 +1,15 @@
+name: Rust
+description: Rust development environment with cargo and clippy
+version: 1.0.0
+lang_version_default: "latest"
+features:
+  - name: cargo
+    description: Package manager
+  - name: clippy
+    description: Linting tool
+supported_versions:
+  - "latest"
+  - "stable"
+devcontainer_features:
+  - ghcr.io/devcontainers/features/rust:1
+  - ghcr.io/devcontainers/features/common-utils:2

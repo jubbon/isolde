@@ -1,0 +1,74 @@
+# Presets for Claude Code Devcontainer Templates
+# Each preset defines a template, language version, features, and recommended Claude plugins
+
+presets:
+  python-ml:
+    template: python
+    description: Python machine learning environment with Jupyter support
+    lang_version: "3.12"
+    features:
+      - uv
+      - jupyter
+      - pytest
+      - numpy
+      - pandas
+    claude_plugins: oh-my-claudecode,tdd
+
+  python-web:
+    template: python
+    description: Python web development environment
+    lang_version: "3.11"
+    features:
+      - uv
+      - pytest
+      - ruff
+      - black
+    claude_plugins: oh-my-claudecode
+
+  node-api:
+    template: nodejs
+    description: Node.js API development with TypeScript
+    lang_version: "22"
+    features:
+      - typescript
+      - eslint
+      - vitest
+      - prettier
+    claude_plugins: oh-my-claudecode,security-review
+
+  rust-cli:
+    template: rust
+    description: Rust CLI application development
+    lang_version: "latest"
+    features:
+      - cargo
+      - clippy
+      - rustfmt
+    claude_plugins: oh-my-claudecode
+
+  go-service:
+    template: go
+    description: Go microservice development
+    lang_version: "latest"
+    features:
+      - modules
+      - golangci-lint
+    claude_plugins: oh-my-claudecode
+
+  minimal:
+    template: generic
+    description: Minimal devcontainer for any project
+    lang_version: ""
+    features: []
+    claude_plugins: oh-my-claudecode
+
+  fullstack:
+    template: nodejs
+    description: Full-stack development with Node.js backend
+    lang_version: "22"
+    features:
+      - typescript
+      - eslint
+      - vitest
+      - prettier
+    claude_plugins: oh-my-claudecode,tdd,security-review

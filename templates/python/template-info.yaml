@@ -1,0 +1,18 @@
+name: Python
+description: Python development environment with uv, pytest, and ruff
+version: 1.0.0
+lang_version_default: "3.12"
+features:
+  - name: uv
+    description: Fast Python package installer
+  - name: pytest
+    description: Testing framework
+  - name: ruff
+    description: Fast linter and formatter
+supported_versions:
+  - "3.12"
+  - "3.11"
+  - "3.10"
+devcontainer_features:
+  - ghcr.io/devcontainers/features/python:1
+  - ghcr.io/devcontainers/features/common-utils:2

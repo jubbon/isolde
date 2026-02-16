@@ -1,0 +1,61 @@
+{
+  "name": "{{PROJECT_NAME}} - Python Environment",
+
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "..",
+    "args": {
+      "USERNAME": "${localEnv:USER}",
+      "PYTHON_VERSION": "{{PYTHON_VERSION}}"
+    }
+  },
+
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": false,
+      "installOhMyZsh": false,
+      "upgradePackages": false
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "{{PYTHON_VERSION}}",
+      "installTools": true
+    },
+    "{{FEATURES_PROXY}}": {
+      "http_proxy": "{{HTTP_PROXY}}",
+      "https_proxy": "{{HTTPS_PROXY}}",
+      "no_proxy": "{{NO_PROXY}}",
+      "enabled": {{PROXY_ENABLED}}
+    },
+    "{{FEATURES_CLAUDE_CODE}}": {
+      "version": "{{CLAUDE_VERSION}}",
+      "provider": "{{CLAUDE_PROVIDER}}",
+      "models": "{{CLAUDE_MODELS}}"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "anthropic.claude-code",
+        "ms-python.python",
+        "ms-python.pylint",
+        "ms-python.vscode-pylance"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "python.defaultInterpreterPath": "/usr/local/bin/python"
+      }
+    }
+  },
+
+  "postCreateCommand": "bash -c 'if [ -f ~/.config/devcontainer/provider ]; then sed -i \"s#local provider=\\\\\\\"#local provider=\\\\\\\"\\$(cat ~/.config/devcontainer/provider)\\\\\\\"#\" ~/.bashrc; fi && pip install --user uv pytest ruff'",
+
+  "mounts": [
+    "source=${localEnv:HOME}/.claude,target=/home/${localEnv:USER}/.claude,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/.claude.json,target=/home/${localEnv:USER}/.claude.json,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/.config/devcontainer/machine-id,target=/etc/machine-id,type=bind,consistency=cached"
+  ],
+
+  "remoteUser": "${localEnv:USER}",
+  "workspaceFolder": "/workspaces/{{PROJECT_NAME}}"
+}

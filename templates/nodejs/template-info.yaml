@@ -1,0 +1,18 @@
+name: Node.js
+description: Node.js development environment with TypeScript, ESLint, and Vitest
+version: 1.0.0
+lang_version_default: "22"
+features:
+  - name: typescript
+    description: TypeScript compiler
+  - name: eslint
+    description: Linter for JavaScript/TypeScript
+  - name: vitest
+    description: Fast unit testing framework
+supported_versions:
+  - "22"
+  - "20"
+  - "18"
+devcontainer_features:
+  - ghcr.io/devcontainers/features/node:1
+  - ghcr.io/devcontainers/features/common-utils:2
