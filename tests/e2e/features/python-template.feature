@@ -15,8 +15,7 @@ Feature: Python Template
 
   Scenario: Python ML preset includes Jupyter
     Given I am using the "shell-script" generator
-    When I create a project named "test-ml" using template "python" with version "3.12"
-    And I use preset "python-ml"
+    When I create a project named "test-ml" using template "python" with version "3.12" and preset "python-ml"
     Then the project should be created successfully
     And the devcontainer should build successfully
     And Jupyter should be installed in the container
@@ -25,8 +24,7 @@ Feature: Python Template
 
   Scenario: Python web preset includes web tools
     Given I am using the "shell-script" generator
-    When I create a project named "test-web" using template "python" with version "3.12"
-    And I use preset "python-web"
+    When I create a project named "test-web" using template "python" with version "3.12" and preset "python-web"
     Then the project should be created successfully
     And the devcontainer should build successfully
     And pytest should be available in the container
