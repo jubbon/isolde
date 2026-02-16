@@ -15,6 +15,11 @@
       "installOhMyZsh": false,
       "upgradePackages": false
     },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts",
+      "nodeGypDependencies": true,
+      "npxInstallCachedPackages": true
+    },
     "ghcr.io/devcontainers/features/rust:1": {
       "version": "latest",
       "profile": "default"

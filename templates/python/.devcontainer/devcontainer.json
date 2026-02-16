@@ -16,6 +16,11 @@
       "installOhMyZsh": false,
       "upgradePackages": false
     },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts",
+      "nodeGypDependencies": true,
+      "npxInstallCachedPackages": true
+    },
     "ghcr.io/devcontainers/features/python:1": {
       "version": "{{PYTHON_VERSION}}",
       "installTools": true
