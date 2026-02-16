@@ -80,9 +80,39 @@ configure_auto_update() {
     return 0
 }
 
+# Version option from feature (default: latest)
+VERSION_OPTION="${VERSION:-latest}"
+
+# Check if running as root or with sudo
+if [ "$(id -u)" -eq 0 ]; then
+    # Running as root, install for user from host
+    # Use USERNAME (from devcontainer build arg) or _REMOTE_USER or default to first non-root user
+    if [ -n "$USERNAME" ]; then
+        TARGET_USER="$USERNAME"
+    elif [ -n "$_REMOTE_USER" ]; then
+        TARGET_USER="$_REMOTE_USER"
+    elif [ -n "$_DEV_CONTAINERS_IMAGE_USER" ]; then
+        TARGET_USER="$_DEV_CONTAINERS_IMAGE_USER"
+    else
+        # Fallback: find first user with UID >= 1000
+        TARGET_USER=$(getent passwd | awk -F: '$3 >= 1000 {print $1; exit}')
+        if [ -z "$TARGET_USER" ]; then
+            TARGET_USER="user"
+        fi
+    fi
+
+    # Get home directory for target user
+    TARGET_HOME=$(getent passwd "$TARGET_USER" | cut -d: -f6)
+else
+    # Running as non-root
+    TARGET_USER="$(whoami)"
+    TARGET_HOME="$HOME"
+fi
+
 # Proxy variables from shared state or feature options (for Claude Code installation ONLY)
-# Priority: 1) Shared state file (~/.config/devcontainer/proxy) 2) Feature options (deprecated) 3) Global ENV
-STATE_FILE="${HOME}/.config/devcontainer/proxy"
+# Priority: 1) Shared state file  2) Feature options (deprecated) 3) Global ENV
+# NOTE: Must read state file AFTER determining TARGET_USER and TARGET_HOME
+STATE_FILE="$TARGET_HOME/.config/devcontainer/proxy"
 if [ -f "$STATE_FILE" ]; then
     # Read from shared state (recommended approach)
     source "$STATE_FILE"
@@ -107,8 +137,6 @@ export https_proxy="$FEATURE_HTTPS_PROXY"
 export HTTP_PROXY="$FEATURE_HTTP_PROXY"
 export HTTPS_PROXY="$FEATURE_HTTPS_PROXY"
 
-# Version option from feature (default: latest)
-VERSION_OPTION="${VERSION:-latest}"
 log_info "Claude Code version: $VERSION_OPTION"
 
 # Check if proxy is set
@@ -116,26 +144,8 @@ if [ -n "$FEATURE_HTTP_PROXY" ] || [ -n "$FEATURE_HTTPS_PROXY" ]; then
     log_info "Proxy detected for Claude Code installation - HTTP_PROXY=$FEATURE_HTTP_PROXY, HTTPS_PROXY=$FEATURE_HTTPS_PROXY"
 fi
 
-# Check if running as root or with sudo
+# Continue with root installation
 if [ "$(id -u)" -eq 0 ]; then
-    # Running as root, install for user from host
-    # Use USERNAME (from devcontainer build arg) or _REMOTE_USER or default to first non-root user
-    if [ -n "$USERNAME" ]; then
-        TARGET_USER="$USERNAME"
-    elif [ -n "$_REMOTE_USER" ]; then
-        TARGET_USER="$_REMOTE_USER"
-    elif [ -n "$_DEV_CONTAINERS_IMAGE_USER" ]; then
-        TARGET_USER="$_DEV_CONTAINERS_IMAGE_USER"
-    else
-        # Fallback: find first user with UID >= 1000
-        TARGET_USER=$(getent passwd | awk -F: '$3 >= 1000 {print $1; exit}')
-        if [ -z "$TARGET_USER" ]; then
-            TARGET_USER="user"
-        fi
-    fi
-
-    # Get home directory for target user
-    TARGET_HOME=$(getent passwd "$TARGET_USER" | cut -d: -f6)
 
     if ! id "$TARGET_USER" &>/dev/null; then
         log_error "User '$TARGET_USER' does not exist. Creating..."
