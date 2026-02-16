@@ -130,6 +130,7 @@ apply_template_substitutions() {
 
     # Template substitutions
     sed -i "s|{{PROJECT_NAME}}|$project_name|g" "$devcontainer_json"
+    sed -i "s|{{PROJECT_DIR}}|$project_dir|g" "$devcontainer_json"
     sed -i "s|{{PYTHON_VERSION}}|$lang_version|g" "$devcontainer_json"
     sed -i "s|{{NODE_VERSION}}|$lang_version|g" "$devcontainer_json"
     sed -i "s|{{RUST_VERSION}}|$lang_version|g" "$devcontainer_json"

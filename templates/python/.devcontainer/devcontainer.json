@@ -64,5 +64,5 @@
   ],
 
   "remoteUser": "${localEnv:USER}",
-  "workspaceFolder": "/workspaces/{{PROJECT_NAME}}"
+  "workspaceFolder": "{{PROJECT_DIR}}"
 }
