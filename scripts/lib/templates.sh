@@ -116,12 +116,12 @@ apply_template_substitutions() {
     local features_dir="$project_dir/.devcontainer/features"
     mkdir -p "$features_dir"
 
-    # Create symlinks to core features
+    # Copy core features (Docker cannot follow symlinks outside build context)
     for feature in "$core_features"/*; do
         if [ -d "$feature" ]; then
             local feature_name=$(basename "$feature")
-            ln -sf "$feature" "$features_dir/$feature_name"
-            log_debug "Created symlink: $features_dir/$feature_name -> $feature"
+            cp -r "$feature" "$features_dir/$feature_name"
+            log_debug "Copied feature: $features_dir/$feature_name"
         fi
     done
 
