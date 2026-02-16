@@ -217,3 +217,51 @@ def step_golangci_lint_available(context):
 
     if result.returncode != 0:
         raise AssertionError(f"golangci-lint not found: {result.stderr}")
+
+
+@then('Flask should be installed')
+def step_flask_installed(context):
+    """Verify Flask installation."""
+    result = subprocess.run(
+        f'docker run --rm {context.test_image} python -c "import flask; print(flask.__version__)"',
+        shell=True, capture_output=True, text=True
+    )
+
+    if result.returncode != 0:
+        raise AssertionError(f"Flask not installed: {result.stderr}")
+
+
+@then('ruff should be available for linting')
+def step_ruff_available(context):
+    """Verify ruff is available."""
+    result = subprocess.run(
+        f"docker run --rm {context.test_image} ruff --version",
+        shell=True, capture_output=True, text=True
+    )
+
+    if result.returncode != 0:
+        raise AssertionError(f"ruff not found: {result.stderr}")
+
+
+@then('ESLint should be configured')
+def step_eslint_configured(context):
+    """Verify ESLint is available."""
+    result = subprocess.run(
+        f"docker run --rm {context.test_image} npx eslint --version",
+        shell=True, capture_output=True, text=True
+    )
+
+    if result.returncode != 0:
+        raise AssertionError(f"ESLint not found: {result.stderr}")
+
+
+@then('Prettier should be configured')
+def step_prettier_configured(context):
+    """Verify Prettier is available."""
+    result = subprocess.run(
+        f"docker run --rm {context.test_image} npx prettier --version",
+        shell=True, capture_output=True, text=True
+    )
+
+    if result.returncode != 0:
+        raise AssertionError(f"Prettier not found: {result.stderr}")
