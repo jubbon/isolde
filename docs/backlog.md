@@ -45,9 +45,10 @@ _Recently reported issues_
 
 _Potential future features_
 
-- [ ] **Single binary CLI** - Rewrite shell scripts as Go/Rust binary (similar to `cog`)
+- [ ] **clog** - Single binary CLI (Go/Rust) replacing shell scripts
+  - Name: **clog** (Claude Log + similar to `cog`)
   - Read TOML configuration file
-  - Deploy project structure
+  - Deploy devcontainer project structure
   - Single executable, no shell dependencies
 - [ ] **Multi-container support** - Docker Compose based templates
 - [ ] **GPU support templates** - Preconfigured for CUDA/ROCm
