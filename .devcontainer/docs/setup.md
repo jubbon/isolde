@@ -15,6 +15,41 @@ Complete guide for setting up and configuring Claude Code Dev Container.
 - **Git** - For version control and worktrees
 - **Docker Group** - Add user to `docker` group for socket-less access
 
+## Prevent Setup Wizard from Running
+
+**Problem:** After rebuilding the Dev Container, Claude Code's setup wizard runs repeatedly, asking about color scheme, file system trust, and other initial configuration.
+
+**Solution:** Create a persistent machine-id on your host machine and mount it into the container.
+
+### One-Time Host Setup
+
+Run these commands on your **host machine** (not in the container):
+
+```bash
+# Create directory for persistent container identity
+mkdir -p ~/.config/devcontainer
+
+# Generate and save a persistent machine-id
+uuidgen > ~/.config/devcontainer/machine-id
+```
+
+**That's it!** The `devcontainer.json` already includes the mount configuration:
+```json
+"source=${localEnv:HOME}/.config/devcontainer/machine-id,target=/etc/machine-id,type=bind,consistency=cached"
+```
+
+### Verification
+
+After rebuilding the container:
+
+```bash
+# Inside container - verify machine-id persists
+cat /etc/machine-id
+
+# Start Claude Code - setup wizard should NOT run
+claude
+```
+
 ## Installation Methods
 
 ### Method 1: VS Code (Recommended)
