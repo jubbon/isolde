@@ -36,6 +36,35 @@ This template system provides:
 ./scripts/init-project.sh my-api --template=nodejs --lang-version=22
 ```
 
+## Development
+
+### Using the Makefile
+
+The root-level Makefile provides convenient targets for building, testing, and development:
+
+```bash
+# Build the devcontainer image
+make
+
+# Run all tests (CI parity)
+make test
+
+# Run linting checks
+make lint
+
+# Run specific test categories
+make test-e2e              # E2E tests (Docker-based)
+make test-build            # Container builds
+make test-config           # Environment configuration
+
+# Cleanup
+make clean                 # Remove containers
+make clean-all             # Full cleanup
+
+# Show all available targets
+make help
+```
+
 ## Project Structure
 
 After creating a project, your workspace will look like:

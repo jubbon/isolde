@@ -28,6 +28,51 @@ cd claude-code-templates
 ./scripts/init-project.sh my-api --template=nodejs --lang-version=22
 ```
 
+## Development
+
+### Using the Makefile
+
+The root-level Makefile provides convenient targets for building, testing, and development:
+
+```bash
+# Build the devcontainer image
+make
+
+# Run all tests (CI parity)
+make test
+
+# Run linting checks
+make lint
+
+# Run specific test categories
+make test-e2e              # E2E tests (Docker-based)
+make test-build            # Container builds
+make test-config           # Environment configuration
+
+# Cleanup
+make clean                 # Remove containers
+make clean-all             # Full cleanup
+
+# Show all available targets
+make help
+```
+
+### Quick Test Reference
+
+```bash
+# Test container builds
+make build
+
+# Verify shell scripts
+make lint-shell
+
+# Validate JSON files
+make lint-json
+
+# Run E2E tests
+make test-e2e SCENARIO="Create Python project"
+```
+
 ## Project Structure
 
 After creating a project, your workspace will look like:
@@ -103,9 +148,18 @@ claude-code-templates/
 │   └── lib/               # Helper libraries
 ├── presets.yaml           # Built-in presets
 ├── docs/                  # Template system documentation
+├── tests/                 # E2E tests
+│   └── e2e/               # Behave test scenarios
 ├── .devcontainer/         # Self devcontainer setup
 │   ├── docs/              # Devcontainer documentation
 │   └── features/          # Feature implementations
+├── mk/                    # Makefile modules
+│   ├── common.mk          # Shared variables
+│   ├── build.mk           # Build targets
+│   ├── lint.mk            # Linting targets
+│   ├── tests.mk           # Test targets
+│   └── clean.mk           # Cleanup targets
+├── Makefile               # Root-level Makefile
 └── README.md              # This file
 ```
 

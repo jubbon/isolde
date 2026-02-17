@@ -25,19 +25,21 @@ This project uses a multi-layered testing approach:
 ## Quick Start
 
 ```bash
-# Run all tests
+# Run all tests (CI parity)
 make test
 
 # Run specific test category
 make test-build     # Container builds
 make test-config    # Environment variables
 make test-runtime   # Docker-in-Docker
-make test-shell     # Shell script syntax
-make test-lint      # JSON validity
-make test-bats      # Bats unit tests
+make test-providers # Provider configuration
+make test-e2e       # E2E tests (Docker-based)
+make lint-shell     # Shell script syntax
+make lint-json      # JSON validity
+make lint-bats      # Bats unit tests
 
-# See all available tests
-make test-help
+# See all available targets
+make help
 ```
 
 ## Test Frameworks
@@ -128,7 +130,7 @@ https://github.com/YOUR_USERNAME/claude-code-devcontainer/actions
 
 ### Makefile Tests
 
-Add new test target to `Makefile`:
+Add new test target to `mk/tests.mk`:
 
 ```makefile
 # Test: Your new test
@@ -143,9 +145,9 @@ test-new-feature:
 	@echo ""
 ```
 
-Then add to main `test` target:
+Then add to main `test` target in `Makefile`:
 ```makefile
-test: test-build test-config test-runtime test-new-feature
+test: lint test-build test-config test-runtime test-providers test-e2e test-new-feature
 ```
 
 ### Bats Tests
@@ -208,10 +210,11 @@ load bats/core
 | Build | `test-build` | - | `build` |
 | Configuration | `test-config` | - | `config` |
 | Runtime | `test-runtime` | - | `runtime` |
-| Shell Scripts | `test-shell` | `install.bats` | `lint` |
-| JSON Files | `test-lint` | `json.bats` | `lint` |
-| Providers | `test-providers` | `provider.bats` | `provider` |
-| Unit Tests | `test-bats` | `*.bats` | `lint` |
+| Providers | `test-providers` | - | `provider` |
+| E2E Tests | `test-e2e` | Behave | `e2e-tests` |
+| Shell Scripts | `lint-shell` | `install.bats` | `lint` |
+| JSON Files | `lint-json` | `json.bats` | `lint` |
+| Unit Tests | `lint-bats` | `*.bats` | `lint` |
 
 ## Troubleshooting
 

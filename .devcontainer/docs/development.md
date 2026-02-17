@@ -61,7 +61,10 @@ code .
 # Edit .devcontainer/Dockerfile
 vim .devcontainer/Dockerfile
 
-# Test build
+# Test build using Makefile
+make build
+
+# Or use Docker directly
 docker build -t claude-code-dev .devcontainer
 ```
 
@@ -71,9 +74,8 @@ docker build -t claude-code-dev .devcontainer
 vim .devcontainer/features/claude-code/install.sh
 
 # Rebuild container
-# In VS Code: F1 → Dev Containers: Rebuild Container
-# Or CLI:
-docker build -t claude-code-dev .devcontainer
+make build
+# Or in VS Code: F1 → Dev Containers: Rebuild Container
 ```
 
 ### 2. Test Your Changes
@@ -94,7 +96,10 @@ This project enforces **atomic commits**. See [CLAUDE.md](../CLAUDE.md) for full
 **Pre-commit Verification:**
 ```bash
 # Build test - REQUIRED before committing
-cd .devcontainer && docker build -t claude-code-dev .
+make build
+
+# Run all tests
+make test
 
 # Environment verification
 # Rebuild container in VS Code: F1 → Dev Containers: Rebuild Container
