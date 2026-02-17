@@ -45,8 +45,7 @@ _Recently reported issues_
 
 _Potential future features_
 
-- [ ] **clone** - Single binary CLI (Go/Rust) replacing shell scripts
-  - Name: **clone** (CLaude cOde iNvironment; alternatives: clog, clodck, clodock)
+- [ ] **Standalone binary CLI** - Single binary utility (Go/Rust) replacing shell scripts
   - Read TOML configuration file
   - Deploy devcontainer project structure
   - Single executable, no shell dependencies
