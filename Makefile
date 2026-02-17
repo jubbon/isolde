@@ -10,7 +10,7 @@
 #   make help       - Show all available targets
 # =============================================================================
 
-.PHONY: all build test clean lint help
+.PHONY: all build test clean lint install help
 
 # Include modular makefiles
 include mk/common.mk
@@ -18,6 +18,7 @@ include mk/build.mk
 include mk/lint.mk
 include mk/tests.mk
 include mk/clean.mk
+include mk/install.mk
 
 # =============================================================================
 # Default Target
