@@ -31,6 +31,10 @@ find_install_dir() {
         echo "$HOME/.isolde"
         return 0
     fi
+    if [ -f "$HOME/.isolde/scripts/isolde.sh" ]; then
+        echo "$HOME/.isolde"
+        return 0
+    fi
 
     # Running from source - find isolde.sh relative to this script
     local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -129,9 +133,11 @@ main() {
             # Delegate to isolde.sh for full help
             # But show quick help if isolde.sh not found
             local install_dir="$(find_install_dir)" 2>/dev/null || true
-            if [ -n "$install_dir" ] && [ -f "$install_dir/isolde.sh" ]; then
+            if [ -n "$install_dir" ] && ([ -f "$install_dir/isolde.sh" ] || [ -f "$install_dir/scripts/isolde.sh" ]); then
                 export ISOLDE_INSTALL_DIR="$install_dir"
-                exec bash "$install_dir/isolde.sh" --help
+                local script_path="$install_dir/isolde.sh"
+                [ ! -f "$script_path" ] && script_path="$install_dir/scripts/isolde.sh"
+                exec bash "$script_path" --help
             else
                 echo "Isolde - ISOLated Development Environment"
                 echo ""
@@ -161,8 +167,13 @@ main() {
     export ISOLDE_INSTALL_DIR="$install_dir"
 
     # Delegate to isolde.sh
-    if [ -f "$install_dir/isolde.sh" ]; then
-        exec bash "$install_dir/isolde.sh" "$@"
+    local script_path="$install_dir/isolde.sh"
+    if [ ! -f "$script_path" ]; then
+        script_path="$install_dir/scripts/isolde.sh"
+    fi
+
+    if [ -f "$script_path" ]; then
+        exec bash "$script_path" "$@"
     else
         echo "Error: isolde.sh not found in $install_dir"
         echo "Please reinstall Isolde"
