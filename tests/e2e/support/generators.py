@@ -3,6 +3,7 @@
 import subprocess
 from typing import Dict
 import os
+import shlex
 
 
 class GeneratorInterface:
@@ -20,11 +21,14 @@ class ShellScriptGenerator(GeneratorInterface):
         # Change to repo root first
         repo_root = self._get_repo_root()
 
+        # Quote the project name to handle spaces and special characters
+        quoted_name = shlex.quote(name)
+
         # If workspace provided, cd there first (for testing)
         if workspace:
-            cmd = f"cd {workspace} && {repo_root}/scripts/init-project.sh {name}"
+            cmd = f"cd {workspace} && {repo_root}/scripts/init-project.sh {quoted_name}"
         else:
-            cmd = f"cd {repo_root} && ./scripts/init-project.sh {name}"
+            cmd = f"cd {repo_root} && ./scripts/init-project.sh {quoted_name}"
 
         if 'template' in kwargs:
             cmd += f" --template={kwargs['template']}"
@@ -32,6 +36,14 @@ class ShellScriptGenerator(GeneratorInterface):
             cmd += f" --lang-version={kwargs['lang_version']}"
         if 'preset' in kwargs:
             cmd += f" --preset={kwargs['preset']}"
+        if 'http_proxy' in kwargs:
+            cmd += f" --http-proxy={kwargs['http_proxy']}"
+        if 'https_proxy' in kwargs:
+            cmd += f" --https-proxy={kwargs['https_proxy']}"
+        if 'claude_provider' in kwargs:
+            cmd += f" --claude-provider={kwargs['claude_provider']}"
+        if 'claude_version' in kwargs:
+            cmd += f" --claude-version={kwargs['claude_version']}"
 
         # Pipe newlines to accept all defaults for non-interactive mode
         # Each prompt in the script will get a newline (accepting default value)

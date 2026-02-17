@@ -15,6 +15,18 @@ def step_use_generator(context, generator_type):
     context.generator_type = generator_type
 
 
+@when('I create a project named "{name}" using template "{template}" with preset "{preset}"')
+def step_create_project_with_preset(context, name, template, preset):
+    """Create a project using specified template and preset."""
+    context.project_name = name
+    context.template = template
+    context.preset = preset
+
+    result = context.generator.generate(name, workspace=context.test_workspace, template=template, preset=preset)
+    context.last_exit_code = result.returncode
+    context.last_output = result.stdout + result.stderr
+
+
 @given('I create a project named "{name}" using template "{template}"')
 def step_create_project(context, name, template):
     """Create a project using specified template."""

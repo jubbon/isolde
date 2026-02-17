@@ -25,6 +25,26 @@ while [[ $# -gt 0 ]]; do
       TEST_TAGS="--tags=cli"
       shift
       ;;
+    --presets)
+      TEST_TAGS="--tags=preset"
+      shift
+      ;;
+    --versions)
+      TEST_TAGS="--tags=version"
+      shift
+      ;;
+    --edge)
+      TEST_TAGS="--tags=edge-case"
+      shift
+      ;;
+    --config)
+      TEST_TAGS="--tags=config"
+      shift
+      ;;
+    --concurrent)
+      TEST_TAGS="--tags=concurrent"
+      shift
+      ;;
     --name)
       SCENARIO_NAME="$2"
       shift 2
@@ -37,11 +57,16 @@ while [[ $# -gt 0 ]]; do
       echo "Usage: run-tests.sh [OPTIONS]"
       echo ""
       echo "Options:"
-      echo "  --all       Run all tests including CLI tests"
-      echo "  --cli       Run only CLI tests"
-      echo "  --name NAME Run specific scenario by name"
-      echo "  --verbose   Show verbose output"
-      echo "  --help      Show this help message"
+      echo "  --all        Run all tests including CLI tests"
+      echo "  --cli        Run only CLI tests"
+      echo "  --presets    Run preset coverage tests"
+      echo "  --versions   Run multi-version language tests"
+      echo "  --edge       Run edge case and negative tests"
+      echo "  --config     Run configuration option tests"
+      echo "  --concurrent Run concurrent operation tests"
+      echo "  --name NAME  Run specific scenario by name"
+      echo "  --verbose    Show verbose output"
+      echo "  --help       Show this help message"
       exit 0
       ;;
     *)
