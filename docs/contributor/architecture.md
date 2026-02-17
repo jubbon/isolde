@@ -201,7 +201,7 @@ Proxy settings are separated to ensure they're used only where needed:
 2. **Feature Installation** - With proxy (Claude Code download)
 3. **Container Runtime** - With proxy (API calls)
 
-See [PROXY_ARCHITECTURE.md](../PROXY_ARCHITECTURE.md) for details.
+See [PROXY_ARCHITECTURE.md](../../.devcontainer/PROXY_ARCHITECTURE.md) for details.
 
 ### Why Docker-in-Docker?
 

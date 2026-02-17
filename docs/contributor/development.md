@@ -91,7 +91,7 @@ docker ps  # Test DinD
 
 ### 3. Commit Standards
 
-This project enforces **atomic commits**. See [CLAUDE.md](../CLAUDE.md) for full standards.
+This project enforces **atomic commits**. See [CLAUDE.md](../../CLAUDE.md) for full standards.
 
 **Pre-commit Verification:**
 ```bash
@@ -252,7 +252,7 @@ jq < presets.yaml  # Note: this is YAML
 ```
 
 2. Update `install.sh` to handle provider
-3. Update documentation in `.devcontainer/docs/providers.md`
+3. Update documentation in `docs/devcontainer/providers.md`
 4. Test with provider configured
 5. Commit: `feat: add support for new-provider`
 
@@ -265,7 +265,7 @@ mkdir core/features/new-feature
 
 2. Create `devcontainer-feature.json`
 3. Create `install.sh`
-4. Document in `.devcontainer/docs/architecture.md`
+4. Document in `docs/contributor/architecture.md`
 5. Test and commit
 
 ### Debugging Container Issues
@@ -291,7 +291,7 @@ docker exec claude-code-dev env | sort
 Update version in relevant files:
 - `core/features/claude-code/devcontainer-feature.json`
 - `README.md` if needed
-- `.devcontainer/docs/setup.md` if user-facing
+- `docs/devcontainer/setup.md` if user-facing
 
 ### Changelog
 
@@ -337,9 +337,9 @@ git push origin v1.2.0
 
 ### Internal Resources
 
-- [CLAUDE.md](../CLAUDE.md) - Project-specific instructions
+- [CLAUDE.md](../../CLAUDE.md) - Project-specific instructions
 - [Architecture](architecture.md) - System design details
-- [Proxy Configuration](proxy.md) - Proxy architecture
+- [Proxy Configuration](../devcontainer/proxy.md) - Proxy architecture
 
 ### External Resources
 

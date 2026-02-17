@@ -114,19 +114,21 @@ After creating a project, your workspace will look like:
 
 ## Documentation
 
+**Main Documentation**: See [docs/README.md](docs/README.md) for the complete documentation index organized by audience.
+
 ### Template System Documentation
-- [Usage Guide](docs/usage.md) - Detailed usage instructions
-- [Template Reference](docs/templates.md) - Template customization
-- [Preset Reference](docs/presets.md) - Available presets and creating custom ones
+- [Usage Guide](docs/user/usage.md) - Detailed usage instructions
+- [Template Reference](docs/user/templates.md) - Template customization
+- [Preset Reference](docs/user/presets.md) - Available presets and creating custom ones
 - [Backlog](docs/backlog.md) - Planned features and improvements
 
 ### Devcontainer Documentation
-- [Devcontainer Setup](.devcontainer/docs/setup.md) - Installation and configuration
-- [Architecture](.devcontainer/docs/architecture.md) - System architecture and design
-- [Development](.devcontainer/docs/development.md) - Contributing and workflow
-- [LLM Providers](.devcontainer/docs/providers.md) - Multi-provider LLM support
-- [Proxy Configuration](.devcontainer/docs/proxy.md) - Proxy settings and architecture
-- [Version Control](.devcontainer/docs/claude-version-control.md) - Managing Claude Code versions
+- [Devcontainer Setup](docs/devcontainer/setup.md) - Installation and configuration
+- [Architecture](docs/contributor/architecture.md) - System architecture and design
+- [Development](docs/contributor/development.md) - Contributing and workflow
+- [LLM Providers](docs/devcontainer/providers.md) - Multi-provider LLM support
+- [Proxy Configuration](docs/devcontainer/proxy.md) - Proxy settings and architecture
+- [Version Control](docs/devcontainer/version-control.md) - Managing Claude Code versions
 
 ## Repository Structure
 
@@ -151,7 +153,6 @@ claude-code-templates/
 ├── tests/                 # E2E tests
 │   └── e2e/               # Behave test scenarios
 ├── .devcontainer/         # Self devcontainer setup
-│   ├── docs/              # Devcontainer documentation
 │   └── features/          # Feature implementations
 ├── mk/                    # Makefile modules
 │   ├── common.mk          # Shared variables

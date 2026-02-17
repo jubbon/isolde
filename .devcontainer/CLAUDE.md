@@ -29,21 +29,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Document | Description |
 |----------|-------------|
 | [docs/README.md](../docs/README.md) | Template system documentation index |
-| [docs/usage.md](../docs/usage.md) | How to use isolde.sh |
-| [docs/templates.md](../docs/templates.md) | Template customization |
-| [docs/presets.md](../docs/presets.md) | Available and custom presets |
+| [docs/user/usage.md](../docs/user/usage.md) | How to use isolde.sh |
+| [docs/user/templates.md](../docs/user/templates.md) | Template customization |
+| [docs/user/presets.md](../docs/user/presets.md) | Available and custom presets |
 | [docs/backlog.md](../docs/backlog.md) | Planned features and improvements |
 
 ### Devcontainer Documentation
 | Document | Description |
 |----------|-------------|
-| [.devcontainer/docs/README.md](README.md) | Devcontainer documentation index |
-| [.devcontainer/docs/setup.md](setup.md) | Installation and configuration |
-| [.devcontainer/docs/architecture.md](architecture.md) | System architecture and design |
-| [.devcontainer/docs/development.md](development.md) | Contributing and workflow |
-| [.devcontainer/docs/providers.md](providers.md) | Multi-provider LLM support |
-| [.devcontainer/docs/proxy.md](proxy.md) | Proxy configuration |
-| [.devcontainer/docs/claude-version-control.md](claude-version-control.md) | Version control options |
+| [docs/devcontainer/setup.md](../docs/devcontainer/setup.md) | Installation and configuration |
+| [docs/contributor/architecture.md](../docs/contributor/architecture.md) | System architecture and design |
+| [docs/contributor/development.md](../docs/contributor/development.md) | Contributing and workflow |
+| [docs/contributor/testing.md](../docs/contributor/testing.md) | Test documentation |
+| [docs/devcontainer/providers.md](../docs/devcontainer/providers.md) | Multi-provider LLM support |
+| [docs/devcontainer/proxy.md](../docs/devcontainer/proxy.md) | Proxy configuration |
+| [docs/devcontainer/version-control.md](../docs/devcontainer/version-control.md) | Version control options |
 
 ## Quick Reference
 
@@ -344,7 +344,7 @@ When modifying `scripts/isolde.sh` or library files:
 
 1. Add entry to `presets.yaml`
 2. Test: `./scripts/isolde.sh test --preset=my-preset`
-3. Update `docs/presets.md` if user-facing
+3. Update `docs/user/presets.md` if user-facing
 
 ## Related Projects
 

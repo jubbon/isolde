@@ -158,8 +158,7 @@ When modifying `scripts/isolde.sh` or library files:
 
 ## Documentation Locations
 
-- Template system: `docs/README.md`, `docs/usage.md`, `docs/templates.md`, `docs/presets.md`
-- Devcontainer setup: `.devcontainer/docs/README.md`, `.devcontainer/docs/setup.md`
-- Architecture: `.devcontainer/docs/architecture.md`
-- Provider config: `.devcontainer/docs/providers.md`
-- Development: `.devcontainer/docs/development.md`
+- Template system: `docs/README.md`, `docs/user/quick-start.md`, `docs/user/usage.md`, `docs/user/templates.md`, `docs/user/presets.md`
+- Devcontainer setup: `docs/devcontainer/setup.md`, `docs/devcontainer/providers.md`, `docs/devcontainer/proxy.md`, `docs/devcontainer/version-control.md`
+- Architecture: `docs/contributor/architecture.md`
+- Development: `docs/contributor/development.md`, `docs/contributor/testing.md`, `docs/contributor/adding-templates.md`

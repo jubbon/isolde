@@ -278,10 +278,10 @@ Only use proxy in certain environments:
 
 ## Reference
 
-See [PROXY_ARCHITECTURE.md](../.devcontainer/PROXY_ARCHITECTURE.md) in the repository for implementation details.
+See [PROXY_ARCHITECTURE.md](../../.devcontainer/PROXY_ARCHITECTURE.md) in the repository for implementation details.
 
 ## Related Documentation
 
 - [Setup Guide](setup.md) - General installation instructions
-- [Architecture](architecture.md) - System design overview
+- [Architecture](../contributor/architecture.md) - System design overview
 - [LLM Providers](providers.md) - Provider-specific configuration

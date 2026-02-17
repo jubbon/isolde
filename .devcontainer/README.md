@@ -36,16 +36,17 @@ make shell
 
 ## Documentation
 
-For detailed documentation, see the [docs/](docs/) directory:
+For detailed documentation, see the [docs/](../docs/) directory:
 
 | Topic | Description |
 |-------|-------------|
-| [Setup Guide](docs/setup.md) | Installation and configuration |
-| [Architecture](docs/architecture.md) | System design and components |
-| [Development](docs/development.md) | Contributing workflow |
-| [Proxy Configuration](docs/proxy.md) | Enterprise proxy setup |
-| [LLM Providers](docs/providers.md) | Provider configuration |
-| [Version Control](docs/claude-version-control.md) | Managing Claude Code versions |
+| [Setup Guide](../docs/devcontainer/setup.md) | Installation and configuration |
+| [Architecture](../docs/contributor/architecture.md) | System design and components |
+| [Development](../docs/contributor/development.md) | Contributing workflow |
+| [Testing](../docs/contributor/testing.md) | Test documentation |
+| [Proxy Configuration](../docs/devcontainer/proxy.md) | Enterprise proxy setup |
+| [LLM Providers](../docs/devcontainer/providers.md) | Provider configuration |
+| [Version Control](../docs/devcontainer/version-control.md) | Managing Claude Code versions |
 
 ## Project Structure
 
@@ -82,7 +83,7 @@ Configure your LLM provider in `devcontainer.json`:
 }
 ```
 
-See [docs/providers.md](docs/providers.md) for detailed setup.
+See [../docs/devcontainer/providers.md](../docs/devcontainer/providers.md) for detailed setup.
 
 ### Proxy Configuration
 
@@ -104,7 +105,7 @@ For enterprise environments, configure proxy in `devcontainer.json`:
 }
 ```
 
-See [docs/proxy.md](docs/proxy.md) for details.
+See [../docs/devcontainer/proxy.md](../docs/devcontainer/proxy.md) for details.
 
 ### Version Control
 
@@ -120,7 +121,7 @@ Choose which Claude Code version to install:
 }
 ```
 
-See [docs/claude-version-control.md](docs/claude-version-control.md) for details.
+See [../docs/devcontainer/version-control.md](../docs/devcontainer/version-control.md) for details.
 
 ## Make Commands
 
@@ -151,7 +152,7 @@ This project follows specific conventions documented in [CLAUDE.md](.devcontaine
 - **Pre-commit verification** - Build testing before commits
 - **English documentation** - All docs in English
 
-See [docs/development.md](docs/development.md) for contributing guidelines.
+See [../docs/contributor/development.md](../docs/contributor/development.md) for contributing guidelines.
 
 ## License
 

@@ -137,6 +137,6 @@ If the specified version isn't installed:
 
 ### See Also
 
-- [CLAUDE.md](../CLAUDE.md) - Main project documentation
-- [.devcontainer/features/claude-code/devcontainer-feature.json](.devcontainer/features/claude-code/devcontainer-feature.json) - Feature definition
-- [.devcontainer/features/claude-code/install.sh](.devcontainer/features/claude-code/install.sh) - Installation script
+- [CLAUDE.md](../../CLAUDE.md) - Main project documentation
+- [.devcontainer/features/claude-code/devcontainer-feature.json](../../.devcontainer/features/claude-code/devcontainer-feature.json) - Feature definition
+- [.devcontainer/features/claude-code/install.sh](../../.devcontainer/features/claude-code/install.sh) - Installation script
