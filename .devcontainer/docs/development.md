@@ -44,7 +44,7 @@ code .
 │   └── base-Dockerfile         # Base image
 ├── templates/                  # Language templates
 ├── scripts/                    # Project creation tools
-│   ├── init-project.sh
+│   ├── isolde.sh
 │   └── lib/
 ├── docs/                       # Template system docs
 ├── .claude/                    # Claude Code settings
@@ -220,7 +220,7 @@ docker ps
 **Script Syntax Test:**
 ```bash
 # Test shell scripts (if shellcheck is installed)
-shellcheck scripts/init-project.sh
+shellcheck scripts/isolde.sh
 shellcheck scripts/lib/*.sh
 shellcheck .devcontainer/features/claude-code/install.sh
 ```

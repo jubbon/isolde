@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Utility functions for init-project.sh
+# Utility functions for isolde.sh
 #
 
 # Colors for output (only define once to allow re-sourcing)

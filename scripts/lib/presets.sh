@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# Preset-related functions for init-project.sh
+# Preset-related functions for isolde.sh
 #
-# Note: This script is sourced by init-project.sh
+# Note: This script is sourced by isolde.sh
 # SCRIPT_DIR and utility functions are already available
 
 # Load preset configuration

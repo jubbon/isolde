@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# Git-related functions for init-project.sh
+# Git-related functions for isolde.sh
 #
-# Note: This script is sourced by init-project.sh
+# Note: This script is sourced by isolde.sh
 # SCRIPT_DIR and utility functions are already available
 
 # Initialize project git repository

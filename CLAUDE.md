@@ -15,7 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Isolde (ISOLated Development Environment)** - A template-based system for creating isolated development environments with Claude Code CLI support. The project has two main components:
 
-1. **Template System** (`templates/`, `scripts/`, `presets.yaml`) - Language templates and `init-project.sh` script for creating new projects
+1. **Template System** (`templates/`, `scripts/`, `presets.yaml`) - Language templates and `isolde.sh` script for creating new projects
 2. **Self Devcontainer** (`.devcontainer/`) - Devcontainer setup for developing this repository itself
 
 ## Commands
@@ -23,13 +23,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Creating New Projects
 ```bash
 # From repository root
-./scripts/init-project.sh                    # Interactive wizard
-./scripts/init-project.sh my-app --preset=python-ml
-./scripts/init-project.sh api --template=nodejs --lang-version=22
+./scripts/isolde.sh                    # Interactive wizard
+./scripts/isolde.sh my-app --preset=python-ml
+./scripts/isolde.sh api --template=nodejs --lang-version=22
 
 # List options
-./scripts/init-project.sh --list-templates
-./scripts/init-project.sh --list-presets
+./scripts/isolde.sh --list-templates
+./scripts/isolde.sh --list-presets
 ```
 
 ### Development Workflow
@@ -47,7 +47,7 @@ docker build -t claude-code-dev .devcontainer
 docker build -t claude-code-dev .devcontainer
 
 # Test shell scripts (requires shellcheck)
-shellcheck scripts/init-project.sh
+shellcheck scripts/isolde.sh
 shellcheck scripts/lib/*.sh
 
 # Validate JSON files (requires jq)
@@ -58,7 +58,7 @@ jq < .devcontainer/devcontainer.json
 
 ### Template Application Flow
 
-When `init-project.sh` creates a project:
+When `isolde.sh` creates a project:
 
 1. **Template Selection** - User selects template or preset
 2. **Copy Devcontainer** - `templates/{name}/.devcontainer/` copied to project
@@ -68,7 +68,7 @@ When `init-project.sh` creates a project:
 
 ### Script Library Architecture
 
-`scripts/lib/` contains modular shell libraries sourced by `init-project.sh`:
+`scripts/lib/` contains modular shell libraries sourced by `isolde.sh`:
 
 | File | Responsibility |
 |------|----------------|
@@ -150,8 +150,8 @@ In created projects, features are referenced as `./features/claude-code` (relati
 `presets.yaml` defines preset configurations. When adding a new preset, follow the existing format and include `template`, `lang_version`, `features`, and optional `claude_plugins`.
 
 ### Script Development
-When modifying `scripts/init-project.sh` or library files:
-1. Test with: `./scripts/init-project.sh test-project --template=python`
+When modifying `scripts/isolde.sh` or library files:
+1. Test with: `./scripts/isolde.sh test-project --template=python`
 2. Verify created project structure
 3. Test all templates if changes affect template processing
 4. Update relevant documentation in `docs/`

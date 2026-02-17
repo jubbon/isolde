@@ -1,9 +1,9 @@
 #!/bin/bash
 #
-# init-project.sh - Create a new project using Isolde devcontainer templates
+# isolde.sh - Create a new project using Isolde devcontainer templates
 #
 # Usage:
-#   ./init-project.sh [project-name] [options]
+#   ./isolde.sh [project-name] [options]
 #
 # Options:
 #   --template=TEMPLATE     Template to use (python, nodejs, rust, go, generic)
@@ -20,10 +20,10 @@
 #   -h, --help              Show this help
 #
 # Examples:
-#   ./init-project.sh                          # Interactive mode
-#   ./init-project.sh myapp --template=python
-#   ./init-project.sh ml-app --preset=python-ml
-#   ./init-project.sh api --lang=python --version=3.12 --proxy=http://proxy:8080
+#   ./isolde.sh                          # Interactive mode
+#   ./isolde.sh myapp --template=python
+#   ./isolde.sh ml-app --preset=python-ml
+#   ./isolde.sh api --lang=python --version=3.12 --proxy=http://proxy:8080
 #
 
 set -e

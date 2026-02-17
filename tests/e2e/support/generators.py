@@ -26,9 +26,9 @@ class ShellScriptGenerator(GeneratorInterface):
 
         # If workspace provided, cd there first (for testing)
         if workspace:
-            cmd = f"cd {workspace} && {repo_root}/scripts/init-project.sh {quoted_name}"
+            cmd = f"cd {workspace} && {repo_root}/scripts/isolde.sh {quoted_name}"
         else:
-            cmd = f"cd {repo_root} && ./scripts/init-project.sh {quoted_name}"
+            cmd = f"cd {repo_root} && ./scripts/isolde.sh {quoted_name}"
 
         if 'template' in kwargs:
             cmd += f" --template={kwargs['template']}"

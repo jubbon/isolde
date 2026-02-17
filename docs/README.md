@@ -8,7 +8,7 @@ This system provides templates and tools for quickly setting up isolated develop
 
 | Document | Description |
 |----------|-------------|
-| [Usage Guide](usage.md) | Detailed usage instructions for init-project.sh |
+| [Usage Guide](usage.md) | Detailed usage instructions for isolde.sh |
 | [Template Reference](templates.md) | Template customization and metadata |
 | [Preset Reference](presets.md) | Available presets and creating custom ones |
 | [Backlog](backlog.md) | Planned features and improvements |
@@ -27,13 +27,13 @@ This template system provides:
 
 ```bash
 # From the repository root
-./scripts/init-project.sh
+./scripts/isolde.sh
 
 # Or with a preset
-./scripts/init-project.sh my-ml-app --preset=python-ml
+./scripts/isolde.sh my-ml-app --preset=python-ml
 
 # Or with specific template
-./scripts/init-project.sh my-api --template=nodejs --lang-version=22
+./scripts/isolde.sh my-api --template=nodejs --lang-version=22
 ```
 
 ## Development
@@ -127,7 +127,7 @@ claude-code-templates/
 │   ├── go/
 │   └── generic/
 ├── scripts/               # Project creation tools
-│   ├── init-project.sh    # Main script
+│   ├── isolde.sh    # Main script
 │   └── lib/               # Helper libraries
 ├── presets.yaml           # Built-in presets
 └── docs/                  # Documentation

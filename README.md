@@ -19,13 +19,13 @@ git clone <repository-url>
 cd claude-code-templates
 
 # Run the interactive wizard
-./scripts/init-project.sh
+./scripts/isolde.sh
 
 # Or create a project with a preset
-./scripts/init-project.sh my-ml-app --preset=python-ml
+./scripts/isolde.sh my-ml-app --preset=python-ml
 
 # Or create with specific template
-./scripts/init-project.sh my-api --template=nodejs --lang-version=22
+./scripts/isolde.sh my-api --template=nodejs --lang-version=22
 ```
 
 ## Development
@@ -144,7 +144,7 @@ claude-code-templates/
 │   ├── go/
 │   └── generic/
 ├── scripts/               # Project creation tools
-│   ├── init-project.sh    # Main script
+│   ├── isolde.sh    # Main script
 │   └── lib/               # Helper libraries
 ├── presets.yaml           # Built-in presets
 ├── docs/                  # Template system documentation

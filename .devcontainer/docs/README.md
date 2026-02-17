@@ -49,7 +49,7 @@ Claude Code Dev Container is a Docker-based development environment that provide
 │   ├── go/
 │   └── generic/
 ├── scripts/                 # Project creation tools
-│   ├── init-project.sh      # Main script
+│   ├── isolde.sh      # Main script
 │   └── lib/                 # Helper libraries
 ├── docs/                    # Template system documentation
 │   ├── usage.md
@@ -90,13 +90,13 @@ Use the template system to create new projects:
 
 ```bash
 # Interactive wizard
-./scripts/init-project.sh
+./scripts/isolde.sh
 
 # With preset
-./scripts/init-project.sh my-app --preset=python-ml
+./scripts/isolde.sh my-app --preset=python-ml
 
 # With template
-./scripts/init-project.sh my-api --template=nodejs --lang-version=22
+./scripts/isolde.sh my-api --template=nodejs --lang-version=22
 ```
 
 See [Template System Documentation](../../docs/) for more details.

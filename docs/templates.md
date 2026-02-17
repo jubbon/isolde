@@ -76,7 +76,7 @@ The `devcontainer.json` template supports these placeholders:
 **Features**: uv, pytest, ruff
 
 ```bash
-./scripts/init-project.sh my-app --template=python --lang-version=3.12
+./scripts/isolde.sh my-app --template=python --lang-version=3.12
 ```
 
 **DevContainer Features**:
@@ -92,7 +92,7 @@ The `devcontainer.json` template supports these placeholders:
 **Features**: TypeScript, ESLint, Vitest
 
 ```bash
-./scripts/init-project.sh my-app --template=nodejs --lang-version=22
+./scripts/isolde.sh my-app --template=nodejs --lang-version=22
 ```
 
 **DevContainer Features**:
@@ -108,7 +108,7 @@ The `devcontainer.json` template supports these placeholders:
 **Features**: cargo, clippy
 
 ```bash
-./scripts/init-project.sh my-app --template=rust
+./scripts/isolde.sh my-app --template=rust
 ```
 
 **DevContainer Features**:
@@ -123,7 +123,7 @@ The `devcontainer.json` template supports these placeholders:
 **Features**: modules, golangci-lint
 
 ```bash
-./scripts/init-project.sh my-app --template=go
+./scripts/isolde.sh my-app --template=go
 ```
 
 **DevContainer Features**:
@@ -137,7 +137,7 @@ The `devcontainer.json` template supports these placeholders:
 **Features**: None
 
 ```bash
-./scripts/init-project.sh my-app --template=generic
+./scripts/isolde.sh my-app --template=generic
 ```
 
 **DevContainer Features**:
@@ -199,7 +199,7 @@ RUN apt-get update && apt-get install -y \
 6. Test the template:
 
 ```bash
-./scripts/init-project.sh test --template=my-language
+./scripts/isolde.sh test --template=my-language
 ```
 
 ## Template Features

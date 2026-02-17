@@ -18,7 +18,7 @@ Presets are pre-configured combinations of templates, language versions, and fea
 | Claude Plugins | oh-my-claudecode, tdd |
 
 ```bash
-./scripts/init-project.sh ml-app --preset=python-ml
+./scripts/isolde.sh ml-app --preset=python-ml
 ```
 
 ### python-web
@@ -33,7 +33,7 @@ Presets are pre-configured combinations of templates, language versions, and fea
 | Claude Plugins | oh-my-claudecode |
 
 ```bash
-./scripts/init-project.sh web-app --preset=python-web
+./scripts/isolde.sh web-app --preset=python-web
 ```
 
 ### node-api
@@ -48,7 +48,7 @@ Presets are pre-configured combinations of templates, language versions, and fea
 | Claude Plugins | oh-my-claudecode, security-review |
 
 ```bash
-./scripts/init-project.sh api --preset=node-api
+./scripts/isolde.sh api --preset=node-api
 ```
 
 ### rust-cli
@@ -63,7 +63,7 @@ Presets are pre-configured combinations of templates, language versions, and fea
 | Claude Plugins | oh-my-claudecode |
 
 ```bash
-./scripts/init-project.sh mycli --preset=rust-cli
+./scripts/isolde.sh mycli --preset=rust-cli
 ```
 
 ### go-service
@@ -78,7 +78,7 @@ Presets are pre-configured combinations of templates, language versions, and fea
 | Claude Plugins | oh-my-claudecode |
 
 ```bash
-./scripts/init-project.sh service --preset=go-service
+./scripts/isolde.sh service --preset=go-service
 ```
 
 ### minimal
@@ -93,7 +93,7 @@ Presets are pre-configured combinations of templates, language versions, and fea
 | Claude Plugins | oh-my-claudecode |
 
 ```bash
-./scripts/init-project.sh simple --preset=minimal
+./scripts/isolde.sh simple --preset=minimal
 ```
 
 ### fullstack
@@ -108,7 +108,7 @@ Presets are pre-configured combinations of templates, language versions, and fea
 | Claude Plugins | oh-my-claudecode, tdd, security-review |
 
 ```bash
-./scripts/init-project.sh fullstack --preset=fullstack
+./scripts/isolde.sh fullstack --preset=fullstack
 ```
 
 ## Preset Configuration File
@@ -162,7 +162,7 @@ presets:
 Use them like built-in presets:
 
 ```bash
-./scripts/init-project.sh my-api --preset=my-python-api
+./scripts/isolde.sh my-api --preset=my-python-api
 ```
 
 ### Project-Level Presets

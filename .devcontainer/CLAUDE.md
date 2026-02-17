@@ -29,7 +29,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Document | Description |
 |----------|-------------|
 | [docs/README.md](../docs/README.md) | Template system documentation index |
-| [docs/usage.md](../docs/usage.md) | How to use init-project.sh |
+| [docs/usage.md](../docs/usage.md) | How to use isolde.sh |
 | [docs/templates.md](../docs/templates.md) | Template customization |
 | [docs/presets.md](../docs/presets.md) | Available and custom presets |
 | [docs/backlog.md](../docs/backlog.md) | Planned features and improvements |
@@ -50,9 +50,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Creating New Projects
 ```bash
 # From repository root
-./scripts/init-project.sh                    # Interactive wizard
-./scripts/init-project.sh my-app --preset=python-ml
-./scripts/init-project.sh api --template=nodejs --lang-version=22
+./scripts/isolde.sh                    # Interactive wizard
+./scripts/isolde.sh my-app --preset=python-ml
+./scripts/isolde.sh api --template=nodejs --lang-version=22
 ```
 
 ### Development Workflow
@@ -82,7 +82,7 @@ git worktree remove ../feature-branch-name
 docker build -t claude-code-dev .devcontainer
 
 # Test shell scripts (if shellcheck is installed)
-shellcheck scripts/init-project.sh
+shellcheck scripts/isolde.sh
 shellcheck .devcontainer/features/claude-code/install.sh
 
 # Validate JSON files (if jq is available)
@@ -105,7 +105,7 @@ claude-code-templates/
 │   ├── go/
 │   └── generic/
 ├── scripts/                 # Project creation tools
-│   ├── init-project.sh      # Main script
+│   ├── isolde.sh      # Main script
 │   └── lib/                 # Helper libraries
 │       ├── git.sh           # Git operations
 │       ├── presets.sh       # Preset management
@@ -126,7 +126,7 @@ claude-code-templates/
 
 ## Project Structure (Created Projects)
 
-Projects created with `init-project.sh` have this structure:
+Projects created with `isolde.sh` have this structure:
 
 ```
 ~/workspace/my-project/
@@ -294,7 +294,7 @@ The `scripts/lib/` directory contains shared functions for:
 - **ui.sh** - Interactive menus and prompts
 - **utils.sh** - Common utility functions
 
-When adding new features to `init-project.sh`, first check if a helper function already exists in these libraries.
+When adding new features to `isolde.sh`, first check if a helper function already exists in these libraries.
 
 ### Template Placeholders
 
@@ -324,9 +324,9 @@ Templates support these placeholders in `devcontainer.json`:
 
 ## Script Development
 
-When modifying `scripts/init-project.sh` or library files:
+When modifying `scripts/isolde.sh` or library files:
 
-1. **Test interactively**: Run `./scripts/init-project.sh test-project --template=python`
+1. **Test interactively**: Run `./scripts/isolde.sh test-project --template=python`
 2. **Verify output**: Check the created project structure
 3. **Test all templates**: Ensure changes work with all templates
 4. **Update documentation**: If adding new options, update relevant docs
@@ -338,12 +338,12 @@ When modifying `scripts/init-project.sh` or library files:
 3. Create `Dockerfile` based on `core/base-Dockerfile`
 4. Create `devcontainer.json` with placeholders
 5. Add template processing logic to `scripts/lib/templates.sh` if needed
-6. Test: `./scripts/init-project.sh test --template=my-language`
+6. Test: `./scripts/isolde.sh test --template=my-language`
 
 ### Adding a New Preset
 
 1. Add entry to `presets.yaml`
-2. Test: `./scripts/init-project.sh test --preset=my-preset`
+2. Test: `./scripts/isolde.sh test --preset=my-preset`
 3. Update `docs/presets.md` if user-facing
 
 ## Related Projects
