@@ -277,3 +277,43 @@ get_relative_path() {
     result="${result}${to}"
     echo "${result#./}"
 }
+
+# Get Isolde root directory (handles installed and source scenarios)
+# This function checks ISOLDE_INSTALL_DIR first (set by wrapper),
+# then falls back to get_templates_root() for source usage
+get_isolde_root() {
+    # If wrapper set install directory, use it
+    if [ -n "${ISOLDE_INSTALL_DIR}" ] && [ -d "${ISOLDE_INSTALL_DIR}" ]; then
+        echo "${ISOLDE_INSTALL_DIR}"
+        return 0
+    fi
+
+    # Check ISOLDE_HOME environment variable
+    if [ -n "$ISOLDE_HOME" ] && [ -d "$ISOLDE_HOME" ]; then
+        echo "$ISOLDE_HOME"
+        return 0
+    fi
+
+    # Check default installation directory
+    if [ -d "$HOME/.isolde" ]; then
+        echo "$HOME/.isolde"
+        return 0
+    fi
+
+    # Fall back to source location
+    get_templates_root
+}
+
+# Get current Isolde version
+# Reads VERSION file or uses git describe
+get_isolde_version() {
+    local root="$(get_isolde_root)"
+
+    if [ -f "$root/VERSION" ]; then
+        cat "$root/VERSION"
+    elif [ -d "$root/.git" ]; then
+        git -C "$root" describe --tags --always 2>/dev/null || echo "unknown"
+    else
+        echo "unknown"
+    fi
+}

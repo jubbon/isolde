@@ -8,8 +8,8 @@
 # Load template metadata
 load_template_info() {
     local template="$1"
-    local templates_root="$(get_templates_root)"
-    local info_file="$templates_root/templates/$template/template-info.yaml"
+    local isolde_root="$(get_isolde_root)"
+    local info_file="$isolde_root/templates/$template/template-info.yaml"
 
     if [ ! -f "$info_file" ]; then
         log_error "Template info file not found: $info_file"
@@ -26,8 +26,8 @@ load_template_info() {
 # Get available language versions for a template
 get_template_versions() {
     local template="$1"
-    local templates_root="$(get_templates_root)"
-    local info_file="$templates_root/templates/$template/template-info.yaml"
+    local isolde_root="$(get_isolde_root)"
+    local info_file="$isolde_root/templates/$template/template-info.yaml"
 
     if [ ! -f "$info_file" ]; then
         echo ""
@@ -63,8 +63,8 @@ apply_template() {
     local template="$1"
     local project_dir="$2"
     local project_name="$3"
-    local templates_root="$(get_templates_root)"
-    local template_dir="$templates_root/templates/$template"
+    local isolde_root="$(get_isolde_root)"
+    local template_dir="$isolde_root/templates/$template"
 
     if ! template_exists "$template"; then
         log_error "Template not found: $template"
@@ -109,8 +109,8 @@ apply_template_substitutions() {
     local lang_version="${TEMPLATE_LANG_VERSION:-$(get_template_info "$template" "lang_version_default")}"
 
     # Get feature paths (relative to project)
-    local templates_root="$(get_templates_root)"
-    local core_features="$templates_root/core/features"
+    local isolde_root="$(get_isolde_root)"
+    local core_features="$isolde_root/core/features"
 
     # Calculate relative paths to core features
     local features_dir="$project_dir/.devcontainer/features"
@@ -156,8 +156,8 @@ apply_template_substitutions() {
 # List template features
 list_template_features() {
     local template="$1"
-    local templates_root="$(get_templates_root)"
-    local info_file="$templates_root/templates/$template/template-info.yaml"
+    local isolde_root="$(get_isolde_root)"
+    local info_file="$isolde_root/templates/$template/template-info.yaml"
 
     if [ ! -f "$info_file" ]; then
         return

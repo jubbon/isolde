@@ -8,8 +8,8 @@
 # Load preset configuration
 load_preset() {
     local preset="$1"
-    local templates_root="$(get_templates_root)"
-    local presets_file="$templates_root/presets.yaml"
+    local isolde_root="$(get_isolde_root)"
+    local presets_file="$isolde_root/presets.yaml"
 
     if [ ! -f "$presets_file" ]; then
         log_error "Presets file not found: $presets_file"
@@ -57,8 +57,8 @@ apply_preset() {
 
 # List all available presets
 list_available_presets() {
-    local templates_root="$(get_templates_root)"
-    local presets_file="$templates_root/presets.yaml"
+    local isolde_root="$(get_isolde_root)"
+    local presets_file="$isolde_root/presets.yaml"
 
     if [ ! -f "$presets_file" ]; then
         log_warn "No presets file found"
@@ -188,8 +188,8 @@ validate_preset() {
 # Get preset description
 get_preset_description() {
     local preset="$1"
-    local templates_root="$(get_templates_root)"
-    local presets_file="$templates_root/presets.yaml"
+    local isolde_root="$(get_isolde_root)"
+    local presets_file="$isolde_root/presets.yaml"
 
     if [ ! -f "$presets_file" ]; then
         echo ""

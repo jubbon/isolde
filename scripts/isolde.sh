@@ -9,7 +9,7 @@
 #   --template=TEMPLATE     Template to use (python, nodejs, rust, go, generic)
 #   --lang-version=VERSION  Language version (e.g., 3.12, 22, latest)
 #   --preset=PRESET         Use a predefined preset
-#   --workspace=PATH        Workspace directory (default: ~/workspace)
+#   --workspace=PATH        Workspace directory (default: current directory)
 #   --claude-version=VER    Claude Code version (default: latest)
 #   --claude-provider=PROV  LLM provider (e.g., z.ai, anthropic)
 #   --claude-models=MODS    Model mapping (haiku:model,sonnet:model,opus:model)
@@ -17,6 +17,8 @@
 #   --no-proxy              Disable proxy
 #   --list-templates        List available templates
 #   --list-presets          List available presets
+#   --self-update           Update Isolde to latest version
+#   --version               Show Isolde version
 #   -h, --help              Show this help
 #
 # Examples:
@@ -121,6 +123,14 @@ parse_args() {
                 ;;
             --list-presets)
                 list_available_presets
+                exit 0
+                ;;
+            --self-update)
+                perform_self_update "$(get_isolde_root)"
+                exit $?
+                ;;
+            --version|-v)
+                get_isolde_version
                 exit 0
                 ;;
             -h|--help)

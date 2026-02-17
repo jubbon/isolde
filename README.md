@@ -11,21 +11,73 @@ This repository provides templates and tools for quickly setting up isolated dev
 - Isolated git repositories for project code and devcontainer config
 - Pre-configured Claude Code CLI with multi-provider support
 
-## Quick Start
+## Installation
+
+### Quick Install (Recommended)
+
+Install Isolde system-wide using the installation script:
 
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd claude-code-templates
+curl -fsSL https://raw.githubusercontent.com/jubbon/isolde/main/scripts/install/install.sh | bash
+```
 
-# Run the interactive wizard
+After installation, reload your shell:
+
+```bash
+source ~/.bashrc  # or source ~/.zshrc
+```
+
+Then verify:
+
+```bash
+isolde --version
+isolde --help
+```
+
+### From Source
+
+Clone and run directly from the repository:
+
+```bash
+git clone https://github.com/jubbon/isolde.git
+cd isolde
 ./scripts/isolde.sh
+```
 
-# Or create a project with a preset
-./scripts/isolde.sh my-ml-app --preset=python-ml
+### Updating
 
-# Or create with specific template
-./scripts/isolde.sh my-api --template=nodejs --lang-version=22
+If installed via the quick install method:
+
+```bash
+isolde --self-update
+```
+
+If running from source, pull the latest changes:
+
+```bash
+cd isolde
+git pull origin main
+```
+
+## Quick Start
+
+Once installed, create a new project:
+
+```bash
+# Interactive wizard
+isolde
+
+# With a preset
+isolde my-ml-app --preset=python-ml
+
+# With a specific template
+isolde my-api --template=nodejs --lang-version=22
+
+# List available templates
+isolde --list-templates
+
+# List available presets
+isolde --list-presets
 ```
 
 ## Development
@@ -133,7 +185,7 @@ After creating a project, your workspace will look like:
 ## Repository Structure
 
 ```
-claude-code-templates/
+isolde/
 ├── core/                  # Shared components
 │   ├── features/          # Reusable devcontainer features
 │   │   ├── claude-code/   # Claude Code CLI installation
@@ -146,7 +198,10 @@ claude-code-templates/
 │   ├── go/
 │   └── generic/
 ├── scripts/               # Project creation tools
-│   ├── isolde.sh    # Main script
+│   ├── isolde.sh          # Main script
+│   ├── install/           # Installation scripts
+│   │   ├── install.sh     # Installation script
+│   │   └── isolde-wrapper.sh  # Wrapper for installed Isolde
 │   └── lib/               # Helper libraries
 ├── presets.yaml           # Built-in presets
 ├── docs/                  # Template system documentation
@@ -161,6 +216,7 @@ claude-code-templates/
 │   ├── tests.mk           # Test targets
 │   └── clean.mk           # Cleanup targets
 ├── Makefile               # Root-level Makefile
+├── VERSION                # Version file
 └── README.md              # This file
 ```
 

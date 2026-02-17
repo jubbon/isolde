@@ -239,3 +239,55 @@ verify_git_repos() {
 
     return $errors
 }
+
+# Check for updates available
+# Returns 0 if updates available, 1 if up to date
+check_for_updates() {
+    local install_dir="$1"
+
+    if [ ! -d "$install_dir/.git" ]; then
+        return 1
+    fi
+
+    # Fetch without output
+    git -C "$install_dir" fetch origin 2>/dev/null || return 1
+
+    # Compare HEAD with remote
+    local local_rev=$(git -C "$install_dir" rev-parse HEAD 2>/dev/null)
+    local remote_rev=$(git -C "$install_dir" rev-parse @{u} 2>/dev/null)
+
+    if [ "$local_rev" != "$remote_rev" ] && [ -n "$remote_rev" ]; then
+        return 0  # Updates available
+    fi
+
+    return 1  # Up to date
+}
+
+# Perform self-update
+perform_self_update() {
+    local install_dir="$1"
+
+    if [ ! -d "$install_dir/.git" ]; then
+        log_error "Not a git installation - cannot self-update"
+        return 1
+    fi
+
+    log_info "Updating Isolde..."
+
+    # Get current branch
+    local current_branch=$(git -C "$install_dir" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "main")
+
+    # Pull latest changes
+    git -C "$install_dir" fetch origin "$current_branch" 2>/dev/null || true
+    git -C "$install_dir" pull origin "$current_branch" || {
+        log_error "Git pull failed"
+        return 1
+    }
+
+    # Update VERSION file
+    local new_version=$(git -C "$install_dir" describe --tags --always 2>/dev/null || echo "unknown")
+    echo "$new_version" > "$install_dir/VERSION"
+
+    log_info "Update complete: $new_version"
+    return 0
+}
