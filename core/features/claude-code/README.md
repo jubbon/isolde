@@ -1,6 +1,6 @@
-# Claude Code DevContainer Feature
+# Isolde Claude Code DevContainer Feature
 
-Installs Anthropic Claude Code CLI with multi-provider support.
+Installs Anthropic Claude Code CLI with multi-provider support for the Isolde project.
 
 ## Options
 

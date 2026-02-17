@@ -1,4 +1,4 @@
-# Claude Code Dev Container
+# Isolde
 
 Docker-based development environment for [Claude Code CLI](https://code.claude.com) with Dev Containers support. Features multi-provider LLM support and enterprise proxy configuration.
 

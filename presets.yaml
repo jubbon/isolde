@@ -1,4 +1,4 @@
-# Presets for Claude Code Devcontainer Templates
+# Presets for Isolde (ISOLated Development Environment)
 # Each preset defines a template, language version, features, and recommended Claude plugins
 
 presets:

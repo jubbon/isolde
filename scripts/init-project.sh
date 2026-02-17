@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# init-project.sh - Create a new project using Claude Code devcontainer templates
+# init-project.sh - Create a new project using Isolde devcontainer templates
 #
 # Usage:
 #   ./init-project.sh [project-name] [options]

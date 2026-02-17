@@ -2,7 +2,7 @@
   "id": "claude-code",
   "version": "1.2.0",
   "name": "Claude Code CLI",
-  "description": "Installs Anthropic Claude Code CLI for AI-assisted development with multi-provider support",
+  "description": "Isolde: Installs Anthropic Claude Code CLI for AI-assisted development with multi-provider support",
   "documentationURL": "https://code.claude.com/docs",
   "options": {
     "version": {

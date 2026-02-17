@@ -1,6 +1,6 @@
-# Claude Code Devcontainer Templates
+# Isolde
 
-A template-based system for creating development environments with Claude Code CLI support.
+ISOLated Development Environment - A template-based system for creating isolated development environments with Claude Code CLI support.
 
 ## Overview
 

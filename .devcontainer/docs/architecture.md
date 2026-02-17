@@ -1,6 +1,6 @@
 # Architecture
 
-This document describes the architecture of the Claude Code Dev Container project.
+This document describes the architecture of the Isolde (ISOLated Development Environment) project.
 
 ## System Overview
 

@@ -1,6 +1,6 @@
 # Development Guide
 
-Guide for contributing to and developing the Claude Code Dev Container project.
+Guide for contributing to and developing the Isolde (ISOLated Development Environment) project.
 
 ## Development Workflow
 

@@ -1,5 +1,5 @@
 # =============================================================================
-# Claude Code Devcontainer Templates - Root Makefile
+# Isolde (ISOLated Development Environment) - Root Makefile
 # =============================================================================
 # This Makefile provides a unified interface for building images, running
 # linting, and executing tests with full CI parity.

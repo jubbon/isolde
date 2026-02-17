@@ -1,6 +1,6 @@
 # Setup Guide
 
-Complete guide for setting up and configuring Claude Code Dev Container.
+Complete guide for setting up and configuring Isolde.
 
 ## Prerequisites
 

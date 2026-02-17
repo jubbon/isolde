@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Claude Code Devcontainer Templates** - A template-based system for creating isolated development environments with Claude Code CLI support. The project has two main components:
+**Isolde (ISOLated Development Environment)** - A template-based system for creating isolated development environments with Claude Code CLI support. The project has two main components:
 
 1. **Template System** (`templates/`, `scripts/`, `presets.yaml`) - Language templates and `init-project.sh` script for creating new projects
 2. **Self Devcontainer** (`.devcontainer/`) - Devcontainer setup for developing this repository itself

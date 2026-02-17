@@ -1,6 +1,6 @@
-# Claude Code Dev Container - Documentation
+# Isolde - Documentation
 
-Welcome to the official documentation for Claude Code Dev Container.
+Welcome to the official documentation for Isolde (ISOLated Development Environment).
 
 ## Quick Links
 

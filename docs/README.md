@@ -1,6 +1,6 @@
-# Claude Code Devcontainer Templates - Documentation
+# Isolde Documentation
 
-Welcome to the documentation for the Claude Code Devcontainer Template System.
+Welcome to the documentation for Isolde (ISOLated Development Environment).
 
 This system provides templates and tools for quickly setting up isolated development environments with Claude Code CLI support.
 

@@ -1,6 +1,6 @@
 # LLM Providers
 
-Guide to configuring and using different LLM providers with Claude Code Dev Container.
+Guide to configuring and using different LLM providers with Isolde.
 
 ## Overview
 
