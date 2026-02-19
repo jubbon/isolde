@@ -14,6 +14,7 @@
 
 # Include modular makefiles
 include mk/common.mk
+include mk/rust.mk
 include mk/build.mk
 include mk/lint.mk
 include mk/tests.mk
@@ -23,7 +24,8 @@ include mk/install.mk
 # =============================================================================
 # Default Target
 # =============================================================================
-all: build
+# Default to Rust build for v2, fallback to Docker for v1
+all: rust-build
 
 # =============================================================================
 # Main Entry Points - High-Level Targets
@@ -36,8 +38,8 @@ build: docker-build
 # Test target (comprehensive CI parity)
 test: lint test-build test-config test-runtime test-providers test-e2e
 
-# Lint target (all fast checks)
-lint: lint-shell lint-json lint-bats
+# Lint target (all fast checks, including Rust)
+lint: lint-shell lint-json lint-bats rust-lint
 
-# Clean target (containers only)
-clean: clean-containers
+# Clean target (containers and Rust artifacts)
+clean: clean-containers rust-clean

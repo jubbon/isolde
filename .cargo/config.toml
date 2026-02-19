@@ -1,0 +1,11 @@
+# Cargo configuration for Isolde project
+# This ensures compatibility with older Rust/Cargo versions
+
+[build]
+# Use a more recent Rust toolchain if available
+#rustflags = ["-C", "target-cpu=native"]
+
+[net]
+# Retry failed downloads
+retry = 3
+quit = false

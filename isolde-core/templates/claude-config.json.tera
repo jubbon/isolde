@@ -1,0 +1,17 @@
+{
+  "providers": {
+    "{{ claude_provider }}": {
+      "apiKey": "${{ claude_provider | upper }}_API_KEY"
+    }
+  },
+  "models": {
+    "haiku": "{{ claude_provider }}:{{ claude_models_json | safe }}",
+    "sonnet": "{{ claude_provider }}:{{ claude_models_json | safe }}",
+    "opus": "{{ claude_provider }}:{{ claude_models_json | safe }}"
+  },
+  "proxy": {
+    "http": "{{ proxy_http | default(value=\"\") }}",
+    "https": "{{ proxy_https | default(value=\"\") }}",
+    "no_proxy": "{{ proxy_no_proxy | default(value=\"localhost,127.0.0.1,.local\") }}"
+  }
+}

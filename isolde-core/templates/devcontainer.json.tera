@@ -1,0 +1,80 @@
+{
+  "name": "{{ project_name }} - Development Environment",
+
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "..",
+    "args": {
+      "USERNAME": "${localEnv:USER}"
+      {% if lang_version is defined -%}
+      ,"LANG_VERSION": "{{ lang_version }}"
+      {%- endif %}
+    }
+  },
+
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": false,
+      "installOhMyZsh": false,
+      "upgradePackages": false
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts",
+      "nodeGypDependencies": true,
+      "npxInstallCachedPackages": true
+    },
+    "{{ features_proxy }}": {
+      "http_proxy": "{{ proxy_http | default(value=\"\") }}",
+      "https_proxy": "{{ proxy_https | default(value=\"\") }}",
+      "no_proxy": "{{ proxy_no_proxy | default(value=\"\") }}",
+      "enabled": {{ proxy_enabled | lower }}
+    },
+    "{{ features_claude_code }}": {
+      "version": "{{ claude_version }}",
+      "provider": "{{ claude_provider }}",
+      "models": {{ claude_models_json | safe }},
+      "http_proxy": "{{ proxy_http | default(value=\"\") }}",
+      "https_proxy": "{{ proxy_https | default(value=\"\") }}"
+    },
+    "{{ features_plugin_manager }}": {
+      "activate_plugins": [
+        {%- for plugin in claude_activate_plugins %}
+        "{{ plugin }}"{% if not loop.last %},{% endif %}
+        {%- endfor %}
+      ],
+      "deactivate_plugins": [
+        {%- for plugin in claude_deactivate_plugins %}
+        "{{ plugin }}"{% if not loop.last %},{% endif %}
+        {%- endfor %}
+      ]
+    }
+  },
+
+  "overrideFeatureInstallOrder": [
+    "./features/proxy",
+    "./features/claude-code",
+    "./features/plugin-manager"
+  ],
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "anthropic.claude-code"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  },
+
+  "postCreateCommand": "bash -c 'if [ -f ~/.config/devcontainer/provider ]; then sed -i \"s#local provider=\\\\\\\"#local provider=\\\\\\\"\\$(cat ~/.config/devcontainer/provider)\\\\\\\"#\" ~/.bashrc; fi'",
+
+  "mounts": [
+    "source=${localEnv:HOME}/.claude,target=/home/${localEnv:USER}/.claude,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/.claude.json,target=/home/${localEnv:USER}/.claude.json,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/.config/devcontainer/machine-id,target=/etc/machine-id,type=bind,consistency=cached"
+  ],
+
+  "remoteUser": "${localEnv:USER}",
+  "workspaceFolder": "/workspaces/{{ project_name }}"
+}

@@ -1,0 +1,28 @@
+[package]
+name = "isolde-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "isolde"
+path = "src/main.rs"
+
+[dependencies]
+isolde-core = { path = "../isolde-core" }
+clap = { workspace = true }
+anyhow = { workspace = true }
+colored = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+# tokio removed - not needed for basic functionality
+# which removed - requires home crate which needs Rust 1.88+
+tempfile = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+assert_cmd = { workspace = true }
+predicates = { workspace = true }

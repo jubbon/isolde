@@ -8,17 +8,23 @@ INSTALL_SCRIPT = scripts/install/install.sh
 
 .PHONY: install uninstall install-info
 
-## Install Isolde to ~/.isolde/
-install:
-	@echo "$(CYAN)Installing Isolde to $(ISOLDE_HOME)...$(RESET)"
-	@ISOLDE_HOME=$(ISOLDE_HOME) bash $(INSTALL_SCRIPT)
-	@echo ""
-	@echo "$(GREEN)Isolde installed successfully!$(RESET)"
+## Install Isolde to ~/.isolde/ (v2 Rust binary via cargo)
+install: rust-install
+	@echo "$(GREEN)Isolde v2 installed successfully!$(RESET)"
 	@echo ""
 	@echo "$(YELLOW)Next steps:$(RESET)"
-	@echo "  1. Reload your shell: $(CYAN)source ~/.bashrc$(RESET) (or restart terminal)"
-	@echo "  2. Verify: $(CYAN)isolde --version$(RESET)"
-	@echo "  3. Create a project: $(CYAN)isolde my-project --template=python$(RESET)"
+	@echo "  1. Verify: $(CYAN)isolde --version$(RESET)"
+	@echo "  2. Create a project: $(CYAN)isolde init my-project$(RESET)"
+	@echo ""
+	@echo "$(YELLOW)Note:$(RESET) Binary installed via cargo to ~/.cargo/bin/"
+	@echo "      For shell script installation (v1), run: make install-v1"
+
+## Install Isolde v1 (shell script version) to ~/.isolde/
+install-v1:
+	@echo "$(CYAN)Installing Isolde v1 (shell scripts) to $(ISOLDE_HOME)...$(RESET)"
+	@ISOLDE_HOME=$(ISOLDE_HOME) bash $(INSTALL_SCRIPT)
+	@echo ""
+	@echo "$(GREEN)Isolde v1 installed successfully!$(RESET)"
 
 ## Uninstall Isolde
 uninstall:

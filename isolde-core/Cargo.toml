@@ -1,0 +1,32 @@
+[package]
+name = "isolde-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_yaml = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+colored = { workspace = true }
+# handlebars removed - using simple string replacement
+thiserror = { workspace = true }
+# reqwest removed - causing ICU issues with Rust 1.75
+# url removed - causing ICU issues with Rust 1.75
+indexmap = { workspace = true }
+
+# Optional dependencies
+clap = { workspace = true, optional = true }
+# tokio removed - not needed for basic functionality
+
+[features]
+default = []
+cli = ["clap"]
+# async feature removed - tokio disabled due to ICU issues
+full = ["cli"]
+
+[dev-dependencies]
+tempfile = "3.8"

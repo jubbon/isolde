@@ -1,0 +1,51 @@
+[workspace]
+resolver = "2"
+members = [
+    "isolde-core",
+    "isolde-cli",
+]
+
+[workspace.package]
+version = "0.2.0"
+edition = "2021"
+license = "MIT"
+authors = ["Isolde Contributors"]
+repository = "https://github.com/dmanakulikov/isolde"
+
+[workspace.dependencies]
+# Core dependencies
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.9"
+serde_json = "1.0"
+anyhow = "1.0"
+colored = "2.1"
+thiserror = "1.0"
+
+# Async runtime (disabled for now - not needed for basic functionality)
+# tokio = { version = "1.40", features = ["full"] }
+
+# Web and HTTP (disabled for now - causing ICU issues)
+# reqwest = { version = "0.11", features = ["json"] }
+# url = "2.4"
+
+# Templating - using simple string replacement instead
+# handlebars removed due to ICU dependency issues with Rust 1.75
+
+# CLI
+clap = { version = "4.4", features = ["derive"] }
+
+# Utilities
+indexmap = "=2.2.6"
+# which removed - requires home crate which needs Rust 1.88+
+# which = "4.4"
+
+# Testing
+assert_cmd = "2.0"
+predicates = "3.1"
+
+# Essential pins for Rust 1.75 compatibility
+getrandom = "=0.2.15"
+tempfile = "=3.8.0"
+
+[workspace.metadata.dummy]
+# Remove all the aggressive pins - let Cargo resolve compatible versions
