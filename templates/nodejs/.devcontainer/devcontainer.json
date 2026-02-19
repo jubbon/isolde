@@ -40,6 +40,12 @@
     }
   },
 
+  "overrideFeatureInstallOrder": [
+    "./features/proxy",
+    "./features/claude-code",
+    "./features/plugin-manager"
+  ],
+
   "customizations": {
     "vscode": {
       "extensions": [
