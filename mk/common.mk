@@ -7,7 +7,7 @@ IMAGE_NAME ?= claude-code-dev
 TEST_IMAGE_PREFIX = claude-code-dev-test
 
 # Paths
-DEVCONTAINER_DIR = .devcontainer
+DEVCONTAINER_DIR = images/devcontainer
 E2E_DIR = tests/e2e
 SCRIPTS_DIR = scripts
 
