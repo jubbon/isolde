@@ -37,6 +37,10 @@
       "models": "{{CLAUDE_MODELS}}",
       "http_proxy": "{{HTTP_PROXY}}",
       "https_proxy": "{{HTTPS_PROXY}}"
+    },
+    "{{FEATURES_PLUGIN_MANAGER}}": {
+      "activate_plugins": {{CLAUDE_ACTIVATE_PLUGINS}},
+      "deactivate_plugins": {{CLAUDE_DEACTIVATE_PLUGINS}}
     }
   },
 

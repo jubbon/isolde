@@ -1,0 +1,18 @@
+{
+  "id": "plugin-manager",
+  "name": "Claude Code Plugin Manager",
+  "description": "Manage Claude Code built-in plugins at project scope. Activate or deactivate plugins per devcontainer environment.",
+  "version": "1.0.0",
+  "options": {
+    "activate_plugins": {
+      "type": "array",
+      "description": "List of plugins to activate (e.g., ['superpowers', 'tdd']). Plugin names are resolved to their full 'name@marketplace' identifiers automatically.",
+      "default": []
+    },
+    "deactivate_plugins": {
+      "type": "array",
+      "description": "List of plugins to deactivate (e.g., ['autopilot', 'ralph']). Takes priority over activate list for conflicting entries.",
+      "default": []
+    }
+  }
+}

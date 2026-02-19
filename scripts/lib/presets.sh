@@ -29,7 +29,13 @@ load_preset() {
     export PRESET_FEATURES=$(get_preset_value "$preset" "features")
     export PRESET_CLAUDE_PLUGINS=$(get_preset_value "$preset" "claude_plugins")
 
+    # Export plugin activation/deactivation lists for template substitution
+    export CLAUDE_ACTIVATE_PLUGINS=$(get_preset_claude_plugins_activate "$preset")
+    export CLAUDE_DEACTIVATE_PLUGINS=$(get_preset_claude_plugins_deactivate "$preset")
+
     log_debug "Preset loaded - template: $PRESET_TEMPLATE, version: $PRESET_LANG_VERSION"
+    log_debug "  Activate plugins: $CLAUDE_ACTIVATE_PLUGINS"
+    log_debug "  Deactivate plugins: $CLAUDE_DEACTIVATE_PLUGINS"
 }
 
 # Apply preset to project
@@ -215,4 +221,46 @@ get_preset_description() {
 
     echo ""
     return 1
+}
+
+# Get claude_plugins activate list from preset (new format)
+# Returns: JSON array of plugins to activate
+# Example: ["oh-my-claudecode", "tdd"]
+get_preset_claude_plugins_activate() {
+    local preset="$1"
+    local presets_file="$(dirname "${BASH_SOURCE[0]}")/../../presets.yaml"
+    local awk_script="$(dirname "${BASH_SOURCE[0]}")/.parse_plugins_activate.awk"
+
+    if [ ! -f "$presets_file" ]; then
+        echo "[]"
+        return 1
+    fi
+
+    if [ ! -f "$awk_script" ]; then
+        echo "[]"
+        return 1
+    fi
+
+    awk -v preset="$preset" -f "$awk_script" "$presets_file"
+}
+
+# Get claude_plugins deactivate list from preset (new format)
+# Returns: JSON array of plugins to deactivate
+# Example: ["autopilot", "ralph"]
+get_preset_claude_plugins_deactivate() {
+    local preset="$1"
+    local presets_file="$(dirname "${BASH_SOURCE[0]}")/../../presets.yaml"
+    local awk_script="$(dirname "${BASH_SOURCE[0]}")/.parse_plugins_deactivate.awk"
+
+    if [ ! -f "$presets_file" ]; then
+        echo "[]"
+        return 1
+    fi
+
+    if [ ! -f "$awk_script" ]; then
+        echo "[]"
+        return 1
+    fi
+
+    awk -v preset="$preset" -f "$awk_script" "$presets_file"
 }

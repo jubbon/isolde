@@ -138,11 +138,19 @@ apply_template_substitutions() {
     # Feature path substitutions
     sed -i "s|{{FEATURES_CLAUDE_CODE}}|./features/claude-code|g" "$devcontainer_json"
     sed -i "s|{{FEATURES_PROXY}}|./features/proxy|g" "$devcontainer_json"
+    sed -i "s|{{FEATURES_PLUGIN_MANAGER}}|./features/plugin-manager|g" "$devcontainer_json"
 
     # Claude Code configuration
     sed -i "s|{{CLAUDE_VERSION}}|${CLAUDE_VERSION:-latest}|g" "$devcontainer_json"
     sed -i "s|{{CLAUDE_PROVIDER}}|${CLAUDE_PROVIDER:-}|g" "$devcontainer_json"
     sed -i "s|{{CLAUDE_MODELS}}|${CLAUDE_MODELS:-}|g" "$devcontainer_json"
+
+    # Plugin manager configuration (from preset if available, else empty)
+    # Note: These get the preset values directly for array formatting
+    local activate_plugins="${CLAUDE_ACTIVATE_PLUGINS:-[]}"
+    local deactivate_plugins="${CLAUDE_DEACTIVATE_PLUGINS:-[]}"
+    sed -i "s|{{CLAUDE_ACTIVATE_PLUGINS}}|$activate_plugins|g" "$devcontainer_json"
+    sed -i "s|{{CLAUDE_DEACTIVATE_PLUGINS}}|$deactivate_plugins|g" "$devcontainer_json"
 
     # Proxy configuration
     sed -i "s|{{HTTP_PROXY}}|${HTTP_PROXY:-}|g" "$devcontainer_json"
