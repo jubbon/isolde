@@ -11,10 +11,14 @@ FEATURE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Try to source plugins.sh from multiple possible locations
 # Priority:
-# 1. From the isolde repository (development)
-# 2. From the devcontainer context (production - copied to project)
+# 1. From the feature directory itself (self-contained)
+# 2. From the isolde repository (development)
+# 3. From the devcontainer context (production - copied to project)
 PLUGINS_LIB=""
-if [ -f "$FEATURE_DIR/../../../scripts/lib/plugins.sh" ]; then
+if [ -f "$FEATURE_DIR/lib/plugins.sh" ]; then
+    # Self-contained: plugin-manager/lib/plugins.sh
+    PLUGINS_LIB="$FEATURE_DIR/lib/plugins.sh"
+elif [ -f "$FEATURE_DIR/../../../scripts/lib/plugins.sh" ]; then
     # Development: scripts/lib/plugins.sh
     PLUGINS_LIB="$FEATURE_DIR/../../../scripts/lib/plugins.sh"
 elif [ -f "$FEATURE_DIR/../../../../scripts/lib/plugins.sh" ]; then
