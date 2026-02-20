@@ -9,6 +9,34 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+/// Trait for running git commands - allows stubbing in tests
+pub trait GitRunner {
+    /// Run a git command in the specified directory
+    fn run_git(&self, dir: &Path, args: &[&str]) -> Result<()>;
+}
+
+/// Default implementation using real git
+pub struct RealGitRunner;
+
+impl GitRunner for RealGitRunner {
+    fn run_git(&self, dir: &Path, args: &[&str]) -> Result<()> {
+        use std::process::Command;
+
+        let result = Command::new("git")
+            .current_dir(dir)
+            .args(args)
+            .output()
+            .map_err(|e| Error::Other(format!("Failed to execute git: {}", e)))?;
+
+        if !result.status.success() {
+            let stderr = String::from_utf8_lossy(&result.stderr);
+            return Err(Error::Other(format!("Git command failed: {}", stderr)));
+        }
+
+        Ok(())
+    }
+}
+
 /// Report generated from a dry run
 #[derive(Debug, Clone)]
 pub struct DryRunReport {
@@ -33,6 +61,8 @@ pub struct Generator {
     config: Config,
     /// Isolde installation root (for templates and features)
     isolde_root: PathBuf,
+    /// Git runner (allows stubbing in tests)
+    git_runner: Box<dyn GitRunner>,
 }
 
 impl Generator {
@@ -53,6 +83,7 @@ impl Generator {
         Ok(Self {
             config,
             isolde_root,
+            git_runner: Box::new(RealGitRunner),
         })
     }
 
@@ -692,50 +723,32 @@ To rebuild the container:
 
         // Initialize project repository
         if !workspace_dir.join(".git").exists() {
-            self.run_git(&workspace_dir, &["init", "-q"])?;
+            self.git_runner.run_git(&workspace_dir, &["init", "-q"])?;
 
             // Add initial files
             let readme_path = workspace_dir.join("README.md");
             let gitignore_path = workspace_dir.join(".gitignore");
 
             if readme_path.exists() {
-                self.run_git(&workspace_dir, &["add", "README.md"])?;
+                self.git_runner.run_git(&workspace_dir, &["add", "README.md"])?;
             }
             if gitignore_path.exists() {
-                self.run_git(&workspace_dir, &["add", ".gitignore"])?;
+                self.git_runner.run_git(&workspace_dir, &["add", ".gitignore"])?;
             }
 
-            self.run_git(&workspace_dir, &["commit", "-m", "Initial commit", "-q"])?;
+            self.git_runner.run_git(&workspace_dir, &["commit", "-m", "Initial commit", "-q"])?;
         }
 
         // Initialize devcontainer repository
         if !devcontainer_dir.join(".git").exists() {
-            self.run_git(&devcontainer_dir, &["init", "-q"])?;
+            self.git_runner.run_git(&devcontainer_dir, &["init", "-q"])?;
 
             // Add all files
-            self.run_git(&devcontainer_dir, &["add", "-A"])?;
-            self.run_git(
+            self.git_runner.run_git(&devcontainer_dir, &["add", "-A"])?;
+            self.git_runner.run_git(
                 &devcontainer_dir,
                 &["commit", "-m", "Initial devcontainer setup", "-q"],
             )?;
-        }
-
-        Ok(())
-    }
-
-    /// Run a git command in the specified directory
-    fn run_git(&self, dir: &Path, args: &[&str]) -> Result<()> {
-        use std::process::Command;
-
-        let result = Command::new("git")
-            .current_dir(dir)
-            .args(args)
-            .output()
-            .map_err(|e| Error::Other(format!("Failed to execute git: {}", e)))?;
-
-        if !result.status.success() {
-            let stderr = String::from_utf8_lossy(&result.stderr);
-            return Err(Error::Other(format!("Git command failed: {}", stderr)));
         }
 
         Ok(())
