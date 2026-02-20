@@ -297,7 +297,7 @@ fn print_checks(checks: &[CheckResult], format: ValidateFormat) {
                     "tool": {
                         "driver": {
                             "name": "isolde",
-                            "version": env!("CARGO_PKG_VERSION"),
+                            "version": env!("ISOLDE_VERSION"),
                             "informationUri": "https://github.com/dmanakulikov/isolde"
                         }
                     },

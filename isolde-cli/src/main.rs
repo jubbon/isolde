@@ -14,8 +14,8 @@ use std::path::PathBuf;
 
 use cli::{Cli, Commands, print_error, print_info, print_warning};
 
-/// Isolde CLI version
-const VERSION: &str = env!("CARGO_PKG_VERSION");
+/// Isolde CLI version (from VERSION file)
+const VERSION: &str = env!("ISOLDE_VERSION");
 
 fn main() -> anyhow::Result<()> {
     let args = Cli::parse();
@@ -292,7 +292,7 @@ fn execute_version(version_verbose: bool, format: String) -> anyhow::Result<()> 
         _ => {
             println!("Isolde {}", VERSION);
             if version_verbose {
-                println!("Release: {}", env!("CARGO_PKG_VERSION"));
+                println!("Release: {}", env!("ISOLDE_VERSION"));
                 println!("Rust: {}", env!("CARGO_PKG_RUST_VERSION"));
             }
         }

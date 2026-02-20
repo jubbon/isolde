@@ -113,7 +113,7 @@ pub fn run(opts: DoctorOptions) -> Result<DoctorReport> {
     let mut healthy_count = 0;
 
     // Get version info
-    let isolde_version = env!("CARGO_PKG_VERSION").to_string();
+    let isolde_version = env!("ISOLDE_VERSION").to_string();
     let rust_version = env!("CARGO_PKG_RUST_VERSION").to_string();
 
     // Determine which checks to run
@@ -201,7 +201,7 @@ pub fn run(opts: DoctorOptions) -> Result<DoctorReport> {
 
 /// Check Isolde CLI installation
 fn check_isolde_cli(cwd: &Path, verbose: bool) -> DiagnosticResult {
-    let version = env!("CARGO_PKG_VERSION");
+    let version = env!("ISOLDE_VERSION");
 
     let mut suggestions = Vec::new();
 

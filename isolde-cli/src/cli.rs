@@ -9,7 +9,7 @@ use colored::Colorize;
 #[derive(Parser, Debug)]
 #[command(name = "isolde")]
 #[command(author = "Isolde Contributors")]
-#[command(version = "2.0.0")]
+#[command(version = env!("ISOLDE_VERSION"))]
 #[command(about = "Create isolated development environments from templates", long_about = None)]
 #[command(after_help = "For more help, visit: https://github.com/dmanakulikov/isolde")]
 pub struct Cli {
