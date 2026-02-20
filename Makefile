@@ -15,7 +15,6 @@
 # Include modular makefiles
 include mk/common.mk
 include mk/rust.mk
-include mk/build.mk
 include mk/lint.mk
 include mk/tests.mk
 include mk/clean.mk
@@ -30,16 +29,15 @@ all: rust-build
 # =============================================================================
 # Main Entry Points - High-Level Targets
 # =============================================================================
-.PHONY: docker-build
 
-# Build target (delegates to build.mk)
-build: docker-build
+# Build target (delegates to Rust build)
+build: rust-build
 
 # Test target (comprehensive CI parity)
 test: lint test-build test-config test-runtime test-providers test-e2e
 
 # Lint target (all fast checks, including Rust)
-lint: lint-shell lint-json lint-bats rust-lint
+lint: lint-json lint-bats rust-lint
 
 # Clean target (containers and Rust artifacts)
 clean: clean-containers rust-clean

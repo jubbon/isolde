@@ -13,72 +13,116 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Isolde (ISOLated Development Environment)** - A template-based system for creating isolated development environments with Claude Code CLI support. The project has two main components:
+**Isolde (ISOLated Development Environment)** - A Rust CLI tool for creating isolated development environments with Claude Code CLI support. The project uses a workspace structure:
 
-1. **Template System** (`templates/`, `scripts/`, `presets.yaml`) - Language templates and `isolde.sh` script for creating new projects
-2. **Self Devcontainer** (`.devcontainer/`) - Devcontainer setup for developing this repository itself
+1. **isolde-core** - Core library with template processing, git operations, and configuration
+2. **isolde-cli** - Command-line interface built with clap
+3. **Template System** (`templates/`, `presets.yaml`) - Language templates and preset configurations
+4. **Core Features** (`core/features/`) - Reusable devcontainer features
 
 ## Commands
 
+### Building the CLI
+```bash
+# Development build (faster)
+make rust-dev-build
+# or
+cargo build
+
+# Release build
+make rust-build
+# or
+cargo build --release
+
+# Run directly
+cargo run -- --help
+```
+
 ### Creating New Projects
 ```bash
-# From repository root
-./scripts/isolde.sh                    # Interactive wizard
-./scripts/isolde.sh my-app --preset=python-ml
-./scripts/isolde.sh api --template=nodejs --lang-version=22
+# Build and install first
+cargo install --path .
 
-# List options
-./scripts/isolde.sh --list-templates
-./scripts/isolde.sh --list-presets
+# Interactive wizard
+isolde init
+
+# Direct command with template
+isolde init my-app --template python
+
+# Using presets
+isolde init my-app --preset python-ml
+
+# List available templates and presets
+isolde list-templates
+isolde list-presets
 ```
 
 ### Development Workflow
 ```bash
-# Build devcontainer image
-docker build -t claude-code-dev .devcontainer
+# Format code
+make rust-fmt
+# or
+cargo fmt
 
-# Rebuild in VS Code: F1 → Dev Containers: Rebuild Container
-# Verify: claude --version && docker ps
+# Run linter
+make rust-lint
+# or
+cargo clippy
+
+# Run tests
+make rust-test
+# or
+cargo test
+
+# Run all checks
+make rust-check
 ```
 
 ### Testing
 ```bash
 # Test container builds
-docker build -t claude-code-dev .devcontainer
+make test-build
 
-# Test shell scripts (requires shellcheck)
-shellcheck scripts/isolde.sh
-shellcheck scripts/lib/*.sh
+# Run E2E tests
+make test-e2e
 
-# Validate JSON files (requires jq)
-jq < .devcontainer/devcontainer.json
+# Run specific E2E scenario
+SCENARIO='basic_init' make test-e2e
 ```
 
 ## Architecture
 
+### Rust Workspace Structure
+
+```
+isolde/
+├── isolde-core/           # Core library
+│   ├── src/
+│   │   ├── templates.rs   # Template loading and processing
+│   │   ├── git.rs         # Git operations (dual repo pattern)
+│   │   ├── config.rs      # Configuration and presets
+│   │   └── features.rs    # Feature copying and management
+│   └── Cargo.toml
+├── isolde-cli/            # CLI binary
+│   ├── src/
+│   │   └── main.rs        # Entry point with clap CLI
+│   └── Cargo.toml
+├── Cargo.toml             # Workspace config
+├── templates/             # Language templates
+├── core/features/         # Devcontainer features
+└── presets.yaml           # Preset configurations
+```
+
 ### Template Application Flow
 
-When `isolde.sh` creates a project:
+When `isolde init` creates a project:
 
-1. **Template Selection** - User selects template or preset
-2. **Copy Devcontainer** - `templates/{name}/.devcontainer/` copied to project
-3. **Feature Copy** - `core/features/*` copied to `.devcontainer/features/` (Docker cannot follow symlinks outside build context)
-4. **Substitution** - Placeholders in `devcontainer.json` replaced via `sed`
-5. **Git Init** - Two separate git repos created: `project/` and `.devcontainer/`
-
-### Script Library Architecture
-
-`scripts/lib/` contains modular shell libraries sourced by `isolde.sh`:
-
-| File | Responsibility |
-|------|----------------|
-| `templates.sh` | Template loading, validation, substitution, copying |
-| `presets.sh` | Preset loading from YAML, validation |
-| `git.sh` | Dual git repo initialization (project + devcontainer) |
-| `ui.sh` | Interactive menus, prompts, colored output |
-| `utils.sh` | YAML parsing, logging, string sanitization |
-
-**Key Pattern**: Functions use `get_templates_root()` to locate `templates/` and `core/` directories relative to `SCRIPT_DIR`.
+1. **CLI Parsing** - clap parses command-line arguments
+2. **Template Selection** - User selects template or preset via interactive prompt or args
+3. **Template Loading** - `isolde-core::templates` loads `template-info.yaml`
+4. **Feature Copy** - `core/features/*` copied to `.devcontainer/features/` (Docker cannot follow symlinks)
+5. **Substitution** - Placeholders in `devcontainer.json` replaced via Rust template engine
+6. **Git Init** - Two separate git repos created: `project/` and `.devcontainer/`
 
 ### Template Metadata Format
 
@@ -111,7 +155,7 @@ supported_versions:
 | `{{CLAUDE_PROVIDER}}` | From `--claude-provider` |
 | `{{HTTP_PROXY}}`, `{{HTTPS_PROXY}}` | From proxy options |
 
-Substitutions happen in `apply_template_substitutions()` via `sed`.
+Substitutions happen in Rust via the `templates` module.
 
 ### Dual Git Repository Pattern
 
@@ -135,13 +179,11 @@ This separation allows:
 `core/features/` contains reusable devcontainer features:
 - `claude-code/` - Claude Code CLI installation with multi-provider support
 - `proxy/` - HTTP proxy configuration for enterprise networks
+- `plugin-manager/` - Plugin activation and management
 
 Features are **copied** (not symlinked) to each project because Docker's build context cannot follow symlinks outside the build directory.
 
 ## Important Notes
-
-### No Makefile
-This project uses Docker directly, not Make. Build commands: `docker build -t claude-code-dev .devcontainer`
 
 ### Feature Path Resolution
 In created projects, features are referenced as `./features/claude-code` (relative to `.devcontainer/`), not via absolute paths from the template repository.
@@ -149,9 +191,9 @@ In created projects, features are referenced as `./features/claude-code` (relati
 ### Preset Format
 `presets.yaml` defines preset configurations. When adding a new preset, follow the existing format and include `template`, `lang_version`, `features`, and optional `claude_plugins`.
 
-### Script Development
-When modifying `scripts/isolde.sh` or library files:
-1. Test with: `./scripts/isolde.sh test-project --template=python`
+### CLI Development
+When modifying the CLI:
+1. Test with: `cargo run -- init test-project --template python`
 2. Verify created project structure
 3. Test all templates if changes affect template processing
 4. Update relevant documentation in `docs/`

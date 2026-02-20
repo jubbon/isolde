@@ -1,6 +1,6 @@
 # Testing Guide
 
-Comprehensive guide for testing the Claude Code Dev Container project.
+Comprehensive guide for testing the Isolde project.
 
 ## Table of Contents
 
@@ -18,8 +18,9 @@ This project uses a multi-layered testing approach:
 
 | Layer | Tool | Purpose |
 |-------|------|---------|
+| **Rust Tests** | cargo test | Unit and integration tests |
 | **Makefile Tests** | Bash make | Fast integration tests (build, config, runtime) |
-| **Bats Tests** | Bats | Unit tests for shell scripts and JSON |
+| **E2E Tests** | Rust + Docker | End-to-end CLI testing |
 | **CI/CD** | GitHub Actions | Automated testing on push/PR |
 
 ## Quick Start
@@ -33,10 +34,10 @@ make test-build     # Container builds
 make test-config    # Environment variables
 make test-runtime   # Docker-in-Docker
 make test-providers # Provider configuration
-make test-e2e       # E2E tests (Docker-based)
-make lint-shell     # Shell script syntax
-make lint-json      # JSON validity
-make lint-bats      # Bats unit tests
+make test-e2e       # E2E tests (Rust CLI)
+
+# Rust-specific tests
+make rust-test      # Run Rust unit/integration tests
 
 # See all available targets
 make help
@@ -44,9 +45,35 @@ make help
 
 ## Test Frameworks
 
+### Rust Tests
+
+Located in `isolde-core/src/` and `isolde-cli/src/` using Rust's built-in test framework.
+
+**Advantages:**
+- First-class Rust support
+- Fast execution
+- Easy to debug
+- Good IDE integration
+
+**Run:**
+```bash
+# Run all tests
+cargo test
+
+# Run tests for specific crate
+cargo test -p isolde-core
+cargo test -p isolde-cli
+
+# Run with output
+cargo test -- --nocapture
+
+# Run specific test
+cargo test test_template_loading
+```
+
 ### Makefile Tests
 
-Located in root `Makefile`, these provide fast feedback for common issues.
+Located in `mk/tests.mk`, these provide fast feedback for common issues.
 
 **Advantages:**
 - No dependencies beyond Docker
@@ -60,35 +87,25 @@ make test-build        # Build test only
 make test-config       # Config test only
 ```
 
-### Bats Tests
+### E2E Tests
 
-Located in `../tests/` directory using [Bats](https://github.com/bats-core/bats-core).
+Located in `tests/` directory using Rust and Docker.
 
 **Advantages:**
-- Unit-level testing
-- Testable assertions
-- Better failure messages
-
-**Installing Bats:**
-```bash
-# macOS
-brew install bats-core
-
-# Linux (npm)
-npm install -g bats
-
-# Linux (source)
-git clone https://github.com/bats-core/bats-core.git
-cd bats-core && sudo ./install.sh /usr/local
-```
+- Tests full CLI workflow
+- Real project creation
+- Integration with Docker
 
 **Run:**
 ```bash
-cd ../tests
-bats .                    # Run all
-bats install.bats          # Run specific file
-bats -v .                 # Verbose output
-bats --pretty .            # Pretty formatting
+# Run all E2E tests
+make test-e2e
+
+# Run specific scenario
+SCENARIO='basic_init' make test-e2e
+
+# Verbose output
+VERBOSE=1 make test-e2e
 ```
 
 ## Running Tests
@@ -98,20 +115,19 @@ bats --pretty .            # Pretty formatting
 1. **Before committing changes:**
    ```bash
    make test              # Run all Makefile tests
-   cd ../tests && bats .     # Run Bats tests
+   make rust-test         # Run Rust tests
+   make test-e2e          # Run E2E tests
    ```
 
 2. **Quick iteration:**
    ```bash
    make test-build       # Just test build
-   make test-bats        # Just run Bats
-   # Note: Bats are now in .devcontainer/tests/
+   cargo test -p isolde-core  # Just test core library
    ```
 
 3. **Full verification:**
    ```bash
-   make clean && make build && make test
-   cd tests && bats --timing .
+   make clean && make rust-build && make test
    ```
 
 ### CI/CD
@@ -121,12 +137,48 @@ Tests run automatically on:
 - Pull requests
 - Manual trigger (Actions tab)
 
-**View results:**
-```
-https://github.com/YOUR_USERNAME/claude-code-devcontainer/actions
+## Writing Tests
+
+### Rust Unit Tests
+
+Add tests to the same file as the code:
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_template_loading() {
+        let template = load_template("python").unwrap();
+        assert_eq!(template.name, "Python");
+    }
+
+    #[test]
+    fn test_invalid_template() {
+        let result = load_template("nonexistent");
+        assert!(result.is_err());
+    }
+}
 ```
 
-## Writing Tests
+### Rust Integration Tests
+
+Create tests in `tests/` directory:
+
+```rust
+// tests/cli_tests.rs
+use assert_cmd::Command;
+
+#[test]
+fn test_init_command() {
+    Command::cargo_bin("isolde")
+        .unwrap()
+        .args(["init", "test-project", "--template", "python"])
+        .assert()
+        .success();
+}
+```
 
 ### Makefile Tests
 
@@ -145,53 +197,24 @@ test-new-feature:
 	@echo ""
 ```
 
-Then add to main `test` target in `Makefile`:
+Then add to main `test` target in root `Makefile`:
 ```makefile
 test: lint test-build test-config test-runtime test-providers test-e2e test-new-feature
 ```
-
-### Bats Tests
-
-Create new `.bats` file in `../tests/`:
-
-```bash
-#!/usr/bin/env bats
-load bats/core
-
-@test "description of test" {
-	# Arrange
-	local result="expected"
-
-	# Act
-	assert [ "$result" = "expected" ]
-
-	# Assert (implicit)
-}
-
-@test "use helper functions" {
-	assert_valid_json "path/to/file.json"
-	assert_shellcheck_pass "path/to/script.sh"
-}
-```
-
-**Available helpers** (in `../tests/bats/core.bash`):
-- `assert_valid_json <file>` - Check JSON validity
-- `assert_shellcheck_pass <script>` - Run shellcheck
-- `assert_contains <file> <string>` - Check file contains string
-- `assert_executable <file>` - Check file is executable
 
 ## Best Practices
 
 ### Test Organization
 
-1. **Unit tests in `tests/`** - Test individual functions/files
-2. **Integration tests in Makefile** - Test end-to-end scenarios
-3. **One test per concern** - Don't combine unrelated checks
-4. **Clear test names** - Describe what is being tested
+1. **Unit tests in `src/`** - Test individual functions/modules
+2. **Integration tests in `tests/`** - Test end-to-end scenarios
+3. **E2E tests in `tests/`** - Test full CLI workflows
+4. **One test per concern** - Don't combine unrelated checks
+5. **Clear test names** - Describe what is being tested
 
 ### Test Reliability
 
-1. **Avoid external dependencies** - Tests should run offline
+1. **Avoid external dependencies** - Tests should run offline when possible
 2. **Clean up after tests** - Don't leave containers/files behind
 3. **Make tests fast** - Parallelize when possible
 4. **Use timeouts** - Don't let tests hang forever
@@ -199,34 +222,23 @@ load bats/core
 ### CI/CD Best Practices
 
 1. **Fast feedback** - Run lint before build
-2. **Matrix testing** - Test multiple providers in parallel
+2. **Matrix testing** - Test multiple configurations in parallel
 3. **Clear failures** - Show what failed and why
 4. **Document flakes** - Note intermittent failures
 
 ## Test Categories Reference
 
-| Category | Makefile Target | Bats File | CI Job |
+| Category | Makefile Target | Cargo Test | CI Job |
 |----------|-----------------|------------|---------|
+| Unit/Integration | `rust-test` | `cargo test` | `rust-test` |
 | Build | `test-build` | - | `build` |
 | Configuration | `test-config` | - | `config` |
 | Runtime | `test-runtime` | - | `runtime` |
 | Providers | `test-providers` | - | `provider` |
-| E2E Tests | `test-e2e` | Behave | `e2e-tests` |
-| Shell Scripts | `lint-shell` | `install.bats` | `lint` |
-| JSON Files | `lint-json` | `json.bats` | `lint` |
-| Unit Tests | `lint-bats` | `*.bats` | `lint` |
+| E2E Tests | `test-e2e` | `tests/` | `e2e-tests` |
+| Lint | `lint` | `cargo clippy` | `lint` |
 
 ## Troubleshooting
-
-### Bats not found
-
-```bash
-# Install via npm
-npm install -g bats
-
-# Or add to project
-npm install --save-dev bats
-```
 
 ### Docker build fails
 
@@ -239,15 +251,30 @@ cd .devcontainer
 docker build -t claude-code-dev-test .
 ```
 
-### shellcheck errors
+### Rust tests fail
 
 ```bash
-# Install shellcheck
-sudo apt-get install shellcheck  # Debian/Ubuntu
-brew install shellcheck               # macOS
+# Run with output for debugging
+cargo test -- --nocapture
 
-# Check specific file
-shellcheck .devcontainer/features/claude-code/install.sh
+# Run specific test with output
+cargo test test_name -- --nocapture
+
+# Run tests in verbose mode
+cargo test -- --verbose
+```
+
+### E2E tests fail
+
+```bash
+# Run with verbose output
+VERBOSE=1 make test-e2e
+
+# Run specific scenario
+SCENARIO='basic_init' VERBOSE=1 make test-e2e
+
+# Check test artifacts
+ls -la tests/e2e/
 ```
 
 ## Contributing Tests
@@ -260,3 +287,33 @@ When adding new features:
 4. **CI will verify** on push/PR
 
 See [development.md](development.md) for full contribution guidelines.
+
+## Test Data
+
+Test templates and fixtures are located in:
+- `templates/` - Real templates used for testing
+- `tests/fixtures/` - Test-specific data files
+
+## Mocking
+
+For tests that require external dependencies, use mocking:
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use mockito::{mock, Server};
+
+    #[test]
+    fn test_with_mock_server() {
+        let mut server = Server::new();
+
+        let _mock = server.mock("GET", "/api")
+            .with_status(200)
+            .with_body("response")
+            .create();
+
+        // Test code using mock server URL
+    }
+}
+```

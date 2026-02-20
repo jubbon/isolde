@@ -1,41 +1,13 @@
 # =============================================================================
 # Lint Targets - Fast Static Checks
 # =============================================================================
-.PHONY: lint lint-shell lint-json lint-bats
+.PHONY: lint lint-json lint-bats
 
 # Run all lint checks
-lint: lint-shell lint-json lint-bats
+lint: lint-json lint-bats
 	@echo ""
 	@echo "$(GREEN)=== All lint checks passed ===$(RESET)"
 	@echo ""
-
-# Check shell scripts with shellcheck
-lint-shell:
-	@echo "$(CYAN)Checking shell scripts with shellcheck...$(RESET)"
-	@if [ -z "$(call command_exists,shellcheck)" ]; then \
-		if [ $(CI_MODE) -eq 1 ]; then \
-			echo "$(RED)Error: shellcheck not found in CI$(RESET)"; \
-			exit 1; \
-		else \
-			echo "$(YELLOW)shellcheck not found, skipping...$(RESET)"; \
-			echo "$(YELLOW)Install: sudo apt-get install shellcheck$(RESET)"; \
-		fi \
-	else \
-		errors=0; \
-		for script in $$(find $(DEVCONTAINER_DIR) $(SCRIPTS_DIR) -name "*.sh" -type f 2>/dev/null); do \
-			if shellcheck "$$script" > /dev/null 2>&1; then \
-				echo "  $(GREEN)$$script$(CHECK)$(RESET)"; \
-			else \
-				echo "  $(RED)$$script$(CROSS)$(RESET)"; \
-				shellcheck "$$script"; \
-				errors=$$((errors + 1)); \
-			fi \
-		done; \
-		if [ $$errors -gt 0 ]; then \
-			echo "$(RED)$$errors script(s) failed linting$(RESET)"; \
-			exit 1; \
-		fi \
-	fi
 
 # Validate JSON files with jq
 lint-json:

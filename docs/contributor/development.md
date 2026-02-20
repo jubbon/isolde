@@ -7,6 +7,7 @@ Guide for contributing to and developing the Isolde (ISOLated Development Enviro
 ### Prerequisites
 
 - Docker installed and running
+- Rust toolchain (rustc, cargo)
 - Git configured
 - Basic understanding of Dev Containers
 
@@ -15,78 +16,87 @@ Guide for contributing to and developing the Isolde (ISOLated Development Enviro
 ```bash
 # Clone repository
 git clone <repository-url>
-cd claude-code-templates
+cd isolde
 
 # Create a feature branch
 git checkout -b feat/my-new-feature
 
-# Open in VS Code and use Dev Containers extension
-code .
-# Press F1 → Dev Containers: Reopen in Container
+# Build the CLI
+make rust-build
+# or
+cargo build --release
 ```
 
 ## Project Structure
 
 ```
 .
-├── .devcontainer/              # Dev Container definition
-│   ├── devcontainer.json       # Main configuration
-│   ├── Dockerfile              # Base image
-│   ├── PROXY_ARCHITECTURE.md   # Proxy documentation
-│   ├── docs/                  # Documentation (this folder)
+├── isolde-core/               # Core library
+│   ├── src/
+│   │   ├── templates.rs       # Template loading and processing
+│   │   ├── git.rs             # Git operations
+│   │   ├── config.rs          # Configuration and presets
+│   │   └── features.rs        # Feature copying
+│   └── Cargo.toml
+├── isolde-cli/                # CLI binary
+│   ├── src/
+│   │   └── main.rs            # Entry point with clap
+│   └── Cargo.toml
+├── .devcontainer/             # Dev Container for development
+│   ├── devcontainer.json      # Main configuration
+│   ├── Dockerfile             # Base image
 │   └── features/
-│       └── claude-code/         # Claude Code feature
-│           ├── devcontainer-feature.json
-│           ├── install.sh
-│           └── README.md
-├── core/                       # Shared components
-│   ├── features/               # Reusable features
-│   └── base-Dockerfile         # Base image
-├── templates/                  # Language templates
-├── scripts/                    # Project creation tools
-│   ├── isolde.sh
-│   └── lib/
-├── docs/                       # Template system docs
-├── .claude/                    # Claude Code settings
-├── CLAUDE.md                   # Project instructions
-└── README.md                   # Project overview
+│       └── claude-code/       # Claude Code feature
+├── core/                      # Shared components
+│   └── features/              # Reusable devcontainer features
+│       ├── claude-code/
+│       ├── proxy/
+│       └── plugin-manager/
+├── templates/                 # Language templates
+│   ├── python/
+│   ├── nodejs/
+│   ├── rust/
+│   ├── go/
+│   └── generic/
+├── mk/                        # Makefile modules
+├── docs/                      # Documentation
+├── tests/                     # E2E tests
+├── presets.yaml               # Preset configurations
+├── Cargo.toml                 # Workspace config
+├── CLAUDE.md                  # Project instructions
+└── README.md                  # Project overview
 ```
 
 ## Making Changes
 
-### 1. Modify Container Image
+### 1. Modify CLI Code
 
-**Dockerfile Changes:**
+**Rust Code Changes:**
 ```bash
-# Edit .devcontainer/Dockerfile
-vim .devcontainer/Dockerfile
+# Edit source files
+vim isolde-cli/src/main.rs
+vim isolde-core/src/templates.rs
 
-# Test build using Makefile
-make build
+# Build and test
+cargo build
+cargo test
+cargo clippy
 
-# Or use Docker directly
-docker build -t claude-code-dev .devcontainer
-```
-
-**Feature Changes:**
-```bash
-# Edit feature files
-vim .devcontainer/features/claude-code/install.sh
-
-# Rebuild container
-make build
-# Or in VS Code: F1 → Dev Containers: Rebuild Container
+# Run directly
+cargo run -- --help
 ```
 
 ### 2. Test Your Changes
 
 ```bash
-# Reopen in VS Code container or use CLI
-# In VS Code: F1 → Dev Containers: Rebuild Container
+# Build release binary
+make rust-build
 
-# Verify inside container (open terminal in VS Code)
-claude --version
-docker ps  # Test DinD
+# Test with a sample project
+./target/release/isolde init test-project --template python
+
+# Verify project structure
+ls -la ~/workspace/test-project/
 ```
 
 ### 3. Commit Standards
@@ -95,17 +105,23 @@ This project enforces **atomic commits**. See [CLAUDE.md](../../CLAUDE.md) for f
 
 **Pre-commit Verification:**
 ```bash
-# Build test - REQUIRED before committing
-make build
+# Format code
+make rust-fmt
+# or
+cargo fmt
 
-# Run all tests
-make test
+# Run linter
+make rust-lint
+# or
+cargo clippy
 
-# Environment verification
-# Rebuild container in VS Code: F1 → Dev Containers: Rebuild Container
-# Inside container terminal:
-echo $HTTP_PROXY
-echo $ANTHROPIC_AUTH_TOKEN
+# Run tests
+make rust-test
+# or
+cargo test
+
+# Build release
+make rust-build
 ```
 
 **Commit Message Format:**
@@ -128,52 +144,130 @@ git push origin feat/my-new-feature
 gh pr create --title "feat: add custom provider option"
 ```
 
-## Testing Strategy
+## Rust Development
 
-### Unit Testing
-
-Test individual components:
+### Building
 
 ```bash
-# Test installation script
-bash .devcontainer/features/claude-code/install.sh
+# Debug build (faster)
+cargo build
 
-# Test with different providers
-# Modify devcontainer.json provider option
-# Rebuild and verify
+# Release build (optimized)
+cargo build --release
+
+# Specific crate
+cargo build -p isolde-core
+cargo build -p isolde-cli
 ```
 
-### Integration Testing
-
-Test full container build:
+### Testing
 
 ```bash
-# Full build test
-docker build -t claude-code-dev .devcontainer
+# Run all tests
+cargo test
 
-# Runtime test - rebuild container in VS Code
-# F1 → Dev Containers: Rebuild Container
+# Run tests for specific crate
+cargo test -p isolde-core
 
-# Inside container:
-# - Verify Claude Code works
-# - Verify provider configuration
-# - Verify Docker-in-Docker
-# - Verify proxy settings
+# Run with output
+cargo test -- --nocapture
+
+# Run specific test
+cargo test test_template_loading
 ```
 
-### Provider Testing
+### Linting and Formatting
 
-Test with each provider:
+```bash
+# Format code
+cargo fmt
 
-| Provider | Test Command |
-|----------|--------------|
-| Anthropic | `echo $ANTHROPIC_AUTH_TOKEN` |
-| Z.ai | `echo $ANTHROPIC_BASE_URL` |
-| Custom | Check provider directory exists |
+# Check formatting
+cargo fmt -- --check
+
+# Run linter
+cargo clippy
+
+# Fix clippy warnings
+cargo clippy --fix
+```
+
+### Adding Dependencies
+
+```bash
+# Add runtime dependency
+cargo add serde -p isolde-core
+
+# Add dev dependency
+cargo add --dev assert_cmd -p isolde-cli
+
+# Update lockfile
+cargo check
+```
+
+## Template Development
+
+### Template Structure
+
+Each template directory contains:
+```
+templates/python/
+├── template-info.yaml         # Template metadata
+└── .devcontainer/
+    ├── devcontainer.json      # Container configuration
+    └── Dockerfile             # Base image
+```
+
+### Creating a New Template
+
+1. Create template directory:
+```bash
+mkdir templates/my-language
+```
+
+2. Create `template-info.yaml`:
+```yaml
+name: My Language
+description: Development environment for My Language
+version: 1.0.0
+lang_version_default: "1.0"
+features:
+  - name: tool1
+    description: Essential tool
+supported_versions:
+  - "1.0"
+  - "2.0"
+```
+
+3. Create `.devcontainer/devcontainer.json` with placeholders
+
+4. Test the template:
+```bash
+cargo run -- init test --template my-language
+```
+
+### Template Placeholders
+
+Supported placeholders in `devcontainer.json`:
+- `{{PROJECT_NAME}}` - Project name
+- `{{LANG_VERSION}}` - Language version
+- `{{FEATURES_CLAUDE_CODE}}` - Claude Code feature path
+- `{{FEATURES_PROXY}}` - Proxy feature path
+- `{{CLAUDE_VERSION}}` - Claude version
+- `{{CLAUDE_PROVIDER}}` - Claude provider
+- `{{HTTP_PROXY}}` - HTTP proxy URL
+- `{{HTTPS_PROXY}}` - HTTPS proxy URL
 
 ## Code Style
 
-### Shell Scripts (install.sh)
+### Rust Code
+
+- Use `cargo fmt` for formatting
+- Follow Rust naming conventions
+- Use `Result<T, E>` for error handling
+- Document public APIs with rustdoc
+
+### Shell Scripts (feature install.sh)
 
 - Use `set -euo pipefail` for error handling
 - Quote variables: `"$VAR"` not `$VAR`
@@ -184,7 +278,6 @@ Test with each provider:
 
 - Use 2-space indentation
 - Trailing commas where allowed
-- Comments in JSON5 if needed
 - Validate with `jq` or VS Code
 
 ### Documentation
@@ -194,67 +287,30 @@ Test with each provider:
 - Code fences with language
 - Relative links: `[Link](other-file.md)`
 
-## Testing
-
-For comprehensive testing documentation, see [testing.md](testing.md).
-
-### Quick Test Reference
-
-The project uses manual testing with VS Code Dev Containers:
-
-**Build Test:**
-```bash
-# Test container builds
-docker build -t claude-code-dev .devcontainer
-```
-
-**Runtime Test:**
-```bash
-# Rebuild container in VS Code: F1 → Dev Containers: Rebuild Container
-# Then open terminal and verify:
-claude --version
-echo $ANTHROPIC_AUTH_TOKEN
-docker ps
-```
-
-**Script Syntax Test:**
-```bash
-# Test shell scripts (if shellcheck is installed)
-shellcheck scripts/isolde.sh
-shellcheck scripts/lib/*.sh
-shellcheck .devcontainer/features/claude-code/install.sh
-```
-
-**JSON Lint Test:**
-```bash
-# Validate JSON files (if jq is available)
-jq < .devcontainer/devcontainer.json
-jq < .devcontainer/features/claude-code/devcontainer-feature.json
-jq < presets.yaml  # Note: this is YAML
-```
-
 ## Common Tasks
 
-### Adding a New Provider Option
+### Adding a New CLI Command
 
-1. Update `devcontainer-feature.json`:
-```json
-{
-  "options": [
-    {
-      "id": "provider",
-      "type": "string",
-      "default": "anthropic",
-      "description": "LLM provider name"
-    }
-  ]
+1. Edit `isolde-cli/src/main.rs`:
+```rust
+#[derive(Subcommand)]
+enum Commands {
+    #[command(name = "newcommand")]
+    NewCommand {
+        #[arg(short, long)]
+        option: String,
+    },
+}
+
+// Handle the command
+Commands::NewCommand { option } => {
+    // Your implementation
 }
 ```
 
-2. Update `install.sh` to handle provider
-3. Update documentation in `docs/devcontainer/providers.md`
-4. Test with provider configured
-5. Commit: `feat: add support for new-provider`
+2. Add corresponding function in `isolde-core` if needed
+3. Test with: `cargo run -- newcommand --option value`
+4. Update documentation
 
 ### Adding a New Feature
 
@@ -284,33 +340,51 @@ docker exec -it claude-code-dev bash
 docker exec claude-code-dev env | sort
 ```
 
+## Testing
+
+For comprehensive testing documentation, see [testing.md](testing.md).
+
+### Quick Test Reference
+
+```bash
+# Run all tests
+make test
+
+# Run specific test category
+make test-build     # Container builds
+make test-config    # Environment variables
+make test-runtime   # Docker-in-Docker
+make test-providers # Provider configuration
+make test-e2e       # E2E tests
+```
+
 ## Release Process
 
 ### Version Bump
 
-Update version in relevant files:
-- `core/features/claude-code/devcontainer-feature.json`
+Update version in:
+- `isolde-cli/Cargo.toml`
+- `isolde-core/Cargo.toml`
 - `README.md` if needed
-- `docs/devcontainer/setup.md` if user-facing
 
 ### Changelog
 
 Maintain `CHANGELOG.md` with entries:
 ```markdown
-## [1.2.0] - 2025-02-13
+## [2.0.0] - 2025-02-20
 ### Added
-- Multi-provider support
-- Proxy configuration options
+- Rust CLI implementation
+- Plugin manager support
 
-### Fixed
-- Docker socket permission issues
+### Changed
+- Migrated from shell scripts to Rust
 ```
 
 ### Tag Release
 
 ```bash
-git tag -a v1.2.0 -m "Release v1.2.0"
-git push origin v1.2.0
+git tag -a v2.0.0 -m "Release v2.0.0"
+git push origin v2.0.0
 ```
 
 ## Review Guidelines
@@ -318,10 +392,9 @@ git push origin v1.2.0
 ### Code Review Checklist
 
 - [ ] Build succeeds without errors
-- [ ] Pre-commit verification completed
+- [ ] Tests pass locally
 - [ ] Commit messages follow format
 - [ ] Documentation updated
-- [ ] Tests pass locally
 - [ ] No unrelated changes included
 - [ ] Atomic commits maintained
 
@@ -330,7 +403,7 @@ git push origin v1.2.0
 - [ ] English language used
 - [ ] Code examples tested
 - [ ] Links are valid
-- [ ] Architect section accurate
+- [ ] Architecture section accurate
 - [ ] Troubleshooting covers common issues
 
 ## Getting Help
@@ -346,12 +419,12 @@ git push origin v1.2.0
 - [Dev Containers Spec](https://devcontainers.github.io/implementors/spec/)
 - [Claude Code Docs](https://code.claude.com/docs)
 - [Docker Documentation](https://docs.docker.com/)
+- [Rust Documentation](https://www.rust-lang.org/docs)
 
 ### Reporting Issues
 
 When reporting issues, include:
-1. `devcontainer.json` configuration
-2. Provider being used
-3. Error messages or logs
-4. Steps to reproduce
-5. Environment details (OS, Docker version)
+1. Command that failed
+2. Error messages or logs
+3. Steps to reproduce
+4. Environment details (OS, Rust version, Docker version)

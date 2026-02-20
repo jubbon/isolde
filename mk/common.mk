@@ -7,9 +7,8 @@ IMAGE_NAME ?= claude-code-dev
 TEST_IMAGE_PREFIX = claude-code-dev-test
 
 # Paths
-DEVCONTAINER_DIR = images/devcontainer
+DEVCONTAINER_DIR = .devcontainer
 E2E_DIR = tests/e2e
-SCRIPTS_DIR = scripts
 
 # Docker
 DOCKER_BUILDKIT = 1
@@ -62,14 +61,8 @@ help: ## Show this help message
 	@echo "  make rust-install     - Install via cargo to ~/.cargo/bin/"
 	@echo "  make rust-info        - Show Rust build information"
 	@echo ""
-	@echo "$(ARROW) $(GREEN)Docker Build targets (v1):$(RESET)"
-	@echo "  make build          - Build devcontainer image"
-	@echo "  make build-provider - Build with specific provider (PROVIDER=name)"
-	@echo "  make rebuild        - Force rebuild without cache"
-	@echo ""
 	@echo "$(ARROW) $(GREEN)Lint targets:$(RESET)"
 	@echo "  make lint           - Run all lint checks (including Rust)"
-	@echo "  make lint-shell     - Check shell scripts with shellcheck"
 	@echo "  make lint-json      - Validate JSON files with jq"
 	@echo "  make lint-bats      - Run Bats unit tests"
 	@echo ""
@@ -79,7 +72,7 @@ help: ## Show this help message
 	@echo "  make test-config    - Test environment configuration"
 	@echo "  make test-runtime   - Test Docker-in-Docker"
 	@echo "  make test-providers - Test provider configuration"
-	@echo "  make test-e2e       - Run E2E tests (Docker-based)"
+	@echo "  make test-e2e       - Run E2E tests (Rust CLI)"
 	@echo "  make test-e2e-all   - Run E2E tests including CLI"
 	@echo "  make test-e2e-cli   - Run E2E CLI tests only"
 	@echo ""
@@ -91,7 +84,6 @@ help: ## Show this help message
 	@echo ""
 	@echo "$(ARROW) $(GREEN)Installation targets:$(RESET)"
 	@echo "  make install        - Install Rust binary (via cargo)"
-	@echo "  make install-v1     - Install shell script version to ~/.isolde/"
 	@echo "  make uninstall      - Remove Isolde installation"
 	@echo "  make install-info   - Show installation status"
 	@echo ""

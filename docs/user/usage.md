@@ -5,8 +5,7 @@
 The simplest way to create a project is using the interactive wizard:
 
 ```bash
-# From the repository root
-./scripts/isolde.sh
+isolde init
 ```
 
 The wizard will guide you through:
@@ -21,25 +20,24 @@ The wizard will guide you through:
 ### Basic Usage
 
 ```bash
-# From the repository root
 # Create a project with default template (generic)
-./scripts/isolde.sh my-project
+isolde init my-project
 
 # Create with a specific template
-./scripts/isolde.sh my-app --template=python
+isolde init my-app --template python
 
 # Create with a preset
-./scripts/isolde.sh ml-app --preset=python-ml
+isolde init ml-app --preset python-ml
 ```
 
 ### Language Version
 
 ```bash
 # Python 3.12
-./scripts/isolde.sh my-app --template=python --lang-version=3.12
+isolde init my-app --template python --lang-version 3.12
 
 # Node.js 20
-./scripts/isolde.sh my-api --template=nodejs --lang-version=20
+isolde init my-api --template nodejs --lang-version 20
 ```
 
 ### Workspace Location
@@ -47,33 +45,33 @@ The wizard will guide you through:
 By default, projects are created in `~/workspace`. Use `--workspace` to specify a different location:
 
 ```bash
-./scripts/isolde.sh my-app --template=python --workspace=~/projects
+isolde init my-app --template python --workspace ~/projects
 ```
 
 ### Claude Code Configuration
 
 ```bash
 # Specific version
-./scripts/isolde.sh my-app --template=python --claude-version=1.2.41
+isolde init my-app --template python --claude-version 1.2.41
 
 # Custom provider
-./scripts/isolde.sh my-app --template=python --claude-provider=z.ai
+isolde init my-app --template python --claude-provider z.ai
 
 # Custom models
-./scripts/isolde.sh my-app --template=python --claude-models="haiku:glm-4.5-air,sonnet:glm-4.7"
+isolde init my-app --template python --claude-models "haiku:glm-4.5-air,sonnet:glm-4.7"
 ```
 
 ### Proxy Configuration
 
 ```bash
 # With proxy
-./scripts/isolde.sh my-app --template=python --proxy=http://proxy.example.com:8080
+isolde init my-app --template python --proxy http://proxy.example.com:8080
 
 # Separate HTTP/HTTPS proxies
-./scripts/isolde.sh my-app --template=python --http-proxy=http://proxy:8080 --https-proxy=https://proxy:8443
+isolde init my-app --template python --http-proxy http://proxy:8080 --https-proxy https://proxy:8443
 
 # Disable proxy
-./scripts/isolde.sh my-app --template=python --no-proxy
+isolde init my-app --template python --no-proxy
 ```
 
 ### Auto-Confirm
@@ -81,17 +79,17 @@ By default, projects are created in `~/workspace`. Use `--workspace` to specify 
 Skip confirmation prompts:
 
 ```bash
-./scripts/isolde.sh my-app --template=python --yes
+isolde init my-app --template python --yes
 ```
 
 ## Listing Options
 
 ```bash
 # List available templates
-./scripts/isolde.sh --list-templates
+isolde list-templates
 
 # List available presets
-./scripts/isolde.sh --list-presets
+isolde list-presets
 ```
 
 ## Environment Variables
@@ -99,7 +97,7 @@ Skip confirmation prompts:
 You can set defaults via environment variables:
 
 ```bash
-export WORKSPACE=~/projects
+export ISOLDE_WORKSPACE=~/projects
 export CLAUDE_VERSION=latest
 export CLAUDE_PROVIDER=z.ai
 export HTTP_PROXY=http://proxy:8080
@@ -136,6 +134,20 @@ git pull origin main
 
 Then rebuild the container.
 
+## Sync Command
+
+The `isolde sync` command updates the devcontainer with the latest changes from the template:
+
+```bash
+cd ~/workspace/my-project
+isolde sync
+```
+
+This will:
+- Pull latest template changes
+- Update features while preserving your customizations
+- Rebuild the container if needed
+
 ## Troubleshooting
 
 ### Container Won't Start
@@ -169,7 +181,7 @@ echo $NO_PROXY
 
 ## Advanced: Custom Presets
 
-Create custom presets in `~/.devcontainer-presets.yaml`:
+Create custom presets in `~/.isolde-presets.yaml`:
 
 ```yaml
 presets:
@@ -186,5 +198,5 @@ presets:
 Then use it:
 
 ```bash
-./scripts/isolde.sh my-app --preset=my-custom
+isolde init my-app --preset my-custom
 ```

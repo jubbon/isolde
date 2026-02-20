@@ -15,7 +15,42 @@ This document describes the architecture of the Isolde (ISOLated Development Env
           └──────────────────┼──────────────────┘
                              ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Dev Container                              │
+│                    Rust CLI (isolde)                          │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │              isolde-cli (clap parser)                 │  │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────────────┐ │  │
+│  │  │   init   │  │   sync   │  │  list-templates  │ │  │
+│  │  └──────────┘  └──────────┘  └──────────────────┘ │  │
+│  └────────────────────────────────────────────────────────┘  │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │              isolde-core (business logic)             │  │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌─────────────┐ │ │
+│  │  │  templates   │  │     git      │  │   config    │ │ │
+│  │  │    module    │  │   module     │  │   module    │ │ │
+│  │  └──────────────┘  └──────────────┘  └─────────────┘ │ │
+│  └────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+          │
+          ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Created Project                             │
+│  ┌─────────────────────┐    ┌────────────────────────────────┐ │
+│  │   project/          │    │   .devcontainer/               │ │
+│  │   (user code)       │    │   (container config)           │ │
+│  │                     │    │                                │ │
+│  │   └─ .git/          │    │   ├─ devcontainer.json         │ │
+│  │                     │    │   ├─ Dockerfile                │ │
+│  └─────────────────────┘    │   ├─ features/                 │ │
+│                             │   │   ├─ claude-code/          │ │
+│                             │   │   ├─ proxy/                │ │
+│                             │   │   └─ plugin-manager/       │ │
+│                             │   └─ .git/                     │ │
+│                             └────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+          │
+          ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Dev Container                               │
 │  ┌────────────────────────────────────────────────────────┐  │
 │  │          Claude Code CLI (user workspace)            │  │
 │  │  ┌──────────┐  ┌──────────┐  ┌──────────────────┐ │  │
@@ -37,7 +72,64 @@ This document describes the architecture of the Isolde (ISOLated Development Env
 
 ## Components
 
-### 1. Dev Container Configuration
+### 1. Rust CLI
+
+**Location:** `isolde-cli/` and `isolde-core/`
+
+#### isolde-cli
+
+| File | Purpose |
+|------|---------|
+| `src/main.rs` | Entry point with clap command-line argument parsing |
+| `Cargo.toml` | CLI dependencies and metadata |
+
+**Key Responsibilities:**
+- Parse command-line arguments
+- Display help and usage information
+- Delegate to isolde-core for business logic
+- Handle error reporting
+
+#### isolde-core
+
+| Module | Purpose |
+|--------|---------|
+| `templates.rs` | Template loading, validation, substitution, copying |
+| `git.rs` | Dual git repo initialization (project + devcontainer) |
+| `config.rs` | Configuration and preset loading from YAML |
+| `features.rs` | Feature copying and management |
+
+**Key Responsibilities:**
+- Template processing engine
+- Git operations for dual repository pattern
+- Configuration management
+- Feature file handling
+
+### 2. Template System
+
+**Location:** `templates/`
+
+Each template contains:
+```
+templates/python/
+├── template-info.yaml         # Template metadata
+└── .devcontainer/
+    ├── devcontainer.json      # Container configuration with placeholders
+    └── Dockerfile             # Base image definition
+```
+
+### 3. Core Features
+
+**Location:** `core/features/`
+
+| Feature | Purpose |
+|---------|---------|
+| `claude-code/` | Claude Code CLI installation with multi-provider support |
+| `proxy/` | HTTP proxy configuration for enterprise networks |
+| `plugin-manager/` | Plugin activation and management |
+
+Features are **copied** (not symlinked) to each project because Docker's build context cannot follow symlinks outside the build directory.
+
+### 4. Dev Container Configuration
 
 **Location:** `.devcontainer/`
 
@@ -48,101 +140,40 @@ This document describes the architecture of the Isolde (ISOLated Development Env
 | `PROXY_ARCHITECTURE.md` | Proxy architecture documentation |
 | `docs/` | Devcontainer-specific documentation |
 
-**Key Responsibilities:**
-- Define container image and build arguments
-- Configure volume mounts for workspace and Claude Code config
-- Set up environment variables (proxy, models)
-- Specify custom features
-
-### 2. Claude Code Feature
-
-**Location:** `core/features/claude-code/` (copied to `.devcontainer/features/` in projects)
-
-| File | Purpose |
-|------|---------|
-| `devcontainer-feature.json` | Feature definition and options schema |
-| `install.sh` | Installation script with multi-provider support |
-| `README.md` | Feature-specific documentation |
-
-**Key Responsibilities:**
-- Install Claude Code CLI
-- Configure provider-specific settings
-- Set up bash integration for provider switching
-- Handle user mapping for non-root containers
-
-**Provider Loading Flow:**
-```
-install.sh (build time)
-    │
-    ▼
-Creates ~/.config/devcontainer/provider
-    │
-    ▼
-postCreateCommand updates ~/.bashrc
-    │
-    ▼
-~/.bashrc sources configure_claude_provider()
-    │
-    ▼
-Each shell: loads from ~/.claude/providers/{provider}/
-    ├── auth → ANTHROPIC_AUTH_TOKEN
-    └── base_url → ANTHROPIC_BASE_URL
-```
-
-### 3. Provider System
-
-**Location:** `~/.claude/providers/{provider}/`
-
-Each provider directory contains:
-
-```
-~/.claude/providers/
-├── anthropic/          (optional, uses ~/.claude/auth by default)
-├── z.ai/
-│   ├── auth            # API token
-│   └── base_url        # API endpoint
-└── custom/
-    ├── auth
-    └── base_url
-```
-
-**Configuration Loading:**
-```bash
-configure_claude_provider() {
-    local provider=$1
-    local provider_dir="$HOME/.claude/providers/$provider"
-
-    if [ -z "$provider" ]; then
-        # Use default Anthropic auth
-        export ANTHROPIC_AUTH_TOKEN="$(cat "$HOME/.claude/auth")"
-    else
-        # Load from provider directory
-        export ANTHROPIC_AUTH_TOKEN="$(cat "$provider_dir/auth")"
-        [ -f "$provider_dir/base_url" ] && \
-            export ANTHROPIC_BASE_URL="$(cat "$provider_dir/base_url")"
-    fi
-}
-```
-
-### 4. Workspace Integration
-
-**Mounts Configuration:**
-```json
-"mounts": [
-  // Claude Code config (shared across containers)
-  "source=${localEnv:HOME}/.claude,target=/home/${localEnv:USER}/.claude,type=bind",
-
-  // Docker socket for DinD
-  "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
-]
-```
-
-**Git Worktrees:**
-- Stored in `.worktrees/` directory
-- Isolated development branches
-- Separate from main workspace
-
 ## Data Flow
+
+### Template Application Flow
+
+```
+isolde init my-app --template python
+    │
+    ▼
+1. CLI parses arguments (clap)
+    │
+    ▼
+2. isolde-core::config loads template-info.yaml
+    │
+    ▼
+3. isolde-core::templates validates template
+    │
+    ▼
+4. isolde-core::features copies core/features/* to .devcontainer/features/
+    │
+    ▼
+5. isolde-core::templates applies substitutions to devcontainer.json
+    │   - {{PROJECT_NAME}}
+    │   - {{LANG_VERSION}}
+    │   - {{FEATURES_CLAUDE_CODE}}
+    │   - etc.
+    │
+    ▼
+6. isolde-core::git initializes dual git repositories
+    │   - project/.git/
+    │   - .devcontainer/.git/
+    │
+    ▼
+7. Project ready at ~/workspace/my-app/
+```
 
 ### Container Startup Flow
 
@@ -165,50 +196,118 @@ configure_claude_provider() {
 6. Claude Code CLI ready with configured provider
 ```
 
-### API Request Flow
+### Provider Configuration Flow
 
 ```
-Claude Code CLI
+install.sh (build time)
     │
     ▼
-Reads ANTHROPIC_AUTH_TOKEN
+Creates ~/.config/devcontainer/provider
     │
     ▼
-Reads ANTHROPIC_BASE_URL (optional)
+postCreateCommand updates ~/.bashrc
     │
     ▼
-Makes API request to provider endpoint
+~/.bashrc sources configure_claude_provider()
     │
     ▼
-[HTTP_PROXY] ────> Corporate Proxy ────> LLM Provider API
+Each shell: loads from ~/.claude/providers/{provider}/
+    ├── auth → ANTHROPIC_AUTH_TOKEN
+    └── base_url → ANTHROPIC_BASE_URL
 ```
 
 ## Design Decisions
+
+### Why Rust?
+
+The v2 implementation uses Rust instead of shell scripts for:
+- **Type Safety**: Compile-time error checking prevents common bugs
+- **Performance**: Faster execution, especially for template processing
+- **Maintainability**: Easier to refactor and extend
+- **Distribution**: Single binary distribution via cargo
+- **Testing**: Built-in test framework with good tooling
+
+### Why Dual Git Repositories?
+
+Created projects have **two separate git repositories**:
+- `project/` - User code repository
+- `.devcontainer/` - Devcontainer configuration repository
+
+This separation allows:
+- Independent version control of code vs. devcontainer config
+- Easy updates to devcontainer from template repository
+- Clean git history for user code
+- Separate release cycles for code and infrastructure
+
+### Why Copy Features Instead of Symlinks?
+
+Docker's build context cannot follow symlinks outside the build directory. Features must be copied into each project's `.devcontainer/features/` directory.
 
 ### Why ~/.config/devcontainer/provider?
 
 The provider name is stored in `~/.config/devcontainer/` (container-local) rather than `~/.claude` to avoid race conditions when `~/.claude` is mounted between multiple containers.
 
-### Why ~/.bashrc not /etc/profile.d?
+## Code Organization
 
-VS Code terminals use non-login shells, which source `~/.bashrc` but not `/etc/profile.d`. Storing provider configuration in `~/.bashrc` ensures it's available in all interactive sessions.
+### Module Boundaries
 
-### Why Separate Proxy Scopes?
+```
+isolde-cli (presentation layer)
+    │
+    │ depends on
+    ▼
+isolde-core (business logic layer)
+    ├── templates (template processing)
+    ├── git (repository operations)
+    ├── config (configuration management)
+    └── features (feature handling)
+    │
+    │ depends on
+    ▼
+templates/, core/features/ (data layer)
+```
 
-Proxy settings are separated to ensure they're used only where needed:
+### Error Handling
 
-1. **Dockerfile Build** - No proxy (direct Debian package downloads)
-2. **Feature Installation** - With proxy (Claude Code download)
-3. **Container Runtime** - With proxy (API calls)
+All modules use `Result<T, E>` for error handling:
+```rust
+pub type Result<T> = std::result::Result<T, Error>;
 
-See [PROXY_ARCHITECTURE.md](../../.devcontainer/PROXY_ARCHITECTURE.md) for details.
+#[derive(Debug)]
+pub enum Error {
+    TemplateNotFound(String),
+    InvalidTemplate(String),
+    GitError(git2::Error),
+    IoError(std::io::Error),
+}
+```
 
-### Why Docker-in-Docker?
+## Extension Points
 
-Mounting `/var/run/docker.sock` enables:
-- Building containers within the dev container
-- Running docker commands without sudo
-- Testing Docker-based projects in isolation
+### Adding New Templates
+
+Create a new directory under `templates/` with:
+- `template-info.yaml` - Template metadata
+- `.devcontainer/devcontainer.json` - Container configuration
+- `.devcontainer/Dockerfile` - Base image
+
+### Adding New Features
+
+Create features under `core/features/` following the [Dev Containers Feature specification](https://devcontainers.github.io/implementors/features/).
+
+### Adding New CLI Commands
+
+Add new subcommands to `isolde-cli/src/main.rs`:
+```rust
+#[derive(Subcommand)]
+enum Commands {
+    #[command(name = "newcommand")]
+    NewCommand {
+        #[arg(short, long)]
+        option: String,
+    },
+}
+```
 
 ## Security Considerations
 
@@ -228,33 +327,3 @@ Mounting `/var/run/docker.sock` enables:
 
 - Proxy URLs in `devcontainer.json` (clear text in project)
 - Consider environment-specific overrides for sensitive proxy credentials
-
-## Extension Points
-
-### Adding New Features
-
-Create features under `core/features/` following the [Dev Containers Feature specification](https://devcontainers.github.io/implementors/features/).
-
-### Adding New Providers
-
-1. Create provider directory: `~/.claude/providers/{provider}/`
-2. Add `auth` file with API token
-3. Add `base_url` file with API endpoint (optional)
-4. Configure in project's `devcontainer.json`:
-
-```json
-{
-  "features": {
-    "./features/claude-code": {
-      "provider": "new-provider"
-    }
-  }
-}
-```
-
-### Custom Base Images
-
-Modify the template's Dockerfile or create a custom base image in `core/base-Dockerfile` to add:
-- System dependencies
-- Base image changes
-- Global configuration
