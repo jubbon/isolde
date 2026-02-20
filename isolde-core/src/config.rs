@@ -154,17 +154,19 @@ pub struct ClaudeConfig {
 impl ClaudeConfig {
     /// Validate Claude configuration
     fn validate(&self) -> Result<()> {
-        let valid_providers = ["anthropic", "openai", "bedrock", "vertex", "azure"];
-        if !valid_providers.contains(&self.provider.as_str()) {
+        if !VALID_CLAUDE_PROVIDERS.contains(&self.provider.as_str()) {
             return Err(Error::InvalidTemplate(format!(
                 "Invalid Claude provider '{}'. Must be one of: {}",
                 self.provider,
-                valid_providers.join(", ")
+                VALID_CLAUDE_PROVIDERS.join(", ")
             )));
         }
         Ok(())
     }
 }
+
+/// Valid Claude API providers
+const VALID_CLAUDE_PROVIDERS: &[&str] = &["anthropic", "openai", "bedrock", "vertex", "azure"];
 
 fn default_claude_version() -> String {
     "latest".to_string()
@@ -600,9 +602,7 @@ proxy:
 
     #[test]
     fn test_valid_claude_providers() {
-        let valid_providers = ["anthropic", "openai", "bedrock", "vertex", "azure"];
-
-        for provider in valid_providers {
+        for provider in VALID_CLAUDE_PROVIDERS {
             let yaml = format!(r#"
 name: test
 version: 1.0.0

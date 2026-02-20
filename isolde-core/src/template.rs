@@ -203,22 +203,21 @@ fn render_template_simple(template: &str, context: &TemplateContext) -> String {
     result = result.replace("{{proxy_no_proxy}}", proxy_no_proxy);
 
     // Plugin lists
-    let activate_list = context
-        .claude_activate_plugins
-        .iter()
-        .map(|s| format!("\"{}\"", s))
-        .collect::<Vec<_>>()
-        .join(", ");
-    let deactivate_list = context
-        .claude_deactivate_plugins
-        .iter()
-        .map(|s| format!("\"{}\"", s))
-        .collect::<Vec<_>>()
-        .join(", ");
+    let activate_list = format_plugin_list(&context.claude_activate_plugins);
+    let deactivate_list = format_plugin_list(&context.claude_deactivate_plugins);
     result = result.replace("{{claude_activate_plugins}}", &activate_list);
     result = result.replace("{{claude_deactivate_plugins}}", &deactivate_list);
 
     result
+}
+
+/// Format a list of plugin names as a JSON array string
+fn format_plugin_list(plugins: &[String]) -> String {
+    plugins
+        .iter()
+        .map(|s| format!("\"{}\"", s))
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 /// Template context for rendering

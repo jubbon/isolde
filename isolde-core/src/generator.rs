@@ -97,7 +97,7 @@ impl Generator {
     /// Returns a `Result` containing a `GenerateReport` or an `Error`
     pub fn generate(&self, output_dir: &Path) -> Result<GenerateReport> {
         let mut files_created = Vec::new();
-        let mut files_modified = Vec::new();
+        let files_modified = Vec::new();
 
         // Create workspace directory
         let workspace_dir = output_dir.join(&self.config.workspace.dir);
@@ -253,7 +253,7 @@ impl Generator {
         let mut content = self.get_base_devcontainer_template()?;
 
         // Build substitution map
-        let mut substitutions = self.build_substitution_map();
+        let substitutions = self.build_substitution_map();
 
         // Apply each substitution
         for (key, value) in &substitutions {
@@ -426,24 +426,24 @@ impl Generator {
 
         // Runtime language version (if available)
         if let Some(ref runtime) = self.config.runtime {
-            match runtime.language.as_str() {
-                "python" => {
-                    map.insert("PYTHON_VERSION".to_string(), runtime.version.clone());
-                }
-                "node" | "nodejs" | "javascript" => {
-                    map.insert("NODE_VERSION".to_string(), runtime.version.clone());
-                }
-                "rust" => {
-                    map.insert("RUST_VERSION".to_string(), runtime.version.clone());
-                }
-                "go" | "golang" => {
-                    map.insert("GO_VERSION".to_string(), runtime.version.clone());
-                }
-                _ => {}
+            if let Some(version_key) = Self::language_to_version_key(runtime.language.as_str()) {
+                map.insert(version_key, runtime.version.clone());
             }
         }
 
         map
+    }
+
+    /// Map a language name to its version variable name
+    fn language_to_version_key(language: &str) -> Option<String> {
+        let key = match language {
+            "python" => "PYTHON_VERSION",
+            "node" | "nodejs" | "javascript" => "NODE_VERSION",
+            "rust" => "RUST_VERSION",
+            "go" | "golang" => "GO_VERSION",
+            _ => return None,
+        };
+        Some(key.to_string())
     }
 
     /// Render Dockerfile content

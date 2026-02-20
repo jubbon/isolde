@@ -62,22 +62,13 @@ impl Marketplace {
             ));
         }
 
-        // Extract name from GitHub URL
-        let name = if url.contains("github.com/") {
-            // Extract repo name from GitHub URL
-            // Format: https://github.com/owner/repo
-            url.split('/')
-                .last()
-                .unwrap_or("unknown")
-                .to_string()
-        } else {
-            // Use last part of URL as name
-            url.split('/')
-                .filter(|s| !s.is_empty())
-                .last()
-                .unwrap_or("unknown")
-                .to_string()
-        };
+        // Extract the last non-empty segment of the URL as the name
+        let name = url
+            .split('/')
+            .filter(|s| !s.is_empty())
+            .last()
+            .unwrap_or("unknown")
+            .to_string();
 
         Ok(Marketplace {
             name,
@@ -265,12 +256,6 @@ impl Plugin {
             .map(|tags| tags.iter().any(|t| t.eq_ignore_ascii_case(tag)))
             .unwrap_or(false)
     }
-}
-
-/// Internal structure for deserializing plugin lists
-#[derive(Debug, Serialize, Deserialize)]
-struct PluginList {
-    plugins: Vec<Plugin>,
 }
 
 #[cfg(test)]
