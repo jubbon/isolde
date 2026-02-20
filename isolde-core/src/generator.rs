@@ -60,7 +60,7 @@ pub struct Generator {
     /// Configuration loaded from isolde.yaml
     config: Config,
     /// Isolde installation root (for templates and features)
-    isolde_root: PathBuf,
+    pub(crate) isolde_root: PathBuf,
     /// Git runner (allows stubbing in tests)
     git_runner: Box<dyn GitRunner>,
 }
@@ -588,7 +588,7 @@ USER ${USERNAME}
     }
 
     /// Copy a directory recursively
-    fn copy_dir_recursive(&self, src: &Path, dst: &Path) -> Result<()> {
+    pub(crate) fn copy_dir_recursive(&self, src: &Path, dst: &Path) -> Result<()> {
         fs::create_dir_all(dst)?;
 
         let entries = fs::read_dir(src)
@@ -932,5 +932,47 @@ runtime:
         assert!(!rendered.contains("{{PROJECT_NAME}}"));
         assert!(rendered.contains("\"haiku\":"));
         assert!(rendered.contains("\"sonnet\":"));
+    }
+
+    #[test]
+    fn test_copy_dir_recursive() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let src = temp_dir.path().join("src");
+        let dst = temp_dir.path().join("dst");
+
+        // Create source structure
+        fs::create_dir_all(&src).unwrap();
+        fs::write(src.join("file1.txt"), "content1").unwrap();
+        fs::create_dir_all(src.join("subdir")).unwrap();
+        fs::write(src.join("subdir/file2.txt"), "content2").unwrap();
+
+        let config = create_test_config();
+        let generator = Generator::new(config).unwrap();
+
+        generator.copy_dir_recursive(&src, &dst).unwrap();
+
+        assert!(dst.exists());
+        assert!(dst.join("file1.txt").exists());
+        assert!(dst.join("subdir/file2.txt").exists());
+    }
+
+    #[test]
+    fn test_copy_core_features_with_temp_dir() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let features_dir = temp_dir.path().join("features");
+
+        // Setup mock isolde root
+        let mock_root = temp_dir.path().join("isolde");
+        fs::create_dir_all(mock_root.join("core/features/feature1")).unwrap();
+        fs::write(mock_root.join("core/features/feature1/install.sh"), "#!/bin/bash").unwrap();
+
+        let config = create_test_config();
+        let mut generator = Generator::new(config).unwrap();
+        generator.isolde_root = mock_root;
+
+        let copied = generator.copy_core_features(&features_dir).unwrap();
+
+        assert!(!copied.is_empty());
+        assert!(features_dir.join("feature1").exists());
     }
 }
