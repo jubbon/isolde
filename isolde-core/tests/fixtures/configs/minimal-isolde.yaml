@@ -1,0 +1,9 @@
+name: minimal-test
+version: 0.1.0
+workspace:
+  dir: .
+docker:
+  image: ubuntu:latest
+  build_args: []
+claude:
+  provider: anthropic
