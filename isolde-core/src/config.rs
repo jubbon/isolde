@@ -618,4 +618,46 @@ claude:
             assert!(result.is_ok(), "Provider {} should be valid", provider);
         }
     }
+
+    #[test]
+    fn test_from_file_not_found_error() {
+        let result = Config::from_file(Path::new("/nonexistent/isolde.yaml"));
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_from_file_invalid_yaml_error() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let invalid_yaml = temp_dir.path().join("invalid.yaml");
+
+        std::fs::write(&invalid_yaml, "name: value\n  bad indent: broken: yaml:").unwrap();
+
+        let result = Config::from_file(&invalid_yaml);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_template_info_default_values() {
+        let yaml = r#"
+name: Test
+description: Test template
+version: "1.0"
+lang_version_default: "1.0"
+"#;
+        let info: TemplateInfo = serde_yaml::from_str(yaml).unwrap();
+
+        assert!(info.features.is_empty());
+        assert!(info.supported_versions.is_empty());
+    }
+
+    #[test]
+    fn test_plugin_config_activate_default_true() {
+        let yaml = r#"
+marketplace: omc
+name: test-plugin
+"#;
+        let plugin: PluginConfig = serde_yaml::from_str(yaml).unwrap();
+
+        assert_eq!(plugin.activate, true);
+    }
 }

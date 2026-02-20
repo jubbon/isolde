@@ -9,6 +9,34 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+/// Trait for running git commands - allows stubbing in tests
+pub trait GitRunner {
+    /// Run a git command in the specified directory
+    fn run_git(&self, dir: &Path, args: &[&str]) -> Result<()>;
+}
+
+/// Default implementation using real git
+pub struct RealGitRunner;
+
+impl GitRunner for RealGitRunner {
+    fn run_git(&self, dir: &Path, args: &[&str]) -> Result<()> {
+        use std::process::Command;
+
+        let result = Command::new("git")
+            .current_dir(dir)
+            .args(args)
+            .output()
+            .map_err(|e| Error::Other(format!("Failed to execute git: {}", e)))?;
+
+        if !result.status.success() {
+            let stderr = String::from_utf8_lossy(&result.stderr);
+            return Err(Error::Other(format!("Git command failed: {}", stderr)));
+        }
+
+        Ok(())
+    }
+}
+
 /// Report generated from a dry run
 #[derive(Debug, Clone)]
 pub struct DryRunReport {
@@ -32,7 +60,9 @@ pub struct Generator {
     /// Configuration loaded from isolde.yaml
     config: Config,
     /// Isolde installation root (for templates and features)
-    isolde_root: PathBuf,
+    pub(crate) isolde_root: PathBuf,
+    /// Git runner (allows stubbing in tests)
+    git_runner: Box<dyn GitRunner>,
 }
 
 impl Generator {
@@ -53,6 +83,7 @@ impl Generator {
         Ok(Self {
             config,
             isolde_root,
+            git_runner: Box::new(RealGitRunner),
         })
     }
 
@@ -435,7 +466,7 @@ impl Generator {
     }
 
     /// Map a language name to its version variable name
-    fn language_to_version_key(language: &str) -> Option<String> {
+    pub fn language_to_version_key(language: &str) -> Option<String> {
         let key = match language {
             "python" => "PYTHON_VERSION",
             "node" | "nodejs" | "javascript" => "NODE_VERSION",
@@ -557,7 +588,7 @@ USER ${USERNAME}
     }
 
     /// Copy a directory recursively
-    fn copy_dir_recursive(&self, src: &Path, dst: &Path) -> Result<()> {
+    pub(crate) fn copy_dir_recursive(&self, src: &Path, dst: &Path) -> Result<()> {
         fs::create_dir_all(dst)?;
 
         let entries = fs::read_dir(src)
@@ -692,50 +723,32 @@ To rebuild the container:
 
         // Initialize project repository
         if !workspace_dir.join(".git").exists() {
-            self.run_git(&workspace_dir, &["init", "-q"])?;
+            self.git_runner.run_git(&workspace_dir, &["init", "-q"])?;
 
             // Add initial files
             let readme_path = workspace_dir.join("README.md");
             let gitignore_path = workspace_dir.join(".gitignore");
 
             if readme_path.exists() {
-                self.run_git(&workspace_dir, &["add", "README.md"])?;
+                self.git_runner.run_git(&workspace_dir, &["add", "README.md"])?;
             }
             if gitignore_path.exists() {
-                self.run_git(&workspace_dir, &["add", ".gitignore"])?;
+                self.git_runner.run_git(&workspace_dir, &["add", ".gitignore"])?;
             }
 
-            self.run_git(&workspace_dir, &["commit", "-m", "Initial commit", "-q"])?;
+            self.git_runner.run_git(&workspace_dir, &["commit", "-m", "Initial commit", "-q"])?;
         }
 
         // Initialize devcontainer repository
         if !devcontainer_dir.join(".git").exists() {
-            self.run_git(&devcontainer_dir, &["init", "-q"])?;
+            self.git_runner.run_git(&devcontainer_dir, &["init", "-q"])?;
 
             // Add all files
-            self.run_git(&devcontainer_dir, &["add", "-A"])?;
-            self.run_git(
+            self.git_runner.run_git(&devcontainer_dir, &["add", "-A"])?;
+            self.git_runner.run_git(
                 &devcontainer_dir,
                 &["commit", "-m", "Initial devcontainer setup", "-q"],
             )?;
-        }
-
-        Ok(())
-    }
-
-    /// Run a git command in the specified directory
-    fn run_git(&self, dir: &Path, args: &[&str]) -> Result<()> {
-        use std::process::Command;
-
-        let result = Command::new("git")
-            .current_dir(dir)
-            .args(args)
-            .output()
-            .map_err(|e| Error::Other(format!("Failed to execute git: {}", e)))?;
-
-        if !result.status.success() {
-            let stderr = String::from_utf8_lossy(&result.stderr);
-            return Err(Error::Other(format!("Git command failed: {}", stderr)));
         }
 
         Ok(())
@@ -890,5 +903,191 @@ runtime:
         assert!(!map.get("CLAUDE_ACTIVATE_PLUGINS").unwrap().contains("plugin2"));
         assert!(map.get("CLAUDE_DEACTIVATE_PLUGINS").unwrap().contains("plugin2"));
         assert!(!map.get("CLAUDE_DEACTIVATE_PLUGINS").unwrap().contains("plugin1"));
+    }
+
+    #[test]
+    fn test_language_to_version_key_mappings() {
+        use crate::generator::Generator;
+
+        assert_eq!(Generator::language_to_version_key("python"), Some("PYTHON_VERSION".to_string()));
+        assert_eq!(Generator::language_to_version_key("node"), Some("NODE_VERSION".to_string()));
+        assert_eq!(Generator::language_to_version_key("nodejs"), Some("NODE_VERSION".to_string()));
+        assert_eq!(Generator::language_to_version_key("javascript"), Some("NODE_VERSION".to_string()));
+        assert_eq!(Generator::language_to_version_key("rust"), Some("RUST_VERSION".to_string()));
+        assert_eq!(Generator::language_to_version_key("go"), Some("GO_VERSION".to_string()));
+        assert_eq!(Generator::language_to_version_key("golang"), Some("GO_VERSION".to_string()));
+        assert_eq!(Generator::language_to_version_key("unknown"), None);
+    }
+
+    #[test]
+    fn test_render_devcontainer_json_substitutions() {
+        let config = create_test_config();
+        let generator = Generator::new(config).unwrap();
+
+        let result = generator.render_devcontainer_json();
+        assert!(result.is_ok());
+
+        let rendered = result.unwrap();
+        assert!(rendered.contains("test-app"));
+        assert!(!rendered.contains("{{PROJECT_NAME}}"));
+        assert!(rendered.contains("\"haiku\":"));
+        assert!(rendered.contains("\"sonnet\":"));
+    }
+
+    #[test]
+    fn test_copy_dir_recursive() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let src = temp_dir.path().join("src");
+        let dst = temp_dir.path().join("dst");
+
+        // Create source structure
+        fs::create_dir_all(&src).unwrap();
+        fs::write(src.join("file1.txt"), "content1").unwrap();
+        fs::create_dir_all(src.join("subdir")).unwrap();
+        fs::write(src.join("subdir/file2.txt"), "content2").unwrap();
+
+        let config = create_test_config();
+        let generator = Generator::new(config).unwrap();
+
+        generator.copy_dir_recursive(&src, &dst).unwrap();
+
+        assert!(dst.exists());
+        assert!(dst.join("file1.txt").exists());
+        assert!(dst.join("subdir/file2.txt").exists());
+    }
+
+    #[test]
+    fn test_copy_core_features_with_temp_dir() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let features_dir = temp_dir.path().join("features");
+
+        // Setup mock isolde root
+        let mock_root = temp_dir.path().join("isolde");
+        fs::create_dir_all(mock_root.join("core/features/feature1")).unwrap();
+        fs::write(mock_root.join("core/features/feature1/install.sh"), "#!/bin/bash").unwrap();
+
+        let config = create_test_config();
+        let mut generator = Generator::new(config).unwrap();
+        generator.isolde_root = mock_root;
+
+        let copied = generator.copy_core_features(&features_dir).unwrap();
+
+        assert!(!copied.is_empty());
+        assert!(features_dir.join("feature1").exists());
+    }
+
+    /// Mock git runner for testing
+    struct MockGitRunner {
+        should_fail: bool,
+    }
+
+    impl MockGitRunner {
+        fn new() -> Self {
+            Self { should_fail: false }
+        }
+
+        fn failing() -> Self {
+            Self { should_fail: true }
+        }
+    }
+
+    impl GitRunner for MockGitRunner {
+        fn run_git(&self, _dir: &Path, _args: &[&str]) -> Result<()> {
+            if self.should_fail {
+                Err(Error::Other("Mock git failure".to_string()))
+            } else {
+                Ok(())
+            }
+        }
+    }
+
+    #[test]
+    fn test_initialize_git_with_mock_runner() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let config = create_test_config();
+
+        let mut generator = Generator::new(config).unwrap();
+        generator.git_runner = Box::new(MockGitRunner::new());
+
+        let result = generator.initialize_git_repos(temp_dir.path());
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_run_git_command_fails_propagates_error() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let config = create_test_config();
+
+        let mut generator = Generator::new(config).unwrap();
+        generator.git_runner = Box::new(MockGitRunner::failing());
+
+        let result = generator.initialize_git_repos(temp_dir.path());
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_generate_full_workflow() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let output_dir = temp_dir.path();
+
+        // Setup mock isolde root
+        let mock_root = temp_dir.path().join("isolde");
+        fs::create_dir_all(mock_root.join("core/features/claude-code")).unwrap();
+        fs::create_dir_all(mock_root.join("core/features/proxy")).unwrap();
+        fs::create_dir_all(mock_root.join("core/features/plugin-manager")).unwrap();
+        fs::write(mock_root.join("core/features/claude-code/install.sh"), "#!/bin/bash\necho claude").unwrap();
+        fs::write(mock_root.join("core/features/proxy/install.sh"), "#!/bin/bash\necho proxy").unwrap();
+        fs::write(mock_root.join("core/features/plugin-manager/install.sh"), "#!/bin/bash\necho plugin").unwrap();
+
+        let config = create_test_config();
+        let mut generator = Generator::new(config).unwrap();
+        generator.isolde_root = mock_root;
+        generator.git_runner = Box::new(MockGitRunner::new());
+
+        let report = generator.generate(output_dir).unwrap();
+
+        // Verify files created
+        assert!(!report.files_created.is_empty());
+
+        let devcontainer_dir = output_dir.join(".devcontainer");
+        assert!(devcontainer_dir.exists());
+        assert!(devcontainer_dir.join("devcontainer.json").exists());
+        assert!(devcontainer_dir.join("Dockerfile").exists());
+        assert!(devcontainer_dir.join("features/claude-code").exists());
+
+        let workspace_dir = output_dir.join("./project");
+        assert!(workspace_dir.exists());
+        assert!(workspace_dir.join(".claude/config.json").exists());
+        assert!(workspace_dir.join("README.md").exists());
+        assert!(workspace_dir.join(".gitignore").exists());
+    }
+
+    #[test]
+    fn test_dry_run_all_cases() {
+        let temp_dir = tempfile::tempdir().unwrap();
+
+        // Setup mock isolde root
+        let mock_root = temp_dir.path().join("isolde");
+        fs::create_dir_all(mock_root.join("core/features/test-feature")).unwrap();
+
+        let config = create_test_config();
+        let mut generator = Generator::new(config).unwrap();
+        generator.isolde_root = mock_root;
+
+        let output_dir = temp_dir.path().join("output");
+        fs::create_dir_all(&output_dir).unwrap();
+
+        // First run - should show all creates
+        let report = generator.dry_run(&output_dir).unwrap();
+        assert!(!report.would_create.is_empty());
+        assert!(report.would_modify.is_empty());
+
+        // Create one file
+        fs::create_dir_all(output_dir.join(".devcontainer")).unwrap();
+        fs::write(output_dir.join(".devcontainer/devcontainer.json"), "{}").unwrap();
+
+        // Second run - should show modify
+        let report2 = generator.dry_run(&output_dir).unwrap();
+        assert!(report2.would_modify.iter().any(|p| p.ends_with("devcontainer.json")));
     }
 }

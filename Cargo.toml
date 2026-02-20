@@ -45,7 +45,7 @@ predicates = "3.1"
 
 # Essential pins for Rust 1.75 compatibility
 getrandom = "=0.2.15"
-tempfile = "=3.8.0"
+tempfile = "=3.10.0"
 
 [workspace.metadata.dummy]
 # Remove all the aggressive pins - let Cargo resolve compatible versions

@@ -74,4 +74,55 @@ mod tests {
         let err = Error::TemplateNotFound("python".to_string());
         assert_eq!(err.to_string(), "Template not found: python");
     }
+
+    #[test]
+    fn test_all_error_variants_display() {
+        use std::path::PathBuf;
+
+        assert_eq!(
+            Error::PresetNotFound("test".to_string()).to_string(),
+            "Preset not found: test"
+        );
+
+        assert_eq!(
+            Error::InvalidTemplate("bad template".to_string()).to_string(),
+            "Invalid template configuration: bad template"
+        );
+
+        let path = PathBuf::from("/test/path");
+        assert_eq!(
+            Error::PathNotFound(path).to_string(),
+            "Path not found: /test/path"
+        );
+
+        assert_eq!(
+            Error::InvalidSubstitution("bad sub".to_string()).to_string(),
+            "Invalid substitution: bad sub"
+        );
+
+        assert_eq!(
+            Error::Other("generic error".to_string()).to_string(),
+            "generic error"
+        );
+
+        assert_eq!(
+            Error::InvalidMarketplace("bad url".to_string()).to_string(),
+            "Invalid marketplace: bad url"
+        );
+
+        assert_eq!(
+            Error::PluginNotFound("plugin".to_string()).to_string(),
+            "Plugin not found: plugin"
+        );
+
+        assert_eq!(
+            Error::InvalidPlugin("bad plugin".to_string()).to_string(),
+            "Invalid plugin: bad plugin"
+        );
+
+        assert_eq!(
+            Error::MarketplaceError("market error".to_string()).to_string(),
+            "Marketplace error: market error"
+        );
+    }
 }
