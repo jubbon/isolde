@@ -466,7 +466,7 @@ impl Generator {
     }
 
     /// Map a language name to its version variable name
-    fn language_to_version_key(language: &str) -> Option<String> {
+    pub fn language_to_version_key(language: &str) -> Option<String> {
         let key = match language {
             "python" => "PYTHON_VERSION",
             "node" | "nodejs" | "javascript" => "NODE_VERSION",
@@ -903,5 +903,34 @@ runtime:
         assert!(!map.get("CLAUDE_ACTIVATE_PLUGINS").unwrap().contains("plugin2"));
         assert!(map.get("CLAUDE_DEACTIVATE_PLUGINS").unwrap().contains("plugin2"));
         assert!(!map.get("CLAUDE_DEACTIVATE_PLUGINS").unwrap().contains("plugin1"));
+    }
+
+    #[test]
+    fn test_language_to_version_key_mappings() {
+        use crate::generator::Generator;
+
+        assert_eq!(Generator::language_to_version_key("python"), Some("PYTHON_VERSION".to_string()));
+        assert_eq!(Generator::language_to_version_key("node"), Some("NODE_VERSION".to_string()));
+        assert_eq!(Generator::language_to_version_key("nodejs"), Some("NODE_VERSION".to_string()));
+        assert_eq!(Generator::language_to_version_key("javascript"), Some("NODE_VERSION".to_string()));
+        assert_eq!(Generator::language_to_version_key("rust"), Some("RUST_VERSION".to_string()));
+        assert_eq!(Generator::language_to_version_key("go"), Some("GO_VERSION".to_string()));
+        assert_eq!(Generator::language_to_version_key("golang"), Some("GO_VERSION".to_string()));
+        assert_eq!(Generator::language_to_version_key("unknown"), None);
+    }
+
+    #[test]
+    fn test_render_devcontainer_json_substitutions() {
+        let config = create_test_config();
+        let generator = Generator::new(config).unwrap();
+
+        let result = generator.render_devcontainer_json();
+        assert!(result.is_ok());
+
+        let rendered = result.unwrap();
+        assert!(rendered.contains("test-app"));
+        assert!(!rendered.contains("{{PROJECT_NAME}}"));
+        assert!(rendered.contains("\"haiku\":"));
+        assert!(rendered.contains("\"sonnet\":"));
     }
 }
