@@ -154,7 +154,7 @@ mod tests {
 
         // TODO: Run isolde pull with a valid GitHub URL
         // let output = Command::new("isolde")
-        //     .args(["pull", "https://github.com/dmanakulikov/isolde"])
+        //     .args(["pull", "https://github.com/jubbon/isolde"])
         //     .current_dir(project.path())
         //     .output()
         //     .expect("Failed to run isolde pull");

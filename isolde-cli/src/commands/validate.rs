@@ -298,7 +298,7 @@ fn print_checks(checks: &[CheckResult], format: ValidateFormat) {
                         "driver": {
                             "name": "isolde",
                             "version": env!("ISOLDE_VERSION"),
-                            "informationUri": "https://github.com/dmanakulikov/isolde"
+                            "informationUri": "https://github.com/jubbon/isolde"
                         }
                     },
                     "results": checks.iter().filter_map(|check| {

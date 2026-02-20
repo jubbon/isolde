@@ -10,7 +10,7 @@ use colored::Colorize;
 use isolde_core::{Error, Result};
 
 /// Default GitHub repository for Isolde templates
-const DEFAULT_ISOLDE_REPO: &str = "https://github.com/dmanakulikov/isolde";
+const DEFAULT_ISOLDE_REPO: &str = "https://github.com/jubbon/isolde";
 
 /// Options for the pull command
 #[derive(Debug, Clone)]

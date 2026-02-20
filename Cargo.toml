@@ -10,7 +10,7 @@ version = "0.2.0"
 edition = "2021"
 license = "MIT"
 authors = ["Isolde Contributors"]
-repository = "https://github.com/dmanakulikov/isolde"
+repository = "https://github.com/jubbon/isolde"
 
 [workspace.dependencies]
 # Core dependencies

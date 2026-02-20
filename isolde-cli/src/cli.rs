@@ -11,7 +11,7 @@ use colored::Colorize;
 #[command(author = "Isolde Contributors")]
 #[command(version = env!("ISOLDE_VERSION"))]
 #[command(about = "Create isolated development environments from templates", long_about = None)]
-#[command(after_help = "For more help, visit: https://github.com/dmanakulikov/isolde")]
+#[command(after_help = "For more help, visit: https://github.com/jubbon/isolde")]
 pub struct Cli {
     /// Enable verbose output
     #[arg(short, long, global = true)]
