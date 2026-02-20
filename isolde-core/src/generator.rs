@@ -975,4 +975,53 @@ runtime:
         assert!(!copied.is_empty());
         assert!(features_dir.join("feature1").exists());
     }
+
+    /// Mock git runner for testing
+    struct MockGitRunner {
+        should_fail: bool,
+    }
+
+    impl MockGitRunner {
+        fn new() -> Self {
+            Self { should_fail: false }
+        }
+
+        fn failing() -> Self {
+            Self { should_fail: true }
+        }
+    }
+
+    impl GitRunner for MockGitRunner {
+        fn run_git(&self, _dir: &Path, _args: &[&str]) -> Result<()> {
+            if self.should_fail {
+                Err(Error::Other("Mock git failure".to_string()))
+            } else {
+                Ok(())
+            }
+        }
+    }
+
+    #[test]
+    fn test_initialize_git_with_mock_runner() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let config = create_test_config();
+
+        let mut generator = Generator::new(config).unwrap();
+        generator.git_runner = Box::new(MockGitRunner::new());
+
+        let result = generator.initialize_git_repos(temp_dir.path());
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_run_git_command_fails_propagates_error() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let config = create_test_config();
+
+        let mut generator = Generator::new(config).unwrap();
+        generator.git_runner = Box::new(MockGitRunner::failing());
+
+        let result = generator.initialize_git_repos(temp_dir.path());
+        assert!(result.is_err());
+    }
 }
