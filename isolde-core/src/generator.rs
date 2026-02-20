@@ -1061,4 +1061,33 @@ runtime:
         assert!(workspace_dir.join("README.md").exists());
         assert!(workspace_dir.join(".gitignore").exists());
     }
+
+    #[test]
+    fn test_dry_run_all_cases() {
+        let temp_dir = tempfile::tempdir().unwrap();
+
+        // Setup mock isolde root
+        let mock_root = temp_dir.path().join("isolde");
+        fs::create_dir_all(mock_root.join("core/features/test-feature")).unwrap();
+
+        let config = create_test_config();
+        let mut generator = Generator::new(config).unwrap();
+        generator.isolde_root = mock_root;
+
+        let output_dir = temp_dir.path().join("output");
+        fs::create_dir_all(&output_dir).unwrap();
+
+        // First run - should show all creates
+        let report = generator.dry_run(&output_dir).unwrap();
+        assert!(!report.would_create.is_empty());
+        assert!(report.would_modify.is_empty());
+
+        // Create one file
+        fs::create_dir_all(output_dir.join(".devcontainer")).unwrap();
+        fs::write(output_dir.join(".devcontainer/devcontainer.json"), "{}").unwrap();
+
+        // Second run - should show modify
+        let report2 = generator.dry_run(&output_dir).unwrap();
+        assert!(report2.would_modify.iter().any(|p| p.ends_with("devcontainer.json")));
+    }
 }
