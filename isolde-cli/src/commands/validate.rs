@@ -574,16 +574,6 @@ fn check_git_repos(cwd: &Path, verbose: bool) -> CheckResult {
         details.push("Project git repository: not initialized".to_string());
     }
 
-    // Check for devcontainer git repo
-    let devcontainer_git = cwd.join(".devcontainer/.git");
-    if devcontainer_git.exists() {
-        details.push("Devcontainer git repository: initialized".to_string());
-    } else {
-        status = CheckStatus::Warning;
-        details.push("Devcontainer git repository: not initialized".to_string());
-        details.push("Run 'isolde sync' to initialize repositories".to_string());
-    }
-
     CheckResult {
         name: "git-repos".to_string(),
         description: "Git repositories".to_string(),

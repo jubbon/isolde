@@ -76,9 +76,8 @@ isolde list-presets
 ## What You Get
 
 Each created project has:
-- A `project/` directory for your code
-- A `.devcontainer/` directory with container configuration
-- Two separate git repositories (code and devcontainer)
+- A `project/` directory for your code and devcontainer configuration
+- A single git repository that includes both code and config
 - Pre-installed language tools and Claude Code CLI
 
 ## Next Steps

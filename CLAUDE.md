@@ -99,7 +99,7 @@ isolde/
 ├── isolde-core/           # Core library
 │   ├── src/
 │   │   ├── templates.rs   # Template loading and processing
-│   │   ├── git.rs         # Git operations (dual repo pattern)
+│   │   ├── git.rs         # Git operations
 │   │   ├── config.rs      # Configuration and presets
 │   │   └── features.rs    # Feature copying and management
 │   └── Cargo.toml
@@ -122,7 +122,9 @@ When `isolde init` creates a project:
 3. **Template Loading** - `isolde-core::templates` loads `template-info.yaml`
 4. **Feature Copy** - `core/features/*` copied to `.devcontainer/features/` (Docker cannot follow symlinks)
 5. **Substitution** - Placeholders in `devcontainer.json` replaced via Rust template engine
-6. **Git Init** - Two separate git repos created: `project/` and `.devcontainer/`
+6. **Git Init** - Git repository created for the project
+
+**Note:** `.gitignore` files are **not** created automatically. Users manage their own `.gitignore` files based on their needs.
 
 ### Template Metadata Format
 
@@ -157,22 +159,18 @@ supported_versions:
 
 Substitutions happen in Rust via the `templates` module.
 
-### Dual Git Repository Pattern
+### Single Git Repository Pattern
 
-Created projects have **two separate git repositories**:
+Created projects have **a single git repository** that includes:
+- User code
+- Devcontainer configuration
+- Template files
 
-```
-~/workspace/my-project/
-├── project/              # Git repo #1 - user code
-│   └── .git/
-└── .devcontainer/        # Git repo #2 - devcontainer config
-    └── .git/
-```
-
-This separation allows:
-- Independent version control of code vs. devcontainer config
-- Easy updates to devcontainer from template repository
-- Clean git history for user code
+This approach allows:
+- Simplified version control with code and config together
+- Complete history of changes in one repository
+- Easier collaboration with team members
+- Simplified deployment and CI/CD workflows
 
 ### Core Features
 
@@ -184,6 +182,9 @@ This separation allows:
 Features are **copied** (not symlinked) to each project because Docker's build context cannot follow symlinks outside the build directory.
 
 ## Important Notes
+
+### .gitignore Files
+Isolde **does not create** `.gitignore` files automatically. Users must create and manage their own `.gitignore` files based on their project needs. This design choice gives users full control over what gets ignored in their repositories.
 
 ### Feature Path Resolution
 In created projects, features are referenced as `./features/claude-code` (relative to `.devcontainer/`), not via absolute paths from the template repository.

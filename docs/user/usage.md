@@ -125,10 +125,10 @@ VS Code will detect the devcontainer and prompt to reopen in it.
 
 ### Updating the Devcontainer
 
-The devcontainer configuration is a separate git repository:
+The devcontainer configuration is part of the project's git repository:
 
 ```bash
-cd ~/workspace/my-project/.devcontainer
+cd ~/workspace/my-project
 git pull origin main
 ```
 
@@ -158,15 +158,11 @@ This will:
 
 ### Git Repository Issues
 
-Each project has two git repositories:
-- `project/` - Your code
-- `.devcontainer/` - Devcontainer config
-
-Check status separately:
+The project has a single git repository that includes both your code and devcontainer configuration:
 
 ```bash
-cd ~/workspace/my-project/project && git status
-cd ../.devcontainer && git status
+cd ~/workspace/my-project
+git status
 ```
 
 ### Proxy Issues

@@ -2,13 +2,11 @@
 //!
 //! Generate devcontainer and Claude configuration from isolde.yaml.
 
-use std::collections::HashMap;
 use std::fs;
-use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use colored::Colorize;
-use isolde_core::config::{Config, GitGeneratedHandling};
+use isolde_core::config::Config;
 use isolde_core::{Error, Result};
 
 /// Options for the sync command
@@ -98,13 +96,6 @@ pub fn run(opts: SyncOptions) -> Result<()> {
     print!("{} ", "Copying core features...".dimmed());
     if !opts.dry_run {
         copy_core_features(&features_dir)?;
-    }
-    println!("{}", "✔".green());
-
-    // Initialize git repos
-    print!("{} ", "Initializing git repositories...".dimmed());
-    if !opts.dry_run {
-        init_git_repos(&opts.cwd, &config)?;
     }
     println!("{}", "✔".green());
 
@@ -548,95 +539,6 @@ fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<()> {
                 Error::FileError(std::io::Error::new(
                     std::io::ErrorKind::Other,
                     format!("Failed to copy {} to {}: {}", src_path.display(), dst_path.display(), e),
-                ))
-            })?;
-        }
-    }
-
-    Ok(())
-}
-
-/// Initialize git repositories for project and devcontainer
-fn init_git_repos(cwd: &Path, config: &Config) -> Result<()> {
-    use std::process::Command;
-
-    // Determine the project directory
-    let project_dir = if config.workspace.dir == "." {
-        cwd.to_path_buf()
-    } else {
-        cwd.join(&config.workspace.dir)
-    };
-
-    // Create project directory if it doesn't exist
-    if !project_dir.exists() {
-        fs::create_dir_all(&project_dir).map_err(|e| {
-            Error::FileError(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("Failed to create project directory {}: {}", project_dir.display(), e),
-            ))
-        })?;
-    }
-
-    // Initialize project git repo if it doesn't exist
-    let project_git = project_dir.join(".git");
-    if !project_git.exists() {
-        print!(
-            "{}",
-            format!("  Initializing git repo in {}...\n", project_dir.display()).dimmed()
-        );
-        Command::new("git")
-            .args(["init"])
-            .current_dir(&project_dir)
-            .status()
-            .map_err(|e| Error::Other(format!("Failed to initialize git repo: {}", e)))?;
-    }
-
-    // Initialize devcontainer git repo
-    let devcontainer_dir = cwd.join(".devcontainer");
-    let devcontainer_git = devcontainer_dir.join(".git");
-    if !devcontainer_git.exists() {
-        print!(
-            "{}",
-            format!("  Initializing git repo in {}...\n", devcontainer_dir.display()).dimmed()
-        );
-        Command::new("git")
-            .args(["init"])
-            .current_dir(&devcontainer_dir)
-            .status()
-            .map_err(|e| Error::Other(format!("Failed to initialize git repo: {}", e)))?;
-    }
-
-    // Handle generated files based on git config
-    match config.git.generated {
-        GitGeneratedHandling::Ignored => {
-            // Do nothing - user handles gitignore manually
-        }
-        GitGeneratedHandling::Committed => {
-            // Files are committed as-is
-        }
-        GitGeneratedHandling::LinguistGenerated => {
-            // Add to gitattributes
-            let gitattributes_path = cwd.join(".gitattributes");
-            let mut attrs_content = String::new();
-            if gitattributes_path.exists() {
-                attrs_content = fs::read_to_string(&gitattributes_path).unwrap_or_default();
-            }
-
-            let entries = vec![
-                ".devcontainer/ linguist-generated",
-                ".claude/ linguist-generated",
-            ];
-            for entry in entries {
-                if !attrs_content.contains(entry) {
-                    attrs_content.push_str(entry);
-                    attrs_content.push('\n');
-                }
-            }
-
-            fs::write(&gitattributes_path, attrs_content).map_err(|e| {
-                Error::FileError(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("Failed to write .gitattributes: {}", e),
                 ))
             })?;
         }

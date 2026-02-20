@@ -178,25 +178,23 @@ Look for the `supported_versions` field. Use a version from that list or omit `-
 
 ## Git Repository Issues
 
-Each project has **two separate git repositories**:
-- `project/` - Your code
-- `.devcontainer/` - Devcontainer config
+Each project has a **single git repository** that includes both your code and devcontainer configuration.
 
 ### Git status confusion
 **Problem:** Changes not showing in git status or unexpected behavior.
 
-**Solution:** Check status separately for each repository:
+**Solution:** Check status in the main project directory:
 ```bash
-cd ~/workspace/my-project/project && git status
-cd ../.devcontainer && git status
+cd ~/workspace/my-project
+git status
 ```
 
 ### Updating the devcontainer
 **Problem:** Want to get latest devcontainer changes.
 
-**Solution:** The devcontainer configuration is a separate git repository:
+**Solution:** The devcontainer configuration is part of the project's git repository:
 ```bash
-cd ~/workspace/my-project/.devcontainer
+cd ~/workspace/my-project
 git pull origin main
 ```
 

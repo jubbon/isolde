@@ -9,34 +9,6 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-/// Trait for running git commands - allows stubbing in tests
-pub trait GitRunner {
-    /// Run a git command in the specified directory
-    fn run_git(&self, dir: &Path, args: &[&str]) -> Result<()>;
-}
-
-/// Default implementation using real git
-pub struct RealGitRunner;
-
-impl GitRunner for RealGitRunner {
-    fn run_git(&self, dir: &Path, args: &[&str]) -> Result<()> {
-        use std::process::Command;
-
-        let result = Command::new("git")
-            .current_dir(dir)
-            .args(args)
-            .output()
-            .map_err(|e| Error::Other(format!("Failed to execute git: {}", e)))?;
-
-        if !result.status.success() {
-            let stderr = String::from_utf8_lossy(&result.stderr);
-            return Err(Error::Other(format!("Git command failed: {}", stderr)));
-        }
-
-        Ok(())
-    }
-}
-
 /// Report generated from a dry run
 #[derive(Debug, Clone)]
 pub struct DryRunReport {
@@ -61,8 +33,6 @@ pub struct Generator {
     config: Config,
     /// Isolde installation root (for templates and features)
     pub(crate) isolde_root: PathBuf,
-    /// Git runner (allows stubbing in tests)
-    git_runner: Box<dyn GitRunner>,
 }
 
 impl Generator {
@@ -83,7 +53,6 @@ impl Generator {
         Ok(Self {
             config,
             isolde_root,
-            git_runner: Box::new(RealGitRunner),
         })
     }
 
@@ -168,9 +137,6 @@ impl Generator {
         let readme_path = workspace_dir.join("README.md");
         fs::write(&readme_path, readme)?;
         files_created.push(readme_path);
-
-        // Initialize git repositories
-        self.initialize_git_repos(output_dir)?;
 
         Ok(GenerateReport {
             files_created,
@@ -617,13 +583,13 @@ This project was created using the Isolde devcontainer template system.
 ## Project Structure
 
 - `project/` - Your main project code (this directory)
-- `.devcontainer/` - Devcontainer configuration (separate git repository)
-- `.claude/` - Claude Code configuration (not in git)
+- `.devcontainer/` - Devcontainer configuration
+- `.claude/` - Claude Code configuration
 
 ## DevContainer
 
 This project uses a devcontainer for development. The configuration is in the
-`.devcontainer/` directory (a separate git repository).
+`.devcontainer/` directory.
 
 To rebuild the container:
 1. Press F1 in VS Code
@@ -631,40 +597,6 @@ To rebuild the container:
 "#,
             self.config.name
         ))
-    }
-
-    /// Initialize dual git repositories
-    fn initialize_git_repos(&self, output_dir: &Path) -> Result<()> {
-        let workspace_dir = output_dir.join(&self.config.workspace.dir);
-        let devcontainer_dir = output_dir.join(".devcontainer");
-
-        // Initialize project repository
-        if !workspace_dir.join(".git").exists() {
-            self.git_runner.run_git(&workspace_dir, &["init", "-q"])?;
-
-            // Add initial files
-            let readme_path = workspace_dir.join("README.md");
-
-            if readme_path.exists() {
-                self.git_runner.run_git(&workspace_dir, &["add", "README.md"])?;
-            }
-
-            self.git_runner.run_git(&workspace_dir, &["commit", "-m", "Initial commit", "-q"])?;
-        }
-
-        // Initialize devcontainer repository
-        if !devcontainer_dir.join(".git").exists() {
-            self.git_runner.run_git(&devcontainer_dir, &["init", "-q"])?;
-
-            // Add all files
-            self.git_runner.run_git(&devcontainer_dir, &["add", "-A"])?;
-            self.git_runner.run_git(
-                &devcontainer_dir,
-                &["commit", "-m", "Initial devcontainer setup", "-q"],
-            )?;
-        }
-
-        Ok(())
     }
 }
 
@@ -868,55 +800,6 @@ runtime:
         assert!(features_dir.join("feature1").exists());
     }
 
-    /// Mock git runner for testing
-    struct MockGitRunner {
-        should_fail: bool,
-    }
-
-    impl MockGitRunner {
-        fn new() -> Self {
-            Self { should_fail: false }
-        }
-
-        fn failing() -> Self {
-            Self { should_fail: true }
-        }
-    }
-
-    impl GitRunner for MockGitRunner {
-        fn run_git(&self, _dir: &Path, _args: &[&str]) -> Result<()> {
-            if self.should_fail {
-                Err(Error::Other("Mock git failure".to_string()))
-            } else {
-                Ok(())
-            }
-        }
-    }
-
-    #[test]
-    fn test_initialize_git_with_mock_runner() {
-        let temp_dir = tempfile::tempdir().unwrap();
-        let config = create_test_config();
-
-        let mut generator = Generator::new(config).unwrap();
-        generator.git_runner = Box::new(MockGitRunner::new());
-
-        let result = generator.initialize_git_repos(temp_dir.path());
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_run_git_command_fails_propagates_error() {
-        let temp_dir = tempfile::tempdir().unwrap();
-        let config = create_test_config();
-
-        let mut generator = Generator::new(config).unwrap();
-        generator.git_runner = Box::new(MockGitRunner::failing());
-
-        let result = generator.initialize_git_repos(temp_dir.path());
-        assert!(result.is_err());
-    }
-
     #[test]
     fn test_generate_full_workflow() {
         let temp_dir = tempfile::tempdir().unwrap();
@@ -934,7 +817,6 @@ runtime:
         let config = create_test_config();
         let mut generator = Generator::new(config).unwrap();
         generator.isolde_root = mock_root;
-        generator.git_runner = Box::new(MockGitRunner::new());
 
         let report = generator.generate(output_dir).unwrap();
 

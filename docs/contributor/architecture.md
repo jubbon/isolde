@@ -25,8 +25,8 @@ This document describes the architecture of the Isolde (ISOLated Development Env
 │  ┌────────────────────────────────────────────────────────┐  │
 │  │              isolde-core (business logic)             │  │
 │  │  ┌──────────────┐  ┌──────────────┐  ┌─────────────┐ │ │
-│  │  │  templates   │  │     git      │  │   config    │ │ │
-│  │  │    module    │  │   module     │  │   module    │ │ │
+│  │  │  templates   │  │   config    │ │ │
+│  │  │    module    │  │   module    │ │ │
 │  │  └──────────────┘  └──────────────┘  └─────────────┘ │ │
 │  └────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
@@ -34,18 +34,22 @@ This document describes the architecture of the Isolde (ISOLated Development Env
           ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Created Project                             │
-│  ┌─────────────────────┐    ┌────────────────────────────────┐ │
-│  │   project/          │    │   .devcontainer/               │ │
-│  │   (user code)       │    │   (container config)           │ │
-│  │                     │    │                                │ │
-│  │   └─ .git/          │    │   ├─ devcontainer.json         │ │
-│  │                     │    │   ├─ Dockerfile                │ │
-│  └─────────────────────┘    │   ├─ features/                 │ │
-│                             │   │   ├─ claude-code/          │ │
-│                             │   │   ├─ proxy/                │ │
-│                             │   │   └─ plugin-manager/       │ │
-│                             │   └─ .git/                     │ │
-│                             └────────────────────────────────┘ │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │   project/                                                │ │
+│  │   (user code + devcontainer config)                      │ │
+│  │                                                          │ │
+│  │   ├─ .devcontainer/                                      │ │
+│  │   │   ├─ devcontainer.json                              │ │
+│  │   │   ├─ Dockerfile                                     │ │
+│  │   │   ├─ features/                                       │ │
+│  │   │   │   ├─ claude-code/                               │ │
+│  │   │   │   ├─ proxy/                                     │ │
+│  │   │   │   └─ plugin-manager/                            │ │
+│  │   │   └─ .git/                                           │ │
+│  │                                                          │ │
+│  │   └─ .git/                                               │ │
+│  │                                                          │ │
+│  └────────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────┘
           │
           ▼
@@ -94,13 +98,13 @@ This document describes the architecture of the Isolde (ISOLated Development Env
 | Module | Purpose |
 |--------|---------|
 | `templates.rs` | Template loading, validation, substitution, copying |
-| `git.rs` | Dual git repo initialization (project + devcontainer) |
+| `git.rs` | Git repository initialization |
 | `config.rs` | Configuration and preset loading from YAML |
 | `features.rs` | Feature copying and management |
 
 **Key Responsibilities:**
 - Template processing engine
-- Git operations for dual repository pattern
+- Git operations for repository initialization
 - Configuration management
 - Feature file handling
 
@@ -167,9 +171,7 @@ isolde init my-app --template python
     │   - etc.
     │
     ▼
-6. isolde-core::git initializes dual git repositories
-    │   - project/.git/
-    │   - .devcontainer/.git/
+6. isolde-core::git initializes git repository
     │
     ▼
 7. Project ready at ~/workspace/my-app/
@@ -227,17 +229,18 @@ The v2 implementation uses Rust instead of shell scripts for:
 - **Distribution**: Single binary distribution via cargo
 - **Testing**: Built-in test framework with good tooling
 
-### Why Dual Git Repositories?
+### Why Single Git Repository?
 
-Created projects have **two separate git repositories**:
-- `project/` - User code repository
-- `.devcontainer/` - Devcontainer configuration repository
+Created projects have **a single git repository** that includes:
+- User code
+- Devcontainer configuration
+- Template files
 
-This separation allows:
-- Independent version control of code vs. devcontainer config
-- Easy updates to devcontainer from template repository
-- Clean git history for user code
-- Separate release cycles for code and infrastructure
+This approach allows:
+- Simplified version control with code and config together
+- Complete history of changes in one repository
+- Easier collaboration with team members
+- Simplified deployment and CI/CD workflows
 
 ### Why Copy Features Instead of Symlinks?
 
