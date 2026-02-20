@@ -426,4 +426,30 @@ mod tests {
         let result = render_template_simple(template, &ctx);
         assert_eq!(result, "my-project-v3.12");
     }
+
+    #[test]
+    fn test_from_dir_loads_templates() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let templates_dir = temp_dir.path();
+
+        // Create sample template files
+        fs::write(templates_dir.join("test.tera"), "Hello {{name}}").unwrap();
+        fs::write(templates_dir.join("other.template"), "World {{value}}").unwrap();
+
+        let engine = TemplateEngine::from_dir(templates_dir).unwrap();
+
+        assert_eq!(engine.templates.len(), 2);
+        assert!(engine.templates.contains_key("test"));
+        assert!(engine.templates.contains_key("other"));
+    }
+
+    #[test]
+    fn test_from_dir_empty_dir_returns_error() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let templates_dir = temp_dir.path();
+
+        let result = TemplateEngine::from_dir(templates_dir);
+        assert!(result.is_err());
+        assert!(matches!(result, Err(Error::InvalidTemplate(_))));
+    }
 }
