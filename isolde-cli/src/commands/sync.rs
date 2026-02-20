@@ -609,27 +609,7 @@ fn init_git_repos(cwd: &Path, config: &Config) -> Result<()> {
     // Handle generated files based on git config
     match config.git.generated {
         GitGeneratedHandling::Ignored => {
-            // Add generated files to .gitignore
-            let gitignore_path = cwd.join(".gitignore");
-            let mut gitignore_content = String::new();
-            if gitignore_path.exists() {
-                gitignore_content = fs::read_to_string(&gitignore_path).unwrap_or_default();
-            }
-
-            let entries = vec![".devcontainer/", ".claude/"];
-            for entry in entries {
-                if !gitignore_content.contains(entry) {
-                    gitignore_content.push_str(entry);
-                    gitignore_content.push('\n');
-                }
-            }
-
-            fs::write(&gitignore_path, gitignore_content).map_err(|e| {
-                Error::FileError(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("Failed to write .gitignore: {}", e),
-                ))
-            })?;
+            // Do nothing - user handles gitignore manually
         }
         GitGeneratedHandling::Committed => {
             // Files are committed as-is

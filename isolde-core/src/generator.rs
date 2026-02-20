@@ -163,18 +163,6 @@ impl Generator {
         fs::write(&claude_config_path, claude_config)?;
         files_created.push(claude_config_path);
 
-        // Generate .gitignore for project
-        let gitignore_content = self.render_project_gitignore()?;
-        let gitignore_path = workspace_dir.join(".gitignore");
-        fs::write(&gitignore_path, gitignore_content)?;
-        files_created.push(gitignore_path);
-
-        // Generate .gitignore for devcontainer
-        let devcontainer_gitignore = self.render_devcontainer_gitignore()?;
-        let devcontainer_gitignore_path = devcontainer_dir.join(".gitignore");
-        fs::write(&devcontainer_gitignore_path, devcontainer_gitignore)?;
-        files_created.push(devcontainer_gitignore_path);
-
         // Generate README.md for project
         let readme = self.render_project_readme()?;
         let readme_path = workspace_dir.join("README.md");
@@ -247,22 +235,6 @@ impl Generator {
             would_modify.push(claude_config_path);
         } else {
             would_create.push(claude_config_path);
-        }
-
-        // Project gitignore
-        let gitignore_path = workspace_dir.join(".gitignore");
-        if gitignore_path.exists() {
-            would_modify.push(gitignore_path);
-        } else {
-            would_create.push(gitignore_path);
-        }
-
-        // Devcontainer gitignore
-        let devcontainer_gitignore_path = devcontainer_dir.join(".gitignore");
-        if devcontainer_gitignore_path.exists() {
-            would_modify.push(devcontainer_gitignore_path);
-        } else {
-            would_create.push(devcontainer_gitignore_path);
         }
 
         // Project README
@@ -629,61 +601,6 @@ USER ${USERNAME}
             .map_err(|e| Error::Other(format!("Failed to serialize Claude config: {}", e)))
     }
 
-    /// Render project .gitignore content
-    fn render_project_gitignore(&self) -> Result<String> {
-        Ok(r#"# Claude Code local files
-.claude/
-
-# IDE
-.vscode/
-.idea/
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-venv/
-env/
-.venv/
-
-# Node
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Rust
-target/
-Cargo.lock
-
-# Go
-*.sum
-*.test
-*.prof
-"#.to_string())
-    }
-
-    /// Render devcontainer .gitignore content
-    fn render_devcontainer_gitignore(&self) -> Result<String> {
-        Ok(r#"# Claude Code local files (not in git)
-.claude/
-settings.json
-
-# OMC state files (not in git)
-.omc/
-
-# IDE files
-.vscode/
-.idea/
-"#.to_string())
-    }
-
     /// Render project README content
     fn render_project_readme(&self) -> Result<String> {
         Ok(format!(
@@ -727,13 +644,9 @@ To rebuild the container:
 
             // Add initial files
             let readme_path = workspace_dir.join("README.md");
-            let gitignore_path = workspace_dir.join(".gitignore");
 
             if readme_path.exists() {
                 self.git_runner.run_git(&workspace_dir, &["add", "README.md"])?;
-            }
-            if gitignore_path.exists() {
-                self.git_runner.run_git(&workspace_dir, &["add", ".gitignore"])?;
             }
 
             self.git_runner.run_git(&workspace_dir, &["commit", "-m", "Initial commit", "-q"])?;
@@ -824,27 +737,6 @@ runtime:
 
         assert!(claude_config.contains("\"provider\""));
         assert!(claude_config.contains("anthropic"));
-    }
-
-    #[test]
-    fn test_render_project_gitignore() {
-        let config = create_test_config();
-        let generator = Generator::new(config).unwrap();
-        let gitignore = generator.render_project_gitignore().unwrap();
-
-        assert!(gitignore.contains(".claude/"));
-        assert!(gitignore.contains("node_modules/"));
-    }
-
-    #[test]
-    fn test_render_devcontainer_gitignore() {
-        let config = create_test_config();
-        let generator = Generator::new(config).unwrap();
-        let gitignore = generator.render_devcontainer_gitignore().unwrap();
-
-        assert!(gitignore.contains(".claude/"));
-        assert!(gitignore.contains(".omc/"));
-        assert!(gitignore.contains("settings.json"));
     }
 
     #[test]
@@ -1059,7 +951,6 @@ runtime:
         assert!(workspace_dir.exists());
         assert!(workspace_dir.join(".claude/config.json").exists());
         assert!(workspace_dir.join("README.md").exists());
-        assert!(workspace_dir.join(".gitignore").exists());
     }
 
     #[test]
