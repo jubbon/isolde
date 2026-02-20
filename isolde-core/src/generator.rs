@@ -1024,4 +1024,41 @@ runtime:
         let result = generator.initialize_git_repos(temp_dir.path());
         assert!(result.is_err());
     }
+
+    #[test]
+    fn test_generate_full_workflow() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let output_dir = temp_dir.path();
+
+        // Setup mock isolde root
+        let mock_root = temp_dir.path().join("isolde");
+        fs::create_dir_all(mock_root.join("core/features/claude-code")).unwrap();
+        fs::create_dir_all(mock_root.join("core/features/proxy")).unwrap();
+        fs::create_dir_all(mock_root.join("core/features/plugin-manager")).unwrap();
+        fs::write(mock_root.join("core/features/claude-code/install.sh"), "#!/bin/bash\necho claude").unwrap();
+        fs::write(mock_root.join("core/features/proxy/install.sh"), "#!/bin/bash\necho proxy").unwrap();
+        fs::write(mock_root.join("core/features/plugin-manager/install.sh"), "#!/bin/bash\necho plugin").unwrap();
+
+        let config = create_test_config();
+        let mut generator = Generator::new(config).unwrap();
+        generator.isolde_root = mock_root;
+        generator.git_runner = Box::new(MockGitRunner::new());
+
+        let report = generator.generate(output_dir).unwrap();
+
+        // Verify files created
+        assert!(!report.files_created.is_empty());
+
+        let devcontainer_dir = output_dir.join(".devcontainer");
+        assert!(devcontainer_dir.exists());
+        assert!(devcontainer_dir.join("devcontainer.json").exists());
+        assert!(devcontainer_dir.join("Dockerfile").exists());
+        assert!(devcontainer_dir.join("features/claude-code").exists());
+
+        let workspace_dir = output_dir.join("./project");
+        assert!(workspace_dir.exists());
+        assert!(workspace_dir.join(".claude/config.json").exists());
+        assert!(workspace_dir.join("README.md").exists());
+        assert!(workspace_dir.join(".gitignore").exists());
+    }
 }
