@@ -340,4 +340,31 @@ mod tests {
         let result = marketplace.get_plugin("");
         assert!(result.is_err());
     }
+
+    #[test]
+    fn test_marketplace_display_format() {
+        let marketplace = Marketplace {
+            name: "test-market".to_string(),
+            url: "https://example.com/market".to_string(),
+        };
+
+        let display = format!("{}", marketplace);
+        assert!(display.contains("test-market"));
+        assert!(display.contains("https://example.com/market"));
+    }
+
+    #[test]
+    fn test_plugin_display_format() {
+        let plugin = Plugin::new(
+            "test-plugin".to_string(),
+            "test-market".to_string(),
+            "A test plugin".to_string(),
+        )
+        .with_version("1.0.0".to_string());
+
+        let display = format!("{}", plugin);
+        assert!(display.contains("test-plugin"));
+        assert!(display.contains("1.0.0"));
+        assert!(display.contains("test-market"));
+    }
 }
