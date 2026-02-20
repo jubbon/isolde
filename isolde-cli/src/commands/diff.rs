@@ -430,47 +430,53 @@ fn print_text_diff(result: &DiffResult, opts: &DiffOptions) {
     println!("{}", "Run 'isolde sync' to apply changes.".dimmed());
 }
 
-/// Print diff for a single file
-fn print_file_diff(diff: &FileDiff, context_lines: usize) {
-    let icon = match diff.status {
+/// Get icon for diff status
+fn diff_status_icon(status: DiffStatus) -> colored::ColoredString {
+    match status {
         DiffStatus::Created => "+".green(),
         DiffStatus::Modified => "~".yellow(),
         DiffStatus::Deleted => "-".red(),
         DiffStatus::Unchanged => "=".dimmed(),
-    };
+    }
+}
 
-    let relative = if let Ok(p) = diff.path.strip_prefix(std::env::current_dir().unwrap_or(PathBuf::from("."))) {
-        p
-    } else {
-        diff.path.as_path()
-    };
-
-    println!("\n{} {}", icon, relative.display().to_string().bold());
-
-    if !diff.lines.is_empty() {
-        for line in &diff.lines {
-            let prefix = match line.line_type {
-                DiffLineType::Added => "+".green(),
-                DiffLineType::Removed => "-".red(),
-                DiffLineType::Context => " ".dimmed(),
-                DiffLineType::Header => "@".cyan(),
-            };
-            let content = match line.line_type {
-                DiffLineType::Added => line.content.green().to_string(),
-                DiffLineType::Removed => line.content.red().to_string(),
-                _ => line_content_color(&line.content, line.line_type),
-            };
-            println!("{}{}", prefix, content);
-        }
+/// Get prefix for diff line type
+fn diff_line_prefix(line_type: DiffLineType) -> colored::ColoredString {
+    match line_type {
+        DiffLineType::Added => "+".green(),
+        DiffLineType::Removed => "-".red(),
+        DiffLineType::Context => " ".dimmed(),
+        DiffLineType::Header => "@".cyan(),
     }
 }
 
 /// Apply color to diff line content
 fn line_content_color(content: &str, line_type: DiffLineType) -> String {
     match line_type {
+        DiffLineType::Added => content.green().to_string(),
+        DiffLineType::Removed => content.red().to_string(),
         DiffLineType::Header => content.cyan().to_string(),
         DiffLineType::Context => content.dimmed().to_string(),
-        _ => content.to_string(),
+    }
+}
+
+/// Print diff for a single file
+fn print_file_diff(diff: &FileDiff, context_lines: usize) {
+    let relative = diff
+        .path
+        .strip_prefix(std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")))
+        .unwrap_or(diff.path.as_path());
+
+    println!(
+        "\n{} {}",
+        diff_status_icon(diff.status),
+        relative.display().to_string().bold()
+    );
+
+    if !diff.lines.is_empty() {
+        for line in &diff.lines {
+            println!("{}{}", diff_line_prefix(line.line_type), line_content_color(&line.content, line.line_type));
+        }
     }
 }
 

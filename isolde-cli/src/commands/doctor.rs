@@ -91,6 +91,16 @@ impl DoctorReport {
     }
 }
 
+/// Get icon for diagnostic status
+fn diagnostic_status_icon(status: DiagnosticStatus) -> colored::ColoredString {
+    match status {
+        DiagnosticStatus::Healthy => "✔".green(),
+        DiagnosticStatus::Warning => "⚠".yellow(),
+        DiagnosticStatus::Error => "✗".red(),
+        DiagnosticStatus::Missing => "⊘".dimmed(),
+    }
+}
+
 /// Run the doctor command
 pub fn run(opts: DoctorOptions) -> Result<DoctorReport> {
     println!("{}", "🏥 Isolde Installation Doctor".cyan());
@@ -626,16 +636,9 @@ fn print_doctor_report(report: &DoctorReport, verbose: bool) {
     println!("{}", "Diagnostic Results:".bold());
 
     for diagnostic in &report.diagnostics {
-        let icon = match diagnostic.status {
-            DiagnosticStatus::Healthy => "✔".green(),
-            DiagnosticStatus::Warning => "⚠".yellow(),
-            DiagnosticStatus::Error => "✗".red(),
-            DiagnosticStatus::Missing => "⊘".dimmed(),
-        };
-
         println!(
             "  {} {} - {}",
-            icon,
+            diagnostic_status_icon(diagnostic.status),
             diagnostic.component.bold(),
             diagnostic.message
         );
@@ -650,7 +653,6 @@ fn print_doctor_report(report: &DoctorReport, verbose: bool) {
     println!();
     println!("{}", "═".repeat(50).cyan());
 
-    // Summary
     if report.is_healthy() {
         println!(
             "{} {}",
@@ -658,13 +660,14 @@ fn print_doctor_report(report: &DoctorReport, verbose: bool) {
             "All systems operational!".green().bold()
         );
     } else {
+        let icon = if report.error_count > 0 {
+            "✗".red()
+        } else {
+            "⚠".yellow()
+        };
         println!(
             "{} {} error(s), {} warning(s)",
-            if report.error_count > 0 {
-                "✗".red()
-            } else {
-                "⚠".yellow()
-            },
+            icon,
             report.error_count.to_string().red().bold(),
             report.warning_count.to_string().yellow().bold()
         );

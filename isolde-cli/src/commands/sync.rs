@@ -60,11 +60,11 @@ pub fn run(opts: SyncOptions) -> Result<()> {
 
     if !opts.dry_run {
         fs::create_dir_all(&devcontainer_dir)
-            .map_err(|e| Error::FileError(std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to create .devcontainer: {}", e))))?;
+            .map_err(|e| Error::FileError(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
         fs::create_dir_all(&claude_dir)
-            .map_err(|e| Error::FileError(std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to create .claude: {}", e))))?;
+            .map_err(|e| Error::FileError(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
         fs::create_dir_all(&features_dir)
-            .map_err(|e| Error::FileError(std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to create features: {}", e))))?;
+            .map_err(|e| Error::FileError(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
     }
 
     // Generate devcontainer.json
@@ -450,10 +450,7 @@ This project is configured to work with a corporate proxy.
 /// Write file to disk, handling force option
 fn write_file(path: &Path, content: &str, force: bool) -> Result<()> {
     if path.exists() && !force {
-        println!(
-            "{}",
-            format!("  Skipped {} (already exists)", path.display()).yellow()
-        );
+        println!("  Skipped {} (already exists)", path.display().to_string().yellow());
         return Ok(());
     }
 
@@ -469,21 +466,17 @@ fn write_file(path: &Path, content: &str, force: bool) -> Result<()> {
 
 /// Copy core features from the isolde repository
 fn copy_core_features(features_dir: &Path) -> Result<()> {
-    // Get the path to the core features directory
-    // In a real implementation, this would be determined from the isolde installation
     let core_features = match find_core_features_dir() {
         Ok(path) => path,
         Err(_) => {
-            // Features not found - this is okay, they're optional
             println!("{}", "⚠ Core features not found - skipping feature copy".yellow());
             println!("{}", "  Features should be manually installed or bundled with the binary.".dimmed());
             return Ok(());
         }
     };
 
-    // Copy each feature directory
     for entry in fs::read_dir(&core_features)
-        .map_err(|e| Error::FileError(std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to read core features: {}", e))))?
+        .map_err(|e| Error::FileError(std::io::Error::new(std::io::ErrorKind::Other, e)))?
     {
         let entry = entry?;
         let feature_path = entry.path();
@@ -496,7 +489,6 @@ fn copy_core_features(features_dir: &Path) -> Result<()> {
 
             let dest = features_dir.join(feature_name);
 
-            // Remove existing directory if force
             if dest.exists() {
                 fs::remove_dir_all(&dest).map_err(|e| {
                     Error::FileError(std::io::Error::new(
@@ -506,7 +498,6 @@ fn copy_core_features(features_dir: &Path) -> Result<()> {
                 })?;
             }
 
-            // Copy the feature directory
             copy_dir_recursive(&feature_path, &dest)?;
         }
     }
@@ -543,7 +534,7 @@ fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<()> {
     })?;
 
     for entry in fs::read_dir(src)
-        .map_err(|e| Error::FileError(std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to read {}: {}", src.display(), e))))?
+        .map_err(|e| Error::FileError(std::io::Error::new(std::io::ErrorKind::Other, e)))?
     {
         let entry = entry?;
         let ty = entry.file_type()?;

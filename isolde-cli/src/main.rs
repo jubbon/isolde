@@ -51,22 +51,20 @@ fn execute_command(command: Commands, verbose: bool) -> anyhow::Result<()> {
             target_dir,
             list_templates,
             list_presets,
-        } => {
-            execute_init(
-                name,
-                template,
-                preset,
-                lang_version,
-                claude_version,
-                claude_provider,
-                http_proxy,
-                https_proxy,
-                target_dir,
-                list_templates,
-                list_presets,
-                verbose,
-            )
-        }
+        } => execute_init(
+            name,
+            template,
+            preset,
+            lang_version,
+            claude_version,
+            claude_provider,
+            http_proxy,
+            https_proxy,
+            target_dir,
+            list_templates,
+            list_presets,
+            verbose,
+        ),
 
         Commands::Sync {
             dry_run,
@@ -74,9 +72,7 @@ fn execute_command(command: Commands, verbose: bool) -> anyhow::Result<()> {
             version,
         } => execute_sync(dry_run, force, version, verbose),
 
-        Commands::Pull {
-            ..
-        } => {
+        Commands::Pull { .. } => {
             eprintln!("Error: Pull command is disabled in this build (requires async/network support)");
             eprintln!("Please manually download the configuration file from the marketplace.");
             std::process::exit(1);
@@ -187,6 +183,8 @@ fn execute_sync(
 }
 
 /// Execute the pull command
+///
+/// Note: This command is disabled in builds without async/network support.
 fn execute_pull(
     name: String,
     repo: String,
@@ -195,26 +193,7 @@ fn execute_pull(
     verify: bool,
     verbose: bool,
 ) -> anyhow::Result<()> {
-    if verbose {
-        if let Some(reference) = &r#ref {
-            print_info(&format!("Reference: {}", reference));
-        }
-        if let Some(out) = &output {
-            print_info(&format!("Output: {}", out));
-        }
-        if verify {
-            print_info("Checksum verification enabled");
-        }
-    }
-
-    let cwd = output
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("."));
-
-    let opts = commands::PullOptions::new(name)
-        .repo(repo)
-        .r#ref(r#ref.unwrap_or_default())
-        .cwd(cwd);
+    let _ = (name, repo, r#ref, output, verify, verbose);
 
     // Pull command disabled - requires async/network support
     eprintln!("Error: Pull command is disabled in this build.");

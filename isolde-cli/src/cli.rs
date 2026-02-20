@@ -318,7 +318,7 @@ mod tests {
     #[test]
     fn test_cli_parsing() {
         let cli = Cli::try_parse_from(["isolde", "--verbose"]).unwrap();
-        assert!(cli.verbose == true);
+        assert!(cli.verbose);
     }
 
     #[test]

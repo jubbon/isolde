@@ -255,18 +255,31 @@ pub fn run(opts: ValidateOptions) -> Result<ValidationReport> {
     Ok(report)
 }
 
+/// Get icon for check status
+fn status_icon(status: CheckStatus) -> colored::ColoredString {
+    match status {
+        CheckStatus::Passed => "✔".green(),
+        CheckStatus::Failed => "✗".red(),
+        CheckStatus::Warning => "⚠".yellow(),
+        CheckStatus::Skipped => "⊘".dimmed(),
+    }
+}
+
+/// Get SARIF level for check status
+fn status_to_sarif_level(status: CheckStatus) -> &'static str {
+    match status {
+        CheckStatus::Failed => "error",
+        CheckStatus::Warning => "warning",
+        _ => "note",
+    }
+}
+
 /// Print check results based on format
 fn print_checks(checks: &[CheckResult], format: ValidateFormat) {
     match format {
         ValidateFormat::Text => {
             for check in checks {
-                let icon = match check.status {
-                    CheckStatus::Passed => "✔".green(),
-                    CheckStatus::Failed => "✗".red(),
-                    CheckStatus::Warning => "⚠".yellow(),
-                    CheckStatus::Skipped => "⊘".dimmed(),
-                };
-                println!("{} {}", icon, check.description.bold());
+                println!("{} {}", status_icon(check.status), check.description.bold());
                 for detail in &check.details {
                     println!("    {}", detail.dimmed());
                 }
@@ -277,7 +290,6 @@ fn print_checks(checks: &[CheckResult], format: ValidateFormat) {
             println!("{}", json);
         }
         ValidateFormat::Sarif => {
-            // Basic SARIF output
             let sarif = serde_json::json!({
                 "version": "2.1.0",
                 "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
@@ -290,14 +302,10 @@ fn print_checks(checks: &[CheckResult], format: ValidateFormat) {
                         }
                     },
                     "results": checks.iter().filter_map(|check| {
-                        if check.status == CheckStatus::Failed || check.status == CheckStatus::Warning {
+                        if matches!(check.status, CheckStatus::Failed | CheckStatus::Warning) {
                             Some(serde_json::json!({
                                 "ruleId": check.name,
-                                "level": match check.status {
-                                    CheckStatus::Failed => "error",
-                                    CheckStatus::Warning => "warning",
-                                    _ => "note"
-                                },
+                                "level": status_to_sarif_level(check.status),
                                 "message": {
                                     "text": check.details.first().unwrap_or(&check.description)
                                 }
