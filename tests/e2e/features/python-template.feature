@@ -7,7 +7,6 @@ Feature: Python Template
     Given I am using the "shell-script" generator
     When I create a project named "test-python" using template "python" with version "3.12"
     Then the project should be created successfully
-    And the project should have dual git repositories
     And the devcontainer should build successfully
     And Python 3.12 should be installed in the container
     And uv should be available in the container

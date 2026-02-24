@@ -46,9 +46,9 @@ impl TestProject {
         fs::read_to_string(self.path().join(relative_path))
     }
 
-    /// Check if directory is a git repo
-    fn is_git_repo(&self, relative_path: &str) -> bool {
-        self.path().join(relative_path).join(".git").exists()
+    /// Check if the project is a git repo
+    fn is_git_repo(&self) -> bool {
+        self.path().join(".git").exists()
     }
 }
 
@@ -81,32 +81,6 @@ mod tests {
         // Verify core devcontainer files
         assert!(project.devcontainer_file_exists("devcontainer.json"), "devcontainer.json should exist");
         assert!(project.devcontainer_file_exists("Dockerfile"), "Dockerfile should exist");
-    }
-
-    #[test]
-    #[ignore = "Wait for isolde sync implementation"]
-    fn test_sync_creates_git_repos() {
-        // Test: Verify dual git repo setup
-        let project = TestProject::new("test-sync-git");
-
-        // TODO: Run isolde init then sync
-        // Command::new("isolde")
-        //     .args(["init", &project.project_name, "--template", "python"])
-        //     .current_dir(project.temp_dir.path())
-        //     .output()
-        //     .expect("Failed to run isolde init");
-
-        // Command::new("isolde")
-        //     .args(["sync"])
-        //     .current_dir(project.path())
-        //     .output()
-        //     .expect("Failed to run isolde sync");
-
-        // Verify project directory is a git repo
-        assert!(project.is_git_repo("."), "Project root should be a git repo");
-
-        // Verify .devcontainer is a separate git repo
-        assert!(project.is_git_repo(".devcontainer"), ".devcontainer should be a separate git repo");
     }
 
     #[test]

@@ -7,7 +7,6 @@ Feature: Node.js Template
     Given I am using the "shell-script" generator
     When I create a project named "test-nodejs" using template "nodejs" with version "22"
     Then the project should be created successfully
-    And the project should have dual git repositories
     And the devcontainer should build successfully
     And Node.js 22 should be installed in the container
     And npm should be available in the container

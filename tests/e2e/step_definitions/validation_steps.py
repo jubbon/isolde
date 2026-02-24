@@ -29,16 +29,6 @@ def step_project_created(context):
     assert os.path.exists(context.project_path), f"Project path not found: {context.project_path}"
 
 
-@then('the project should have dual git repositories')
-def step_dual_git_repos(context):
-    """Verify dual git repositories."""
-    project_git = os.path.join(context.project_path, "project", ".git")
-    devcontainer_git = os.path.join(context.project_path, ".devcontainer", ".git")
-
-    assert os.path.isdir(project_git), f"project/.git not found at {project_git}"
-    assert os.path.isdir(devcontainer_git), f".devcontainer/.git not found at {devcontainer_git}"
-
-
 @then('the devcontainer directory should exist')
 def step_devcontainer_exists(context):
     """Verify .devcontainer directory exists."""
@@ -53,8 +43,8 @@ def step_devcontainer_json_exists(context):
     assert os.path.isfile(devcontainer_json), f"devcontainer.json not found at {devcontainer_json}"
 
 
-@then('the project directory should exist')
-def step_project_dir_exists(context):
-    """Verify project directory exists."""
-    project_dir = os.path.join(context.project_path, "project")
-    assert os.path.isdir(project_dir), f"project/ not found at {project_dir}"
+@then('the project should be a git repository')
+def step_project_is_git_repo(context):
+    """Verify project is a git repository."""
+    git_dir = os.path.join(context.project_path, ".git")
+    assert os.path.isdir(git_dir), f".git not found at {git_dir}"
