@@ -100,13 +100,41 @@ This document describes the architecture of the Isolde (ISOLated Development Env
 | `templates.rs` | Template loading, validation, substitution, copying |
 | `git.rs` | Git repository initialization |
 | `config.rs` | Configuration and preset loading from YAML |
+| `config/version.rs` | Schema version parsing and validation |
+| `config/v0_1/` | Schema version 0.1 specific configuration |
 | `features.rs` | Feature copying and management |
 
 **Key Responsibilities:**
 - Template processing engine
 - Git operations for repository initialization
-- Configuration management
+- Configuration management with schema versioning support
 - Feature file handling
+
+#### Schema Versioning
+
+Isolde uses schema versioning for `isolde.yaml`, similar to Docker Compose:
+
+```
+isolde.yaml:
+  version: "0.1"     # Schema version (required)
+  name: my-app       # Project name
+  workspace: {...}
+  docker: {...}
+  ...
+```
+
+**Key points:**
+- The `version` field specifies the **schema version** (not project version)
+- Version is **required** - missing or unknown versions result in errors
+- Multiple schema versions can be supported simultaneously
+- Future schemas (v1_0, v2_0, etc.) can be added without breaking existing configs
+
+**Adding a new schema version:**
+1. Add variant to `SchemaVersion` enum in `config/version.rs`
+2. Create new module (e.g., `config/v1_0/mod.rs`) with Config struct
+3. Add variant to `ConfigInner` enum in `config.rs`
+4. Add match arm in `Config::from_str()` for routing
+5. Add accessor methods if needed
 
 ### 2. Template System
 
