@@ -555,7 +555,7 @@ WORKDIR /workspaces
 
 USER ${{USERNAME}}
 "#,
-        config.docker.image
+        config.docker_image()
     ))
 }
 
@@ -565,12 +565,12 @@ fn generate_claude_md(config: &Config) -> Result<String> {
 
 ## Project Overview
 
-**{}** - Version {}
+**{}** - Schema Version {}
 
 Docker Image: {}
 Claude Provider: {}
 "#,
-        config.name, config.name, config.version, config.docker.image, config.claude.provider
+        config.name, config.name, config.version, config.docker_image(), config.claude_provider()
     ))
 }
 

@@ -1,5 +1,7 @@
+# Isolde Configuration test fixture
+version: "0.1"
+
 name: minimal-test
-version: 0.1.0
 workspace:
   dir: .
 docker:

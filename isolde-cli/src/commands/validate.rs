@@ -355,19 +355,19 @@ fn check_config_validity(config: &Config, verbose: bool) -> CheckResult {
 
     if verbose {
         details.push(format!("Project name: {}", config.name.cyan()));
-        details.push(format!("Docker image: {}", config.docker.image.cyan()));
-        details.push(format!("Claude provider: {}", config.claude.provider.cyan()));
+        details.push(format!("Docker image: {}", config.docker_image().cyan()));
+        details.push(format!("Claude provider: {}", config.claude_provider().cyan()));
     }
 
     // Validate provider
     let valid_providers = ["anthropic", "openai", "bedrock", "vertex", "azure"];
-    if !valid_providers.contains(&config.claude.provider.as_str()) {
+    if !valid_providers.contains(&config.claude_provider()) {
         status = CheckStatus::Failed;
-        details.push(format!("Invalid provider: {}", config.claude.provider));
+        details.push(format!("Invalid provider: {}", config.claude_provider()));
     }
 
     // Check for deprecated settings
-    if config.docker.image.contains("devcontainers/base") {
+    if config.docker_image().contains("devcontainers/base") {
         details.push("Note: Using base devcontainer image".to_string());
     }
 
@@ -793,8 +793,8 @@ mod tests {
     #[test]
     fn test_check_config_validity() {
         let config_yaml = r#"
+version: "0.1"
 name: test
-version: 1.0.0
 workspace:
   dir: .
 docker:
@@ -810,8 +810,8 @@ claude:
     #[test]
     fn test_check_config_validity_invalid_provider() {
         let config_yaml = r#"
+version: "0.1"
 name: test
-version: 1.0.0
 workspace:
   dir: .
 docker:

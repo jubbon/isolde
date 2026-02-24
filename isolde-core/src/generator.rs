@@ -100,7 +100,7 @@ impl Generator {
         let files_modified = Vec::new();
 
         // Create workspace directory
-        let workspace_dir = output_dir.join(&self.config.workspace.dir);
+        let workspace_dir = output_dir.join(self.config.workspace_dir());
         fs::create_dir_all(&workspace_dir)?;
 
         // Create .devcontainer directory
@@ -157,7 +157,7 @@ impl Generator {
         let mut would_create = Vec::new();
         let mut would_modify = Vec::new();
 
-        let workspace_dir = output_dir.join(&self.config.workspace.dir);
+        let workspace_dir = output_dir.join(self.config.workspace_dir());
         let devcontainer_dir = output_dir.join(".devcontainer");
         let features_dir = devcontainer_dir.join("features");
         let claude_dir = workspace_dir.join(".claude");
@@ -324,34 +324,34 @@ impl Generator {
         map.insert("PROJECT_NAME".to_string(), self.config.name.clone());
 
         // Claude configuration
-        map.insert("CLAUDE_VERSION".to_string(), self.config.claude.version.clone());
-        map.insert("CLAUDE_PROVIDER".to_string(), self.config.claude.provider.clone());
+        map.insert("CLAUDE_VERSION".to_string(), self.config.claude_version().to_string());
+        map.insert("CLAUDE_PROVIDER".to_string(), self.config.claude_provider().to_string());
 
         // Claude models as JSON
-        let models_json = serde_json::to_string(&self.config.claude.models)
+        let models_json = serde_json::to_string(self.config.claude_models())
             .unwrap_or_else(|_| "{}".to_string());
         map.insert("CLAUDE_MODELS".to_string(), models_json);
 
         // Proxy configuration
-        let proxy_enabled = if self.config.proxy.is_some() {
+        let proxy_enabled = if self.config.proxy().is_some() {
             "true"
         } else {
             "false"
         };
         map.insert("PROXY_ENABLED".to_string(), proxy_enabled.to_string());
 
-        if let Some(ref proxy) = self.config.proxy {
+        if let Some(proxy) = self.config.proxy() {
             map.insert(
                 "HTTP_PROXY".to_string(),
-                proxy.http.clone().unwrap_or_default(),
+                proxy.http().cloned().unwrap_or_default(),
             );
             map.insert(
                 "HTTPS_PROXY".to_string(),
-                proxy.https.clone().unwrap_or_default(),
+                proxy.https().cloned().unwrap_or_default(),
             );
             map.insert(
                 "NO_PROXY".to_string(),
-                proxy.no_proxy.clone().unwrap_or_else(|| format!("localhost,127.0.0.1{}", ".local")),
+                proxy.no_proxy().cloned().unwrap_or_else(|| format!("localhost,127.0.0.1{}", ".local")),
             );
         } else {
             map.insert("HTTP_PROXY".to_string(), String::new());
@@ -372,9 +372,8 @@ impl Generator {
         );
 
         // Plugin activation lists
-        let activate_plugins: Vec<&String> = self
-            .config
-            .plugins
+        let plugins = self.config.plugins_vec();
+        let activate_plugins: Vec<&String> = plugins
             .iter()
             .filter(|p| p.activate)
             .map(|p| &p.name)
@@ -382,9 +381,7 @@ impl Generator {
         let activate_json = serde_json::to_string(&activate_plugins).unwrap_or_else(|_| "[]".to_string());
         map.insert("CLAUDE_ACTIVATE_PLUGINS".to_string(), activate_json);
 
-        let deactivate_plugins: Vec<&String> = self
-            .config
-            .plugins
+        let deactivate_plugins: Vec<&String> = plugins
             .iter()
             .filter(|p| !p.activate)
             .map(|p| &p.name)
@@ -394,9 +391,9 @@ impl Generator {
         map.insert("CLAUDE_DEACTIVATE_PLUGINS".to_string(), deactivate_json);
 
         // Runtime language version (if available)
-        if let Some(ref runtime) = self.config.runtime {
-            if let Some(version_key) = Self::language_to_version_key(runtime.language.as_str()) {
-                map.insert(version_key, runtime.version.clone());
+        if let Some(runtime) = self.config.runtime() {
+            if let Some(version_key) = Self::language_to_version_key(runtime.language()) {
+                map.insert(version_key, runtime.version().to_string());
             }
         }
 
@@ -418,7 +415,7 @@ impl Generator {
     /// Render Dockerfile content
     fn render_dockerfile(&self) -> Result<String> {
         // Use the configured base image
-        let base_image = &self.config.docker.image;
+        let base_image = self.config.docker_image();
         let mut content = format!("ARG BASE_IMAGE={}\nFROM ${{BASE_IMAGE}}\n\n", base_image);
 
         // Add user arguments
@@ -427,29 +424,29 @@ impl Generator {
         content.push_str("ARG USER_GID=1000\n");
 
         // Add language version if runtime is configured
-        if let Some(ref runtime) = self.config.runtime {
-            match runtime.language.as_str() {
+        if let Some(runtime) = self.config.runtime() {
+            match runtime.language() {
                 "python" => {
-                    content.push_str(&format!("ARG PYTHON_VERSION={}\n\n", runtime.version));
+                    content.push_str(&format!("ARG PYTHON_VERSION={}\n\n", runtime.version()));
                 }
                 "node" | "nodejs" => {
-                    content.push_str(&format!("ARG NODE_VERSION={}\n\n", runtime.version));
+                    content.push_str(&format!("ARG NODE_VERSION={}\n\n", runtime.version()));
                 }
                 "rust" => {
-                    content.push_str(&format!("ARG RUST_VERSION={}\n\n", runtime.version));
+                    content.push_str(&format!("ARG RUST_VERSION={}\n\n", runtime.version()));
                 }
                 "go" | "golang" => {
-                    content.push_str(&format!("ARG GO_VERSION={}\n\n", runtime.version));
+                    content.push_str(&format!("ARG GO_VERSION={}\n\n", runtime.version()));
                 }
                 _ => {}
             }
         }
 
         // Add build args from config
-        for arg in &self.config.docker.build_args {
+        for arg in self.config.docker_build_args() {
             content.push_str(&format!("ARG {}\n", arg));
         }
-        if !self.config.docker.build_args.is_empty() {
+        if !self.config.docker_build_args().is_empty() {
             content.push('\n');
         }
 
@@ -549,14 +546,15 @@ USER ${USERNAME}
     /// Render Claude Code configuration
     fn render_claude_config(&self) -> Result<String> {
         let mut config = serde_json::json!({
-            "provider": self.config.claude.provider,
+            "provider": self.config.claude_provider(),
         });
 
         // Add models mapping if present
-        if !self.config.claude.models.is_empty() {
+        let models = self.config.claude_models();
+        if !models.is_empty() {
             if let Some(models_obj) = config.get_mut("models") {
                 if let Some(obj) = models_obj.as_object_mut() {
-                    for (key, value) in &self.config.claude.models {
+                    for (key, value) in models {
                         obj.insert(key.clone(), serde_json::Value::String(value.clone()));
                     }
                 }
@@ -607,8 +605,8 @@ mod tests {
     fn create_test_config() -> Config {
         Config::from_str(
             r#"
+version: "0.1"
 name: test-app
-version: 1.0.0
 workspace:
   dir: ./project
 docker:
@@ -684,13 +682,26 @@ runtime:
     #[test]
     fn test_substitution_with_proxy() {
         let mut config = create_test_config();
-        config.proxy = Some(crate::config::ProxyConfig {
-            http: Some("http://proxy.example.com:8080".to_string()),
-            https: Some("http://proxy.example.com:8080".to_string()),
-            no_proxy: Some("localhost,127.0.0.1".to_string()),
-        });
+        // For v0.1 config with proxy, we need to parse from YAML
+        let config_with_proxy = Config::from_str(
+            r#"
+version: "0.1"
+name: test-app
+workspace:
+  dir: ./project
+docker:
+  image: ubuntu:latest
+claude:
+  provider: anthropic
+proxy:
+  http: http://proxy.example.com:8080
+  https: http://proxy.example.com:8080
+  no_proxy: localhost,127.0.0.1
+"#,
+        )
+        .unwrap();
 
-        let generator = Generator::new(config).unwrap();
+        let generator = Generator::new(config_with_proxy).unwrap();
         let map = generator.build_substitution_map();
 
         assert_eq!(
@@ -706,19 +717,29 @@ runtime:
 
     #[test]
     fn test_plugin_activation_lists() {
-        let mut config = create_test_config();
-        config.plugins = vec![
-            crate::config::PluginConfig {
-                marketplace: "omc".to_string(),
-                name: "plugin1".to_string(),
-                activate: true,
-            },
-            crate::config::PluginConfig {
-                marketplace: "omc".to_string(),
-                name: "plugin2".to_string(),
-                activate: false,
-            },
-        ];
+        let config = Config::from_str(
+            r#"
+version: "0.1"
+name: test-app
+workspace:
+  dir: ./project
+docker:
+  image: ubuntu:latest
+claude:
+  provider: anthropic
+marketplaces:
+  omc:
+    url: https://example.com
+plugins:
+  - marketplace: omc
+    name: plugin1
+    activate: true
+  - marketplace: omc
+    name: plugin2
+    activate: false
+"#,
+        )
+        .unwrap();
 
         let generator = Generator::new(config).unwrap();
         let map = generator.build_substitution_map();

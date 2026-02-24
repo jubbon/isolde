@@ -122,17 +122,16 @@ impl TemplateEngine {
     /// This converts the high-level configuration into template variables
     pub fn build_context(config: &Config) -> TemplateContext {
         // Build models JSON string for devcontainer
-        let models_json = serde_json::to_string(&config.claude.models).unwrap_or_default();
+        let models_json = serde_json::to_string(config.claude_models()).unwrap_or_default();
 
         // Plugin activation lists
-        let active_plugins: Vec<String> = config
-            .plugins
+        let plugins = config.plugins_vec();
+        let active_plugins: Vec<String> = plugins
             .iter()
             .filter(|p| p.activate)
             .map(|p| p.name.clone())
             .collect();
-        let inactive_plugins: Vec<String> = config
-            .plugins
+        let inactive_plugins: Vec<String> = plugins
             .iter()
             .filter(|p| !p.activate)
             .map(|p| p.name.clone())
@@ -140,15 +139,15 @@ impl TemplateEngine {
 
         TemplateContext {
             project_name: config.name.clone(),
-            docker_image: config.docker.image.clone(),
-            lang_version: config.runtime.as_ref().map(|r| r.version.clone()),
-            claude_version: config.claude.version.clone(),
-            claude_provider: config.claude.provider.clone(),
+            docker_image: config.docker_image().to_string(),
+            lang_version: config.runtime().map(|r| r.version().to_string()),
+            claude_version: config.claude_version().to_string(),
+            claude_provider: config.claude_provider().to_string(),
             claude_models_json: models_json,
-            proxy_http: config.proxy.as_ref().and_then(|p| p.http.clone()),
-            proxy_https: config.proxy.as_ref().and_then(|p| p.https.clone()),
-            proxy_no_proxy: config.proxy.as_ref().and_then(|p| p.no_proxy.clone()),
-            proxy_enabled: config.proxy.is_some(),
+            proxy_http: config.proxy().and_then(|p| p.http().cloned()),
+            proxy_https: config.proxy().and_then(|p| p.https().cloned()),
+            proxy_no_proxy: config.proxy().and_then(|p| p.no_proxy().cloned()),
+            proxy_enabled: config.proxy().is_some(),
             claude_activate_plugins: active_plugins,
             claude_deactivate_plugins: inactive_plugins,
         }
@@ -304,33 +303,26 @@ mod tests {
     use std::path::PathBuf;
 
     fn create_test_config() -> Config {
-        Config {
-            name: "test-project".to_string(),
-            version: "1.0.0".to_string(),
-            workspace: WorkspaceConfig {
-                dir: "./project".to_string(),
-            },
-            docker: DockerConfig {
-                image: "mcr.microsoft.com/devcontainers/base:ubuntu".to_string(),
-                build_args: vec!["USERNAME=user".to_string()],
-            },
-            claude: ClaudeConfig {
-                version: "latest".to_string(),
-                provider: "anthropic".to_string(),
-                models: {
-                    let mut map = HashMap::new();
-                    map.insert("haiku".to_string(), "claude-3-5-haiku-20241022".to_string());
-                    map.insert("sonnet".to_string(), "claude-3-5-sonnet-20241022".to_string());
-                    map.insert("opus".to_string(), "claude-3-5-sonnet-20241022".to_string());
-                    map
-                },
-            },
-            runtime: None,
-            proxy: None,
-            marketplaces: HashMap::new(),
-            plugins: vec![],
-            git: Default::default(),
-        }
+        Config::from_str(
+            r#"
+version: "0.1"
+name: test-project
+workspace:
+  dir: ./project
+docker:
+  image: mcr.microsoft.com/devcontainers/base:ubuntu
+  build_args:
+    - USERNAME=user
+claude:
+  version: latest
+  provider: anthropic
+  models:
+    haiku: claude-3-5-haiku-20241022
+    sonnet: claude-3-5-sonnet-20241022
+    opus: claude-3-5-sonnet-20241022
+"#,
+        )
+        .unwrap()
     }
 
     #[test]

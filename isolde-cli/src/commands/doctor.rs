@@ -333,7 +333,7 @@ fn check_isolde_yaml(cwd: &Path, verbose: bool) -> DiagnosticResult {
             let mut suggestions = vec![];
 
             // Check for deprecated settings
-            if config.docker.image.contains("devcontainers/base") {
+            if config.docker_image().contains("devcontainers/base") {
                 suggestions.push("Consider using a more specific base image".to_string());
             }
 
@@ -543,14 +543,14 @@ fn check_workspace(cwd: &Path, verbose: bool) -> DiagnosticResult {
     };
 
     if let Some(ref cfg) = config {
-        let workspace_dir = cwd.join(&cfg.workspace.dir);
+        let workspace_dir = cwd.join(cfg.workspace_dir());
 
         let (status, message, suggestions) = if !workspace_dir.exists() {
             (
                 DiagnosticStatus::Warning,
-                format!("Workspace directory '{}' does not exist", cfg.workspace.dir),
+                format!("Workspace directory '{}' does not exist", cfg.workspace_dir()),
                 vec![
-                    format!("Create the directory: mkdir -p {}", cfg.workspace.dir),
+                    format!("Create the directory: mkdir -p {}", cfg.workspace_dir()),
                     "Run 'isolde sync' to set up the workspace".to_string(),
                 ],
             )
@@ -560,7 +560,7 @@ fn check_workspace(cwd: &Path, verbose: bool) -> DiagnosticResult {
             if !git_dir.exists() {
                 (
                     DiagnosticStatus::Warning,
-                    format!("Workspace '{}' exists but not a git repository", cfg.workspace.dir),
+                    format!("Workspace '{}' exists but not a git repository", cfg.workspace_dir()),
                     vec![
                         "Initialize git: git init".to_string(),
                         "Or run 'isolde sync' to initialize repositories".to_string(),
@@ -569,7 +569,7 @@ fn check_workspace(cwd: &Path, verbose: bool) -> DiagnosticResult {
             } else {
                 (
                     DiagnosticStatus::Healthy,
-                    format!("Workspace '{}' configured", cfg.workspace.dir),
+                    format!("Workspace '{}' configured", cfg.workspace_dir()),
                     vec![],
                 )
             }

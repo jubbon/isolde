@@ -138,13 +138,13 @@ fn generate_devcontainer(config: &Config) -> Result<String> {
     );
 
     // Add language-specific features
-    if let Some(runtime) = &config.runtime {
-        match runtime.language.as_str() {
+    if let Some(runtime) = config.runtime() {
+        match runtime.language() {
             "python" => {
                 features.insert(
                     format!("ghcr.io/devcontainers/features/python:1"),
                     serde_json::json!({
-                        "version": runtime.version,
+                        "version": runtime.version(),
                         "installTools": true
                     }),
                 );
@@ -153,7 +153,7 @@ fn generate_devcontainer(config: &Config) -> Result<String> {
                 features.insert(
                     format!("ghcr.io/devcontainers/features/node:1"),
                     serde_json::json!({
-                        "version": runtime.version
+                        "version": runtime.version()
                     }),
                 );
             }
@@ -161,7 +161,7 @@ fn generate_devcontainer(config: &Config) -> Result<String> {
                 features.insert(
                     "ghcr.io/devcontainers/features/rust:1".to_string(),
                     serde_json::json!({
-                        "version": runtime.version
+                        "version": runtime.version()
                     }),
                 );
             }
@@ -169,7 +169,7 @@ fn generate_devcontainer(config: &Config) -> Result<String> {
                 features.insert(
                     "ghcr.io/devcontainers/features/go:1".to_string(),
                     serde_json::json!({
-                        "version": runtime.version
+                        "version": runtime.version()
                     }),
                 );
             }
@@ -178,47 +178,45 @@ fn generate_devcontainer(config: &Config) -> Result<String> {
     }
 
     // Add proxy feature if configured
-    if config.proxy.is_some() {
-        let proxy = config.proxy.as_ref().unwrap();
+    if let Some(proxy) = config.proxy() {
         features.insert(
             "./features/proxy".to_string(),
             serde_json::json!({
-                "http_proxy": proxy.http,
-                "https_proxy": proxy.https,
-                "no_proxy": proxy.no_proxy,
+                "http_proxy": proxy.http(),
+                "https_proxy": proxy.https(),
+                "no_proxy": proxy.no_proxy(),
                 "enabled": true
             }),
         );
     }
 
     // Add Claude Code feature
-    let claude_models = if config.claude.models.is_empty() {
+    let claude_models = if config.claude_models().is_empty() {
         None
     } else {
-        Some(serde_json::to_string(&config.claude.models).ok())
+        Some(serde_json::to_string(config.claude_models()).ok())
     };
 
     features.insert(
         "./features/claude-code".to_string(),
         serde_json::json!({
-            "version": config.claude.version,
-            "provider": config.claude.provider,
+            "version": config.claude_version(),
+            "provider": config.claude_provider(),
             "models": claude_models,
-            "http_proxy": config.proxy.as_ref().and_then(|p| p.http.clone()),
-            "https_proxy": config.proxy.as_ref().and_then(|p| p.https.clone())
+            "http_proxy": config.proxy().and_then(|p| p.http().cloned()),
+            "https_proxy": config.proxy().and_then(|p| p.https().cloned())
         }),
     );
 
     // Add plugin manager feature if plugins are configured
-    if !config.plugins.is_empty() {
-        let activate: Vec<&str> = config
-            .plugins
+    let plugins = config.plugins_vec();
+    if !plugins.is_empty() {
+        let activate: Vec<&str> = plugins
             .iter()
             .filter(|p| p.activate)
             .map(|p| p.name.as_str())
             .collect();
-        let deactivate: Vec<&str> = config
-            .plugins
+        let deactivate: Vec<&str> = plugins
             .iter()
             .filter(|p| !p.activate)
             .map(|p| p.name.as_str())
@@ -235,11 +233,11 @@ fn generate_devcontainer(config: &Config) -> Result<String> {
 
     // Build feature install order
     let mut override_order = vec![];
-    if config.proxy.is_some() {
+    if config.proxy().is_some() {
         override_order.push("./features/proxy");
     }
     override_order.push("./features/claude-code");
-    if !config.plugins.is_empty() {
+    if !plugins.is_empty() {
         override_order.push("./features/plugin-manager");
     }
 
@@ -318,7 +316,7 @@ RUN chown -R ${{USERNAME}}:${{USERNAME}} /workspaces
 
 USER ${{USERNAME}}
 "#,
-        config.docker.image
+        config.docker_image()
     );
 
     Ok(dockerfile)
@@ -333,7 +331,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**{}** - Version {}
+**{}** - Schema Version {}
 
 This is an Isolde-managed isolated development environment.
 
@@ -346,12 +344,12 @@ This is an Isolde-managed isolated development environment.
         config.name,
         config.name,
         config.version,
-        config.docker.image,
-        config.claude.provider,
-        config.workspace.dir
+        config.docker_image(),
+        config.claude_provider(),
+        config.workspace_dir()
     );
 
-    if let Some(runtime) = &config.runtime {
+    if let Some(runtime) = config.runtime() {
         content.push_str(&format!(
             r#"
 ## Runtime Environment
@@ -359,20 +357,23 @@ This is an Isolde-managed isolated development environment.
 - **Language**: {} {}
 - **Package Manager**: {}
 "#,
-            runtime.language, runtime.version, runtime.package_manager
+            runtime.language(),
+            runtime.version(),
+            runtime.package_manager()
         ));
 
-        if !runtime.tools.is_empty() {
+        if !runtime.tools().is_empty() {
             content.push_str("\n### Tools\n");
-            for tool in &runtime.tools {
+            for tool in runtime.tools() {
                 content.push_str(&format!("- {}\n", tool));
             }
         }
     }
 
-    if !config.plugins.is_empty() {
+    let plugins = config.plugins_vec();
+    if !plugins.is_empty() {
         content.push_str("\n## Claude Plugins\n");
-        for plugin in &config.plugins {
+        for plugin in &plugins {
             let status = if plugin.activate { "✓" } else { "✗" };
             content.push_str(&format!(
                 "- {} {} (from marketplace: {})\n",
@@ -381,29 +382,22 @@ This is an Isolde-managed isolated development environment.
         }
     }
 
-    if !config.marketplaces.is_empty() {
-        content.push_str("\n## Marketplaces\n");
-        for (name, marketplace) in &config.marketplaces {
-            content.push_str(&format!("- {}: {}\n", name, marketplace.url));
-        }
-    }
-
-    if config.proxy.is_some() {
-        let proxy = config.proxy.as_ref().unwrap();
+    if let Some(proxy) = config.proxy() {
         content.push_str(
             r#"
+
 ## Proxy Configuration
 
 This project is configured to work with a corporate proxy.
 "#,
         );
-        if let Some(http) = &proxy.http {
+        if let Some(http) = proxy.http() {
             content.push_str(&format!("- HTTP Proxy: {}\n", http));
         }
-        if let Some(https) = &proxy.https {
+        if let Some(https) = proxy.https() {
             content.push_str(&format!("- HTTPS Proxy: {}\n", https));
         }
-        if let Some(no_proxy) = &proxy.no_proxy {
+        if let Some(no_proxy) = proxy.no_proxy() {
             content.push_str(&format!("- No Proxy: {}\n", no_proxy));
         }
     }
@@ -554,8 +548,8 @@ mod tests {
     #[test]
     fn test_generate_dockerfile() {
         let config_yaml = r#"
+version: "0.1"
 name: test
-version: 1.0.0
 workspace:
   dir: .
 docker:
@@ -573,8 +567,8 @@ claude:
     #[test]
     fn test_generate_claude_md() {
         let config_yaml = r#"
+version: "0.1"
 name: test-project
-version: 1.0.0
 workspace:
   dir: .
 docker:
@@ -595,8 +589,8 @@ runtime:
     #[test]
     fn test_generate_devcontainer() {
         let config_yaml = r#"
+version: "0.1"
 name: test
-version: 1.0.0
 workspace:
   dir: .
 docker:
