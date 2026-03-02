@@ -7,6 +7,7 @@
 
 mod cli;
 mod commands;
+mod version_info;
 
 use clap::Parser;
 use colored::Colorize;
@@ -100,9 +101,9 @@ fn execute_command(command: Commands, verbose: bool) -> anyhow::Result<()> {
         } => execute_doctor(fix, doctor_verbose, component, report, verbose),
 
         Commands::Version {
-            verbose: version_verbose,
+            verbosity,
             format,
-        } => execute_version(version_verbose, format),
+        } => execute_version(verbosity, format),
     }
 }
 
@@ -279,21 +280,19 @@ fn execute_doctor(
 }
 
 /// Execute the version command
-fn execute_version(version_verbose: bool, format: String) -> anyhow::Result<()> {
+fn execute_version(verbose: u8, format: String) -> anyhow::Result<()> {
+    let build_info = version_info::BuildInfo::get();
+
     match format.as_str() {
         "json" => {
-            let json = serde_json::json!({
-                "name": "isolde",
-                "version": VERSION,
-                "rust_version": env!("CARGO_PKG_RUST_VERSION"),
-            });
-            println!("{}", json);
+            build_info.display_json();
         }
         _ => {
-            println!("Isolde {}", VERSION);
-            if version_verbose {
-                println!("Release: {}", env!("ISOLDE_VERSION"));
-                println!("Rust: {}", env!("CARGO_PKG_RUST_VERSION"));
+            match verbose {
+                0 => build_info.display_basic(),
+                1 => build_info.display_verbose1(),
+                2 => build_info.display_verbose2(),
+                _ => build_info.display_verbose3(),
             }
         }
     }
@@ -336,13 +335,13 @@ mod tests {
 
     #[test]
     fn test_version_format() {
-        let result = execute_version(false, "text".to_string());
+        let result = execute_version(0, "text".to_string());
         assert!(result.is_ok());
     }
 
     #[test]
     fn test_version_format_json() {
-        let result = execute_version(false, "json".to_string());
+        let result = execute_version(0, "json".to_string());
         assert!(result.is_ok());
     }
 }

@@ -244,18 +244,25 @@ pub enum Commands {
     /// Show version information
     ///
     /// Displays the version of Isolde and its dependencies.
+    /// Use -V, -VV, -VVV for increasing levels of detail.
     ///
     /// # Examples
     ///
     /// Show version:
     ///   isolde version
     ///
+    /// Show version with build date:
+    ///   isolde version -V
+    ///
     /// Show detailed version info:
-    ///   isolde version --verbose
+    ///   isolde version -VV
+    ///
+    /// Show full build metadata:
+    ///   isolde version -VVV
     Version {
-        /// Show detailed version information
-        #[arg(short, long)]
-        verbose: bool,
+        /// Increase verbosity level (use -V, -VV, -VVV for more detail)
+        #[arg(short = 'V', long, action = clap::ArgAction::Count)]
+        verbosity: u8,
 
         /// Output format (text, json)
         #[arg(long, value_name = "FORMAT", default_value = "text")]
@@ -424,7 +431,7 @@ mod tests {
                 report: None,
             },
             Commands::Version {
-                verbose: false,
+                verbosity: 0,
                 format: "text".to_string(),
             },
         ];
