@@ -25,7 +25,9 @@ isolde --version
 ```bash
 git clone https://github.com/jubbon/isolde.git
 cd isolde
-./scripts/isolde.sh
+make install
+export PATH="$HOME/.local/bin:$PATH"
+isolde --version
 ```
 
 #### Create Projects

@@ -41,7 +41,7 @@ cargo run -- --help
 ### Creating New Projects
 ```bash
 # Build and install first
-cargo install --path .
+make install
 
 # Interactive wizard
 isolde init

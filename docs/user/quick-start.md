@@ -26,17 +26,24 @@ docker --version
 git clone <repository-url>
 cd isolde
 
-# Build and install
-cargo install --path .
+# Build and install to ~/.local/bin/
+make install
+
+# Add ~/.local/bin to PATH if needed
+export PATH="$HOME/.local/bin:$PATH"
 
 # Verify installation
 isolde --version
 ```
 
-### Using Cargo (future)
+### Alternative Installation Methods
 
 ```bash
-cargo install isolde
+# Install via cargo (to ~/.cargo/bin/)
+make install-cargo
+
+# Or use cargo directly
+cargo install --path .
 ```
 
 ## Creating Your First Project

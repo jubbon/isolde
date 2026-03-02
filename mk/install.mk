@@ -2,29 +2,41 @@
 # Installation Targets
 # =============================================================================
 
-# Installation directory
+# Installation directory (legacy, for uninstall target)
 ISOLDE_HOME ?= $(HOME)/.isolde
-INSTALL_SCRIPT = scripts/install/install.sh
 
 .PHONY: install uninstall install-info
 
-## Install Isolde to ~/.isolde/ (v2 Rust binary via cargo)
-install: rust-install
-	@echo "$(GREEN)Isolde v2 installed successfully!$(RESET)"
+## Install Isolde to ~/.local/bin/
+install: install-local
+
+## Install Isolde to ~/.local/bin/
+install-local: rust-build
+	@echo "$(CYAN)Installing $(BINARY_NAME) to ~/.local/bin...$(RESET)"
+	@mkdir -p $(HOME)/.local/bin
+	@cp -f $(BINARY_PATH) $(HOME)/.local/bin/$(BINARY_NAME)
+	@chmod +x $(HOME)/.local/bin/$(BINARY_NAME)
+	@echo "$(GREEN)$(BINARY_NAME) installed to ~/.local/bin/$(RESET)"
 	@echo ""
 	@echo "$(YELLOW)Next steps:$(RESET)"
 	@echo "  1. Verify: $(CYAN)isolde --version$(RESET)"
 	@echo "  2. Create a project: $(CYAN)isolde init my-project$(RESET)"
-	@echo ""
-	@echo "$(YELLOW)Note:$(RESET) Binary installed via cargo to ~/.cargo/bin/"
-	@echo "      For shell script installation (v1), run: make install-v1"
+	@if ! echo $$PATH | grep -q "$$HOME/.local/bin"; then \
+		echo ""; \
+		echo "$(YELLOW)Note:$(RESET) ~/.local/bin is not in your PATH."; \
+		echo "Add this to your shell config (~/.bashrc or ~/.zshrc):"; \
+		echo "  $(CYAN)export PATH=\"$$HOME/.local/bin:$$PATH\"$(RESET)"; \
+	fi
 
-## Install Isolde v1 (shell script version) to ~/.isolde/
-install-v1:
-	@echo "$(CYAN)Installing Isolde v1 (shell scripts) to $(ISOLDE_HOME)...$(RESET)"
-	@ISOLDE_HOME=$(ISOLDE_HOME) bash $(INSTALL_SCRIPT)
+## Install Isolde via cargo install (to ~/.cargo/bin/)
+install-cargo:
+	@echo "$(CYAN)Installing $(BINARY_NAME) via cargo install...$(RESET)"
+	@cargo install --path $(CARGO_DIR) --force
+	@echo "$(GREEN)$(BINARY_NAME) installed to ~/.cargo/bin/$(RESET)"
 	@echo ""
-	@echo "$(GREEN)Isolde v1 installed successfully!$(RESET)"
+	@echo "$(YELLOW)Next steps:$(RESET)"
+	@echo "  1. Verify: $(CYAN)isolde --version$(RESET)"
+	@echo "  2. Create a project: $(CYAN)isolde init my-project$(RESET)"
 
 ## Uninstall Isolde
 uninstall:
@@ -40,17 +52,16 @@ uninstall:
 install-info:
 	@echo "$(CYAN)Isolde Installation Information$(RESET)"
 	@echo ""
-	@echo "Installation directory: $(ISOLDE_HOME)"
-	@if [ -d "$(ISOLDE_HOME)" ]; then \
+	@if [ -f "$(HOME)/.local/bin/$(BINARY_NAME)" ]; then \
 		echo "Status: $(GREEN)Installed$(RESET)"; \
-		if [ -f "$(ISOLDE_HOME)/VERSION" ]; then \
-			echo "Version: $$(cat $(ISOLDE_HOME)/VERSION)"; \
-		fi; \
+		echo "Location: ~/.local/bin/$(BINARY_NAME)"; \
+		echo "Version: $$($(HOME)/.local/bin/$(BINARY_NAME) --version 2>/dev/null)"; \
 	else \
 		echo "Status: $(YELLOW)Not installed$(RESET)"; \
 	fi
 	@echo ""
 	@echo "$(ARROW) $(GREEN)Installation commands:$(RESET)"
-	@echo "  make install          - Install Isolde to ~/.isolde/"
+	@echo "  make install          - Install Isolde to ~/.local/bin/"
+	@echo "  make install-cargo    - Install via cargo to ~/.cargo/bin/"
 	@echo "  make uninstall        - Remove Isolde installation"
 	@echo "  make install-info     - Show installation status"
