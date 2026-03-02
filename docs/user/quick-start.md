@@ -87,6 +87,59 @@ Each created project has:
 - A single git repository that includes both code and config
 - Pre-installed language tools and Claude Code CLI
 
+## Building and Running
+
+After creating a project, you'll need to build and run the devcontainer:
+
+### Prerequisites
+
+Install the [devcontainers CLI](https://github.com/devcontainers/cli):
+
+```bash
+npm install -g @devcontainers/cli
+```
+
+### Build the Container
+
+```bash
+cd my-app
+isolde build
+```
+
+### Start the Container
+
+```bash
+isolde run
+```
+
+This will start the container and give you an interactive shell inside it.
+
+### Run Commands
+
+From another terminal, you can execute commands in the running container:
+
+```bash
+cd my-app
+isolde exec python --version
+isolde exec pytest
+```
+
+### Other Useful Commands
+
+```bash
+# Stop the container
+isolde stop
+
+# List running containers
+isolde ps
+
+# View container logs
+isolde logs
+
+# Follow logs (live)
+isolde logs --follow
+```
+
 ## Next Steps
 
 - [Usage Guide](usage.md) - Detailed command reference

@@ -57,6 +57,52 @@ isolde list-templates
 isolde list-presets
 ```
 
+### Container Management
+
+After running `isolde init` and `isolde sync`, you can build and run the devcontainer:
+
+```bash
+# Build the devcontainer image
+isolde build
+
+# Build without cache
+isolde build --no-cache
+
+# Build with custom image name
+isolde build --image-name myproject:latest
+
+# Run the devcontainer (start and enter shell)
+isolde run
+
+# Run without attaching (background mode)
+isolde run --detach
+
+# Execute a command in a running container
+isolde exec python --version
+isolde exec pytest
+isolde exec bash -c "echo hello"
+
+# Stop a running container
+isolde stop
+
+# List running containers
+isolde ps
+
+# List all containers (including stopped)
+isolde ps --all
+
+# View container logs
+isolde logs
+
+# Follow logs (like tail -f)
+isolde logs --follow
+
+# Show last 50 lines
+isolde logs --tail 50
+```
+
+**Note:** These commands require the [devcontainers CLI](https://github.com/devcontainers/cli) to be installed.
+
 ### Development Workflow
 ```bash
 # Format code

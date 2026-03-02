@@ -45,6 +45,42 @@ cargo install --path .
 # Create a new project
 isolde init my-app --preset python-ml
 
+# Generate devcontainer configuration
+cd my-app
+isolde sync
+
+# Build and run the container (requires devcontainers CLI)
+isolde build
+isolde run
+
+# Or use the interactive wizard
+isolde init
+```
+
+See [Quick Start](user/quick-start.md) for more details.
+
+## Container Management
+
+Isolde provides built-in commands for building and managing devcontainers:
+
+- `isolde build` - Build the devcontainer image
+- `isolde run` - Start and enter the container
+- `isolde exec` - Execute commands in a running container
+- `isolde stop` - Stop a running container
+- `isolde ps` - List running containers
+- `isolde logs` - View container logs
+
+These commands require the [devcontainers CLI](https://github.com/devcontainers/cli) to be installed.
+
+```bash
+# Install from source
+git clone <repository-url>
+cd isolde
+cargo install --path .
+
+# Create a new project
+isolde init my-app --preset python-ml
+
 # Or use the interactive wizard
 isolde init
 ```

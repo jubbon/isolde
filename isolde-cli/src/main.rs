@@ -104,6 +104,37 @@ fn execute_command(command: Commands, verbose: bool) -> anyhow::Result<()> {
             verbosity,
             format,
         } => execute_version(verbosity, format),
+
+        Commands::Build {
+            workspace_folder,
+            no_cache,
+            image_name,
+        } => execute_build(workspace_folder, no_cache, image_name, verbose),
+
+        Commands::Run {
+            workspace_folder,
+            detach,
+        } => execute_run(workspace_folder, detach, verbose),
+
+        Commands::Exec {
+            command,
+            workspace_folder,
+        } => execute_exec(command, workspace_folder, verbose),
+
+        Commands::Stop {
+            workspace_folder,
+            force,
+        } => execute_stop(workspace_folder, force, verbose),
+
+        Commands::Ps {
+            all,
+        } => execute_ps(all, verbose),
+
+        Commands::Logs {
+            workspace_folder,
+            follow,
+            tail,
+        } => execute_logs(workspace_folder, follow, tail, verbose),
     }
 }
 
@@ -299,6 +330,98 @@ fn execute_version(verbose: u8, format: String) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Execute the build command
+fn execute_build(
+    workspace_folder: Option<String>,
+    no_cache: bool,
+    image_name: Option<String>,
+    verbose: bool,
+) -> anyhow::Result<()> {
+    let opts = commands::BuildOptions {
+        workspace_folder: workspace_folder.map(PathBuf::from),
+        no_cache,
+        image_name,
+        cwd: PathBuf::from("."),
+        verbose,
+    };
+    commands::run_build(opts).map_err(|e| anyhow::anyhow!(e))
+}
+
+/// Execute the run command
+fn execute_run(
+    workspace_folder: Option<String>,
+    detach: bool,
+    verbose: bool,
+) -> anyhow::Result<()> {
+    let opts = commands::RunOptions {
+        workspace_folder: workspace_folder.map(PathBuf::from),
+        detach,
+        cwd: PathBuf::from("."),
+        verbose,
+    };
+    commands::run_run(opts).map_err(|e| anyhow::anyhow!(e))
+}
+
+/// Execute the exec command
+fn execute_exec(
+    command: Vec<String>,
+    workspace_folder: Option<String>,
+    verbose: bool,
+) -> anyhow::Result<()> {
+    let opts = commands::ExecOptions {
+        command,
+        workspace_folder: workspace_folder.map(PathBuf::from),
+        cwd: PathBuf::from("."),
+        verbose,
+    };
+    commands::run_exec(opts).map_err(|e| anyhow::anyhow!(e))
+}
+
+/// Execute the stop command
+fn execute_stop(
+    workspace_folder: Option<String>,
+    force: bool,
+    verbose: bool,
+) -> anyhow::Result<()> {
+    let opts = commands::StopOptions {
+        workspace_folder: workspace_folder.map(PathBuf::from),
+        force,
+        cwd: PathBuf::from("."),
+        verbose,
+    };
+    commands::run_stop(opts).map_err(|e| anyhow::anyhow!(e))
+}
+
+/// Execute the ps command
+fn execute_ps(
+    all: bool,
+    verbose: bool,
+) -> anyhow::Result<()> {
+    let opts = commands::PsOptions {
+        all,
+        verbose,
+    };
+    let _containers = commands::run_ps(opts).map_err(|e| anyhow::anyhow!(e))?;
+    Ok(())
+}
+
+/// Execute the logs command
+fn execute_logs(
+    workspace_folder: Option<String>,
+    follow: bool,
+    tail: usize,
+    verbose: bool,
+) -> anyhow::Result<()> {
+    let opts = commands::LogsOptions {
+        workspace_folder: workspace_folder.map(PathBuf::from),
+        follow,
+        tail,
+        cwd: PathBuf::from("."),
+        verbose,
+    };
+    commands::run_logs(opts).map_err(|e| anyhow::anyhow!(e))
+}
+
 /// Print usage information
 fn print_usage() -> anyhow::Result<()> {
     println!("{}", "Isolde - ISOLated Development Environment".cyan().bold());
@@ -313,6 +436,12 @@ fn print_usage() -> anyhow::Result<()> {
     println!("  {}  Show differences with template", "diff".cyan());
     println!("  {}  Run diagnostics", "doctor".cyan());
     println!("  {}  Show version information", "version".cyan());
+    println!("  {}  Build devcontainer image", "build".green());
+    println!("  {}  Run devcontainer (start and enter shell)", "run".green());
+    println!("  {}  Execute command in running container", "exec".green());
+    println!("  {}  Stop running container", "stop".green());
+    println!("  {}  List running containers", "ps".green());
+    println!("  {}  View container logs", "logs".green());
     println!();
     println!("Run {} {} for more information on a command.", "isolde".green(), "<COMMAND> --help".yellow());
 

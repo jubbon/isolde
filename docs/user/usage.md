@@ -148,6 +148,185 @@ This will:
 - Update features while preserving your customizations
 - Rebuild the container if needed
 
+## Container Management Commands
+
+Isolde provides built-in commands for managing devcontainers using the [devcontainers CLI](https://github.com/devcontainers/cli). These commands require the devcontainer CLI to be installed.
+
+### Prerequisites
+
+Install the devcontainer CLI:
+
+```bash
+# On Linux/macOS
+npm install -g @devcontainers/cli
+
+# Verify installation
+devcontainer --version
+```
+
+### Building the Container
+
+Build the devcontainer image from your project configuration:
+
+```bash
+cd ~/workspace/my-project
+isolde build
+```
+
+Build options:
+```bash
+# Build without cache
+isolde build --no-cache
+
+# Build with custom image name
+isolde build --image-name myproject:latest
+
+# Build in specific workspace
+isolde build --workspace-folder /path/to/project
+```
+
+### Running the Container
+
+Start the devcontainer and enter an interactive shell:
+
+```bash
+isolde run
+```
+
+Run options:
+```bash
+# Start without attaching (background mode)
+isolde run --detach
+
+# Run in specific workspace
+isolde run --workspace-folder /path/to/project
+```
+
+### Executing Commands
+
+Run a command inside a running container without starting a shell:
+
+```bash
+# Run a single command
+isolde exec python --version
+
+# Run tests
+isolde exec pytest
+
+# Run multiple commands
+isolde exec bash -c "echo hello && ls"
+```
+
+### Stopping the Container
+
+Stop a running container:
+
+```bash
+isolde stop
+```
+
+Stop options:
+```bash
+# Force stop without graceful shutdown
+isolde stop --force
+
+# Stop container in specific workspace
+isolde stop --workspace-folder /path/to/project
+```
+
+### Listing Containers
+
+List all running devcontainers:
+
+```bash
+isolde ps
+```
+
+List options:
+```bash
+# Show all containers (including stopped)
+isolde ps --all
+```
+
+Output example:
+```
+📋 Devcontainers
+────────────────────────────────────────────────────────────────────
+ID            NAME                        STATUS      WORKSPACE
+────────────────────────────────────────────────────────────────────
+abc123...     devcontainer-myproject      running     /home/user/myproject
+
+1 container
+```
+
+### Viewing Logs
+
+View container logs:
+
+```bash
+isolde logs
+```
+
+Logs options:
+```bash
+# Follow logs (like tail -f)
+isolde logs --follow
+
+# Show last 50 lines
+isolde logs --tail 50
+
+# View logs for specific workspace
+isolde logs --workspace-folder /path/to/project
+```
+
+### Typical Workflow
+
+A typical development workflow with Isolde:
+
+```bash
+# 1. Create a project
+isolde init my-app --template python
+cd my-app
+
+# 2. Generate devcontainer configuration
+isolde sync
+
+# 3. Build the container image
+isolde build
+
+# 4. Start the container
+isolde run
+
+# 5. Run commands in the container (from another terminal)
+isolde exec pytest
+isolde exec python --version
+
+# 6. View logs if needed
+isolde logs
+
+# 7. Stop the container when done
+isolde stop
+
+# 8. List containers to verify
+isolde ps
+```
+
+### State Management
+
+Isolde maintains container state in `.isolde/state.json` in each project directory:
+
+```json
+{
+  "container_id": "abc123def456",
+  "container_name": "devcontainer-myproject",
+  "image_name": "myproject-dev:latest",
+  "status": "running",
+  "workspace_folder": "/home/user/myproject",
+  "created_at": "2026-03-02T10:30:00Z",
+  "updated_at": "2026-03-02T10:30:00Z"
+}
+```
+
 ## isolde.yaml Format
 
 Every Isolde project has an `isolde.yaml` configuration file:

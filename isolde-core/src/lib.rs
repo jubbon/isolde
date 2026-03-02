@@ -10,6 +10,8 @@ pub mod config;
 pub mod template;
 pub mod marketplace;
 pub mod generator;
+pub mod container;
+pub mod state;
 
 // Re-export common types
 pub use error::{Error, Result};

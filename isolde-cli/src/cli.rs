@@ -268,6 +268,153 @@ pub enum Commands {
         #[arg(long, value_name = "FORMAT", default_value = "text")]
         format: String,
     },
+
+    /// Build the devcontainer image
+    ///
+    /// Builds the Docker image for the devcontainer using the devcontainer CLI.
+    /// This is equivalent to running `devcontainer build`.
+    ///
+    /// # Examples
+    ///
+    /// Build with cache:
+    ///   isolde build
+    ///
+    /// Build without cache:
+    ///   isolde build --no-cache
+    ///
+    /// Build with custom image name:
+    ///   isolde build --image-name myproject:latest
+    Build {
+        /// Path to project directory (default: current directory)
+        #[arg(long, value_name = "PATH")]
+        workspace_folder: Option<String>,
+
+        /// Don't use cache when building
+        #[arg(long)]
+        no_cache: bool,
+
+        /// Image name and tag
+        #[arg(long, value_name = "NAME:TAG")]
+        image_name: Option<String>,
+    },
+
+    /// Run the devcontainer (start and enter shell)
+    ///
+    /// Starts the devcontainer using the devcontainer CLI and attaches to it.
+    /// This is equivalent to running `devcontainer up` with an interactive shell.
+    ///
+    /// # Examples
+    ///
+    /// Run in current directory:
+    ///   isolde run
+    ///
+    /// Run without attaching:
+    ///   isolde run --detach
+    ///
+    /// Run in specific directory:
+    ///   isolde run --workspace-folder /path/to/project
+    Run {
+        /// Path to project directory
+        #[arg(long, value_name = "PATH")]
+        workspace_folder: Option<String>,
+
+        /// Don't attach to container (start only)
+        #[arg(long)]
+        detach: bool,
+    },
+
+    /// Execute a command in a running container
+    ///
+    /// Executes a command in the running devcontainer without starting a shell.
+    /// This is equivalent to running `devcontainer exec`.
+    ///
+    /// # Examples
+    ///
+    /// Run Python:
+    ///   isolde exec python --version
+    ///
+    /// Run tests:
+    ///   isolde exec pytest
+    ///
+    /// Run multiple commands:
+    ///   isolde exec bash -c "echo hello && ls"
+    Exec {
+        /// Command to execute
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        command: Vec<String>,
+
+        /// Path to project directory
+        #[arg(long, value_name = "PATH")]
+        workspace_folder: Option<String>,
+    },
+
+    /// Stop a running container
+    ///
+    /// Stops the running devcontainer for the current project.
+    /// This is equivalent to running `devcontainer stop`.
+    ///
+    /// # Examples
+    ///
+    /// Stop container:
+    ///   isolde stop
+    ///
+    /// Stop container in specific directory:
+    ///   isolde stop --workspace-folder /path/to/project
+    Stop {
+        /// Path to project directory
+        #[arg(long, value_name = "PATH")]
+        workspace_folder: Option<String>,
+
+        /// Force stop without graceful shutdown
+        #[arg(long)]
+        force: bool,
+    },
+
+    /// List running containers
+    ///
+    /// Lists all devcontainers managed by Isolde.
+    /// This is equivalent to running `devcontainer ps`.
+    ///
+    /// # Examples
+    ///
+    /// List running containers:
+    ///   isolde ps
+    ///
+    /// List all containers (including stopped):
+    ///   isolde ps --all
+    Ps {
+        /// Show all containers (including stopped)
+        #[arg(long)]
+        all: bool,
+    },
+
+    /// View container logs
+    ///
+    /// Shows logs from the devcontainer.
+    ///
+    /// # Examples
+    ///
+    /// Show last 100 lines:
+    ///   isolde logs
+    ///
+    /// Follow logs:
+    ///   isolde logs --follow
+    ///
+    /// Show last 50 lines:
+    ///   isolde logs --tail 50
+    Logs {
+        /// Path to project directory
+        #[arg(long, value_name = "PATH")]
+        workspace_folder: Option<String>,
+
+        /// Follow log output
+        #[arg(short, long)]
+        follow: bool,
+
+        /// Number of lines to show
+        #[arg(short, long, default_value = "100")]
+        tail: usize,
+    },
 }
 
 impl Commands {
@@ -281,6 +428,12 @@ impl Commands {
             Commands::Diff { .. } => "diff".cyan().to_string(),
             Commands::Doctor { .. } => "doctor".cyan().to_string(),
             Commands::Version { .. } => "version".cyan().to_string(),
+            Commands::Build { .. } => "build".cyan().to_string(),
+            Commands::Run { .. } => "run".cyan().to_string(),
+            Commands::Exec { .. } => "exec".cyan().to_string(),
+            Commands::Stop { .. } => "stop".cyan().to_string(),
+            Commands::Ps { .. } => "ps".cyan().to_string(),
+            Commands::Logs { .. } => "logs".cyan().to_string(),
         }
     }
 
@@ -294,6 +447,12 @@ impl Commands {
             Commands::Diff { .. } => "diff",
             Commands::Doctor { .. } => "doctor",
             Commands::Version { .. } => "version",
+            Commands::Build { .. } => "build",
+            Commands::Run { .. } => "run",
+            Commands::Exec { .. } => "exec",
+            Commands::Stop { .. } => "stop",
+            Commands::Ps { .. } => "ps",
+            Commands::Logs { .. } => "logs",
         }
     }
 }

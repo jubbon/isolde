@@ -492,13 +492,43 @@ fn copy_core_features(features_dir: &Path) -> Result<()> {
 
 /// Find the core features directory
 fn find_core_features_dir() -> Result<PathBuf> {
-    // Try several possible locations
-    let possible_paths = vec![
-        PathBuf::from("core/features"),
-        PathBuf::from("../core/features"),
-        PathBuf::from("../../core/features"),
-        // In production, we would also check the isolde installation directory
-    ];
+    let mut possible_paths = vec![];
+
+    // 1. Check environment variable first
+    if let Ok(env_path) = std::env::var("ISOLDE_CORE_FEATURES") {
+        possible_paths.push(PathBuf::from(env_path));
+    }
+
+    // 2. Try relative paths from current directory (for development)
+    possible_paths.push(PathBuf::from("core/features"));
+    possible_paths.push(PathBuf::from("../core/features"));
+    possible_paths.push(PathBuf::from("../../core/features"));
+
+    // 3. Try to find relative to the isolde executable
+    if let Ok(exe_path) = std::env::current_exe() {
+        if let Some(exe_dir) = exe_path.parent() {
+            // Installed via make install to ~/.local/bin
+            // Features should be in ~/.local/share/isolde/core/features
+            if let Some(prefix) = exe_dir.parent() {
+                let share_path = prefix.join("share").join("isolde").join("core").join("features");
+                possible_paths.push(share_path);
+            }
+
+            // Or features might be next to the executable (for development)
+            possible_paths.push(exe_dir.join("core").join("features"));
+            possible_paths.push(exe_dir.join("../core/features").canonicalize().unwrap_or_else(|_| PathBuf::from("../core/features")));
+        }
+    }
+
+    // 4. Check XDG data directories
+    if let Ok(home) = std::env::var("HOME") {
+        possible_paths.push(PathBuf::from(home.clone()).join(".local").join("share").join("isolde").join("core").join("features"));
+        possible_paths.push(PathBuf::from(home).join(".isolde").join("core").join("features"));
+    }
+
+    // 5. Try /usr/local/share for system-wide installation
+    possible_paths.push(PathBuf::from("/usr/local/share/isolde/core/features"));
+    possible_paths.push(PathBuf::from("/opt/isolde/core/features"));
 
     for path in possible_paths {
         if path.exists() {

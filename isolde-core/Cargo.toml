@@ -18,6 +18,11 @@ thiserror = { workspace = true }
 # url removed - causing ICU issues with Rust 1.75
 indexmap = { workspace = true }
 
+# Container and process management
+command-group = "5"
+which = "7"
+chrono = { version = "0.4", features = ["serde"] }
+
 # Optional dependencies
 clap = { workspace = true, optional = true }
 # tokio removed - not needed for basic functionality

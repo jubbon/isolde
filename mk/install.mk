@@ -11,7 +11,7 @@ ISOLDE_HOME ?= $(HOME)/.isolde
 install: install-local
 
 ## Install Isolde to ~/.local/bin/
-install-local: rust-build
+install-local: rust-build install-features
 	@echo "$(CYAN)Installing $(BINARY_NAME) to ~/.local/bin...$(RESET)"
 	@mkdir -p $(HOME)/.local/bin
 	@cp -f $(BINARY_PATH) $(HOME)/.local/bin/$(BINARY_NAME)
@@ -28,6 +28,24 @@ install-local: rust-build
 		echo "  $(CYAN)export PATH=\"$$HOME/.local/bin:$$PATH\"$(RESET)"; \
 	fi
 
+## Install core features to ~/.local/share/isolde/
+install-features:
+	@echo "$(CYAN)Installing core features to ~/.local/share/isolde/...$(RESET)"
+	@mkdir -p $(HOME)/.local/share/isolde/core/features
+	@if [ -d "core/features" ]; then \
+		for feature in core/features/*; do \
+			if [ -d "$$feature" ]; then \
+				feature_name=$$(basename "$$feature"); \
+				echo "  Copying $$feature_name..."; \
+				cp -r "$$feature" $(HOME)/.local/share/isolde/core/features/; \
+			fi; \
+		done; \
+		echo "$(GREEN)Core features installed.$(RESET)"; \
+	else \
+		echo "$(YELLOW)Warning: core/features directory not found.$(RESET)"; \
+		echo "  Features will need to be copied manually."; \
+	fi
+
 ## Install Isolde via cargo install (to ~/.cargo/bin/)
 install-cargo:
 	@echo "$(CYAN)Installing $(BINARY_NAME) via cargo install...$(RESET)"
@@ -40,13 +58,16 @@ install-cargo:
 
 ## Uninstall Isolde
 uninstall:
-	@echo "$(YELLOW)Removing Isolde from $(ISOLDE_HOME)...$(RESET)"
+	@echo "$(YELLOW)Removing Isolde...$(RESET)"
+	@rm -f $(HOME)/.local/bin/$(BINARY_NAME)
+	@rm -rf $(HOME)/.local/share/isolde
 	@rm -rf $(ISOLDE_HOME)
 	@echo "$(GREEN)Isolde uninstalled.$(RESET)"
 	@echo ""
-	@echo "$(YELLOW)Note:$(RESET) Remove the following lines from your shell config:"
-	@echo "  export ISOLDE_HOME=\"$(ISOLDE_HOME)\""
-	@echo "  export PATH=\"\$$PATH:\$$ISOLDE_HOME\""
+	@echo "$(YELLOW)Removed:$(RESET)"
+	@echo "  - ~/.local/bin/$(BINARY_NAME)"
+	@echo "  - ~/.local/share/isolde/"
+	@echo "  - $(ISOLDE_HOME)"
 
 ## Show installation information
 install-info:
