@@ -53,8 +53,30 @@ isolde init my-app --template python
 isolde init my-app --preset python-ml
 
 # List available templates and presets
-isolde list-templates
-isolde list-presets
+isolde init --list-templates
+isolde init --list-presets
+```
+
+**Note:** The `pull` command is currently disabled (requires async/network support). Use `sync` to update from local templates.
+
+### Validation and Diagnostics
+```bash
+# Validate project configuration
+isolde validate
+isolde validate --quick
+isolde validate --verbose
+isolde validate --format text|json|sarif
+
+# Show differences from template
+isolde diff
+isolde diff --file FILE
+isolde diff --format diff|json|color
+
+# Run diagnostics
+isolde doctor
+isolde doctor --fix
+isolde doctor --verbose
+isolde doctor --component COMPONENT
 ```
 
 ### Container Management

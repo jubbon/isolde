@@ -144,7 +144,7 @@ echo $NO_PROXY
 
 **Solution:** List available templates to find valid names:
 ```bash
-./scripts/isolde.sh --list-templates
+isolde init --list-templates
 ```
 
 Check the template directory exists:
@@ -158,7 +158,7 @@ cat templates/{name}/template-info.yaml
 
 **Solution:** List available presets:
 ```bash
-./scripts/isolde.sh --list-presets
+isolde init --list-presets
 ```
 
 For custom presets, verify:

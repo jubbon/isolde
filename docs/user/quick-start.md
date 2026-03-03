@@ -74,10 +74,10 @@ isolde init my-api --template nodejs
 
 ```bash
 # List all templates
-isolde list-templates
+isolde init --list-templates
 
 # List all presets
-isolde list-presets
+isolde init --list-presets
 ```
 
 ## What You Get

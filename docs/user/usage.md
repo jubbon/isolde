@@ -86,10 +86,10 @@ isolde init my-app --template python --yes
 
 ```bash
 # List available templates
-isolde list-templates
+isolde init --list-templates
 
 # List available presets
-isolde list-presets
+isolde init --list-presets
 ```
 
 ## Environment Variables

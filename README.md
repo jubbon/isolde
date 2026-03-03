@@ -4,7 +4,7 @@
 
 ## Overview
 
-Isolde provides templates and tools for quickly setting up isolated development environments. Each project gets a dedicated devcontainer with language-specific tooling, isolated git repositories, and pre-configured Claude Code CLI with multi-provider support.
+Isolde provides templates and tools for quickly setting up isolated development environments. Each project gets a dedicated devcontainer with language-specific tooling, a single git repository, and pre-configured Claude Code CLI with multi-provider support.
 
 ---
 
@@ -14,12 +14,7 @@ Isolde provides templates and tools for quickly setting up isolated development 
 
 #### Installation
 
-**Quick Install (Recommended)**
-```bash
-curl -fsSL https://raw.githubusercontent.com/jubbon/isolde/main/scripts/install/install.sh | bash
-source ~/.bashrc  # or source ~/.zshrc
-isolde --version
-```
+Pre-built binaries are not yet available. Build from source using the instructions below.
 
 **From Source**
 ```bash
@@ -34,17 +29,17 @@ isolde --version
 
 ```bash
 # Interactive wizard
-isolde
+isolde init
 
 # With a preset
-isolde my-ml-app --preset=python-ml
+isolde init my-ml-app --preset python-ml
 
 # With a specific template
-isolde my-api --template=nodejs --lang-version=22
+isolde init my-api --template nodejs --lang-version 22
 
 # List options
-isolde --list-templates
-isolde --list-presets
+isolde init --list-templates
+isolde init --list-presets
 ```
 
 ### For Contributors: Development Setup
@@ -74,7 +69,7 @@ make shell
 
 - ✅ **Template-based project creation** - Language-specific devcontainers with pre-configured tooling
 - ✅ **Claude Code CLI pre-installed** - Multi-provider LLM support (Anthropic, Z.ai, custom)
-- ✅ **Dual git repositories** - Separate version control for code and devcontainer config
+- ✅ **Single git repository** - Code and devcontainer config tracked together
 - ✅ **Docker-in-Docker support** - Build containers within the dev container
 - ✅ **Enterprise proxy configuration** - HTTP/HTTPS proxy support for corporate networks
 - ✅ **Version control options** - Pin specific Claude Code versions or track latest
@@ -164,15 +159,13 @@ isolde/
 ### Created Project Structure
 
 ```
-~/workspace/my-project/
-├── project/              # Git repository for your code
-│   ├── README.md
-│   └── .gitignore
-├── .devcontainer/        # Git repository for devcontainer config
+~/workspace/my-project/   # Single git repository
+├── .git/                 # Version control for code and config
+├── .devcontainer/        # Devcontainer configuration
 │   ├── devcontainer.json
 │   ├── Dockerfile
-│   ├── features/
-│   └── README.md
+│   └── features/
+├── isolde.yaml           # Isolde project configuration
 └── .claude/              # Claude Code config (not in git)
 ```
 

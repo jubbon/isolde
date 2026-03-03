@@ -19,7 +19,7 @@ This document describes the architecture of the Isolde (ISOLated Development Env
 │  ┌────────────────────────────────────────────────────────┐  │
 │  │              isolde-cli (clap parser)                 │  │
 │  │  ┌──────────┐  ┌──────────┐  ┌──────────────────┐ │  │
-│  │  │   init   │  │   sync   │  │  list-templates  │ │  │
+│  │  │   init   │  │   sync   │  │  init --list-*   │ │  │
 │  │  └──────────┘  └──────────┘  └──────────────────┘ │  │
 │  └────────────────────────────────────────────────────────┘  │
 │  ┌────────────────────────────────────────────────────────┐  │
@@ -36,18 +36,16 @@ This document describes the architecture of the Isolde (ISOLated Development Env
 │                    Created Project                             │
 │  ┌────────────────────────────────────────────────────────────┐ │
 │  │   project/                                                │ │
-│  │   (user code + devcontainer config)                      │ │
+│  │   (single git repository: user code + devcontainer)     │ │
 │  │                                                          │ │
+│  │   ├─ .git/                                               │ │
 │  │   ├─ .devcontainer/                                      │ │
 │  │   │   ├─ devcontainer.json                              │ │
 │  │   │   ├─ Dockerfile                                     │ │
-│  │   │   ├─ features/                                       │ │
-│  │   │   │   ├─ claude-code/                               │ │
-│  │   │   │   ├─ proxy/                                     │ │
-│  │   │   │   └─ plugin-manager/                            │ │
-│  │   │   └─ .git/                                           │ │
-│  │                                                          │ │
-│  │   └─ .git/                                               │ │
+│  │   │   └─ features/                                       │ │
+│  │   │       ├─ claude-code/                               │ │
+│  │   │       ├─ proxy/                                     │ │
+│  │   │       └─ plugin-manager/                            │ │
 │  │                                                          │ │
 │  └────────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────┘
