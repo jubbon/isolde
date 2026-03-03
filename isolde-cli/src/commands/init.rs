@@ -3,10 +3,10 @@
 //! Initialize a new Isolde project with a configuration file.
 
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use colored::Colorize;
-use isolde_core::config::{Config, GitConfig, GitGeneratedHandling};
+use isolde_core::config::Config;
 use isolde_core::{Error, Result};
 
 /// Options for the init command

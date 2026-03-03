@@ -2,7 +2,6 @@
 //!
 //! Validate project configuration and generated artifacts.
 
-use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;

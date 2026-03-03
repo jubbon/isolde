@@ -31,8 +31,8 @@ pub enum Commands {
     /// Initialize a new Isolde project from a template or preset
     ///
     /// Creates a new project directory with the chosen template's devcontainer configuration.
-    /// The project will have two separate git repositories: one for the user code and one
-    /// for the devcontainer configuration.
+    /// The project will have a single git repository containing both user code and
+    /// devcontainer configuration.
     ///
     /// # Examples
     ///
@@ -455,11 +455,6 @@ impl Commands {
             Commands::Logs { .. } => "logs",
         }
     }
-}
-
-/// Helper function to print a success message with color
-pub fn print_success(message: &str) {
-    println!("{} {}", "✓".green(), message);
 }
 
 /// Helper function to print an error message with color

@@ -13,7 +13,7 @@ use clap::Parser;
 use colored::Colorize;
 use std::path::PathBuf;
 
-use cli::{Cli, Commands, print_error, print_info, print_warning};
+use cli::{Cli, Commands, print_info, print_warning};
 
 /// Isolde CLI version (from VERSION file)
 const VERSION: &str = env!("ISOLDE_VERSION");
@@ -212,25 +212,6 @@ fn execute_sync(
     };
 
     commands::run_sync(opts).map_err(|e| anyhow::anyhow!(e))
-}
-
-/// Execute the pull command
-///
-/// Note: This command is disabled in builds without async/network support.
-fn execute_pull(
-    name: String,
-    repo: String,
-    r#ref: Option<String>,
-    output: Option<String>,
-    verify: bool,
-    verbose: bool,
-) -> anyhow::Result<()> {
-    let _ = (name, repo, r#ref, output, verify, verbose);
-
-    // Pull command disabled - requires async/network support
-    eprintln!("Error: Pull command is disabled in this build.");
-    eprintln!("Please manually download the configuration file from the marketplace.");
-    std::process::exit(1);
 }
 
 /// Execute the validate command

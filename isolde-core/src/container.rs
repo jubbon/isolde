@@ -110,7 +110,7 @@ pub fn build(workspace: &Path, no_cache: bool, image_name: Option<String>) -> Re
 /// # Arguments
 ///
 /// * `workspace` - Path to the workspace folder
-/// * `detach` - If true, start container without attaching
+/// * `detach` - If true, start container without attaching to shell
 pub fn up(workspace: &Path, detach: bool) -> Result<ContainerInfo> {
     check_devcontainer_cli()?;
 
@@ -126,7 +126,9 @@ pub fn up(workspace: &Path, detach: bool) -> Result<ContainerInfo> {
         .arg(workspace);
 
     if detach {
-        cmd.arg("--detach");
+        // Skip the postAttachCommand (which typically starts the shell)
+        // This allows us to start the container without attaching
+        cmd.arg("--skip-post-attach");
     }
 
     // For non-detach mode, we want the terminal to be interactive
@@ -138,10 +140,34 @@ pub fn up(workspace: &Path, detach: bool) -> Result<ContainerInfo> {
         cmd.group_spawn()
             .map_err(|e| Error::Other(format!("Failed to spawn devcontainer up: {}", e)))?;
     } else {
-        // For detach mode, spawn and wait for completion
+        // For detach mode, wait for container to start
         cmd.spawn()
             .and_then(|mut child| child.wait())
             .map_err(|e| Error::Other(format!("Failed to run devcontainer up: {}", e)))?;
+
+        // After up completes, start a keepalive process to keep container running
+        // This is needed because the container would otherwise exit after postStartCommand
+        let container_info = get_container_info(workspace)?;
+
+        // Start a sleep process in the background to keep the container alive
+        let keepalive_cmd = Command::new("devcontainer")
+            .arg("exec")
+            .arg("--workspace-folder")
+            .arg(workspace)
+            .arg("--")
+            .args(["sh", "-c", "nohup sleep infinity >/dev/null 2>&1 &"])
+            .spawn()
+            .and_then(|mut child| child.wait())
+            .map_err(|e| Error::Other(format!("Failed to start keepalive: {}", e)))?;
+
+        if !keepalive_cmd.success() {
+            return Err(Error::Other("Failed to start keepalive process".to_string()));
+        }
+
+        // Small delay to ensure keepalive is running
+        std::thread::sleep(std::time::Duration::from_millis(500));
+
+        return Ok(container_info);
     }
 
     // Get container info by parsing devcontainer output
@@ -213,21 +239,22 @@ pub fn stop(workspace: &Path) -> Result<()> {
 ///
 /// Returns a list of container information
 pub fn ps() -> Result<Vec<ContainerInfo>> {
-    check_devcontainer_cli()?;
-
-    let output = Command::new("devcontainer")
+    // Use docker ps directly since devcontainers CLI 0.83.0 doesn't have ps command
+    let output = Command::new("docker")
         .arg("ps")
         .arg("--format")
         .arg("json")
+        .arg("--filter")
+        .arg("label=devcontainer.container_id")  // Filter for devcontainers
         .output()
-        .map_err(|e| Error::Other(format!("Failed to run devcontainer ps: {}", e)))?;
+        .map_err(|e| Error::Other(format!("Failed to run docker ps: {}", e)))?;
 
     if !output.status.success() {
         return Ok(vec![]);
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    parse_container_list(&stdout)
+    parse_docker_container_list(&stdout)
 }
 
 /// Get container logs
@@ -271,13 +298,86 @@ fn get_container_info(workspace: &Path) -> Result<ContainerInfo> {
     let containers = ps()?;
 
     let workspace_str = workspace.to_string_lossy().to_string();
+    let workspace_canonical = std::fs::canonicalize(workspace)
+        .unwrap_or_else(|_| workspace.to_path_buf());
+    let workspace_canonical_str = workspace_canonical.to_string_lossy().to_string();
 
-    // Find matching container by workspace path
-    let container = containers.iter()
-        .find(|c| c.workspace_folder == workspace_str)
-        .ok_or_else(|| Error::Other("No running container found for workspace".to_string()))?;
+    // First try to find by workspace_folder (for newer devcontainers CLI)
+    if let Some(container) = containers.iter()
+        .find(|c| !c.workspace_folder.is_empty() &&
+                      (c.workspace_folder == workspace_str ||
+                       c.workspace_folder == workspace_canonical_str))
+    {
+        return Ok(container.clone());
+    }
 
-    Ok(container.clone())
+    // For Docker ps output, we need to inspect each container to find the workspace mount
+    for container in &containers {
+        if let Ok(ws_folder) = get_workspace_folder_from_docker(&container.container_id) {
+            if ws_folder == workspace_str || ws_folder == workspace_canonical_str {
+                // Found matching container, fill in the workspace_folder
+                return Ok(ContainerInfo {
+                    workspace_folder: ws_folder,
+                    ..container.clone()
+                });
+            }
+        }
+    }
+
+    // If only one container exists, use it (for simple cases)
+    if containers.len() == 1 {
+        let container = &containers[0];
+        return Ok(ContainerInfo {
+            workspace_folder: workspace_str,
+            ..container.clone()
+        });
+    }
+
+    Err(Error::Other("No running container found for workspace".to_string()))
+}
+
+/// Get workspace folder from docker inspect
+fn get_workspace_folder_from_docker(container_id: &str) -> Result<String> {
+    let output = Command::new("docker")
+        .arg("inspect")
+        .arg(container_id)
+        .output()
+        .map_err(|e| Error::Other(format!("Failed to inspect container: {}", e)))?;
+
+    if !output.status.success() {
+        return Err(Error::Other("Failed to inspect container".to_string()));
+    }
+
+    // Docker API uses PascalCase field names
+    #[allow(non_snake_case)]
+    #[derive(Debug, serde::Deserialize)]
+    struct Mount {
+        Source: Option<String>,
+        Destination: String,
+    }
+
+    // Docker API uses PascalCase field names
+    #[allow(non_snake_case)]
+    #[derive(Debug, serde::Deserialize)]
+    struct InspectResult {
+        Mounts: Vec<Mount>,
+    }
+
+    let inspect_results: Vec<InspectResult> = serde_json::from_slice(&output.stdout)
+        .map_err(|_| Error::Other("Failed to parse inspect output".to_string()))?;
+
+    if let Some(result) = inspect_results.first() {
+        // Find the mount that contains "workspace" in the destination
+        if let Some(mount) = result.Mounts.iter()
+            .find(|m| m.Destination.contains("workspace") || m.Destination.contains("workspaces"))
+        {
+            if let Some(source) = &mount.Source {
+                return Ok(source.clone());
+            }
+        }
+    }
+
+    Err(Error::Other("Workspace mount not found".to_string()))
 }
 
 /// Extract image name from build output
@@ -311,28 +411,32 @@ fn extract_image_name(output: &str) -> Option<String> {
     None
 }
 
-/// Parse container list from JSON output
-fn parse_container_list(json: &str) -> Result<Vec<ContainerInfo>> {
-    #[derive(Debug, serde::Deserialize)]
-    struct ContainerJson {
-        #[serde(rename = "containerID")]
-        container_id: String,
-        #[serde(rename = "containerName")]
-        container_name: String,
-        state: String,
-        #[serde(rename = "workspaceFolder")]
-        workspace_folder: String,
+/// Parse container list from Docker ps JSON format
+/// Docker format differs from devcontainers CLI format
+fn parse_docker_container_list(json: &str) -> Result<Vec<ContainerInfo>> {
+    if json.trim().is_empty() {
+        return Ok(vec![]);
     }
 
-    let containers: Vec<ContainerJson> = serde_json::from_str(json)
+    #[derive(Debug, serde::Deserialize)]
+    struct DockerContainerJson {
+        #[serde(rename = "ID")]
+        id: String,
+        #[serde(rename = "Names")]
+        names: String,
+        #[serde(rename = "State")]
+        state: String,
+    }
+
+    let containers: Vec<DockerContainerJson> = serde_json::from_str(json)
         .unwrap_or_default();
 
     Ok(containers.into_iter()
         .map(|c| ContainerInfo {
-            container_id: c.container_id,
-            container_name: c.container_name,
+            container_id: c.id,
+            container_name: c.names,
             status: c.state,
-            workspace_folder: c.workspace_folder,
+            workspace_folder: String::new(), // Will be filled by get_workspace_folder when needed
         })
         .collect())
 }
@@ -370,23 +474,4 @@ mod tests {
         assert_eq!(name, None);
     }
 
-    #[test]
-    fn test_parse_container_list_empty() {
-        let containers = parse_container_list("[]").unwrap();
-        assert!(containers.is_empty());
-    }
-
-    #[test]
-    fn test_parse_container_list_single() {
-        let json = r#"[{
-            "containerID": "abc123",
-            "containerName": "devcontainer-myproject",
-            "state": "running",
-            "workspaceFolder": "/home/user/myproject"
-        }]"#;
-        let containers = parse_container_list(json).unwrap();
-        assert_eq!(containers.len(), 1);
-        assert_eq!(containers[0].container_id, "abc123");
-        assert_eq!(containers[0].status, "running");
-    }
 }
