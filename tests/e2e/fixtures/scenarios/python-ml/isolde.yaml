@@ -1,0 +1,49 @@
+# E2E Test Fixture: Python ML
+# Machine Learning Python project for testing isolde init
+
+name: python-ml-e2e
+description: E2E test fixture for Python ML preset
+
+# Template configuration
+template: python
+lang_version: "3.12"
+
+# Preset to use
+preset: python-ml
+
+# Features to verify
+features:
+  - uv
+  - jupyter
+  - pytest
+  - numpy
+  - pandas
+
+# Expected binaries after build
+expected_binaries:
+  - python3
+  - pip3
+  - uv
+  - pytest
+  - jupyter
+
+# Expected versions
+expected_versions:
+  python: "3.12"
+  
+# Functional tests
+functional_tests:
+  - name: python_import_numpy
+    command: 'python3 -c "import numpy; print(numpy.__version__)"'
+    
+  - name: python_import_pandas
+    command: 'python3 -c "import pandas; print(pandas.__version__)"'
+    
+  - name: jupyter_version
+    command: "jupyter --version"
+
+# Claude plugins to activate
+claude_plugins:
+  activate:
+    - oh-my-claudecode
+    - tdd

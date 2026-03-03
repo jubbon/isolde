@@ -1,0 +1,44 @@
+# E2E Test Fixture: Python Basic
+# Basic Python project for testing isolde init
+
+name: python-basic-e2e
+description: E2E test fixture for basic Python template
+
+# Template configuration
+template: python
+lang_version: "3.12"
+
+# Features to verify
+features:
+  - uv
+  - pytest
+  - ruff
+
+# Expected binaries after build
+expected_binaries:
+  - python3
+  - pip3
+  - uv
+  - pytest
+  - ruff
+
+# Expected versions
+expected_versions:
+  python: "3.12"
+  
+# Functional tests
+functional_tests:
+  - name: python_hello_world
+    command: 'python3 -c "print(\"Hello, World!\")"'
+    expected_output: "Hello, World!"
+    
+  - name: pytest_version
+    command: "pytest --version"
+    
+  - name: ruff_check
+    command: "ruff --version"
+
+# Claude plugins to activate
+claude_plugins:
+  activate:
+    - oh-my-claudecode

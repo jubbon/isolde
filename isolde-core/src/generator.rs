@@ -472,13 +472,15 @@ WORKDIR /workspaces
 # Pre-install sudo
 RUN apt-get update && apt-get install -y sudo && rm -rf /var/lib/apt/lists/*
 
-# Create user with sudo access
-RUN groupadd --gid ${USER_GID} ${USERNAME} \
-    && useradd --uid ${USER_UID} --gid ${USERNAME} --shell /bin/bash --create-home ${USERNAME} \
-    && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-
-# Set ownership for workspace directory
-RUN chown -R ${USERNAME}:${USERNAME} /workspaces
+# Create user with sudo access (handle existing users/groups in base image)
+RUN if ! id -u ${USER_UID} >/dev/null 2>&1; then \
+    groupadd -f -g ${USER_GID} ${USERNAME} 2>/dev/null || true && \
+    useradd -u ${USER_UID} -g ${USER_GID} -s /bin/bash -m ${USERNAME} && \
+    chown -R ${USERNAME}:${USERNAME} /workspaces; \
+    fi; \
+    if id -u ${USERNAME} >/dev/null 2>&1; then \
+    echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers; \
+    fi
 
 USER ${USERNAME}
 "#,

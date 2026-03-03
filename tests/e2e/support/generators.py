@@ -24,11 +24,14 @@ class ShellScriptGenerator(GeneratorInterface):
         # Quote the project name to handle spaces and special characters
         quoted_name = shlex.quote(name)
 
-        # If workspace provided, cd there first (for testing)
+        # The new CLI creates projects in the current directory, not a subdirectory
+        # We need to create the subdirectory first and cd into it
         if workspace:
-            cmd = f"cd {workspace} && {repo_root}/scripts/isolde.sh {quoted_name}"
+            project_path = os.path.join(workspace, name)
+            cmd = f"mkdir -p {project_path} && cd {project_path} && {repo_root}/scripts/isolde.sh init ."
         else:
-            cmd = f"cd {repo_root} && ./scripts/isolde.sh {quoted_name}"
+            project_path = os.path.join(repo_root, name)
+            cmd = f"mkdir -p {project_path} && cd {project_path} && {repo_root}/scripts/isolde.sh init ."
 
         if 'template' in kwargs:
             cmd += f" --template={kwargs['template']}"
@@ -44,6 +47,13 @@ class ShellScriptGenerator(GeneratorInterface):
             cmd += f" --claude-provider={kwargs['claude_provider']}"
         if 'claude_version' in kwargs:
             cmd += f" --claude-version={kwargs['claude_version']}"
+
+        # The new CLI requires sync after init
+        # Add sync command to the same shell call
+        cmd += f" && {repo_root}/scripts/isolde.sh sync"
+
+        # Initialize git repository (the new CLI doesn't do this automatically)
+        cmd += f" && git init && git add -A && git commit -m 'Initial commit'"
 
         # Pipe newlines to accept all defaults for non-interactive mode
         # Each prompt in the script will get a newline (accepting default value)

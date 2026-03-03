@@ -1,0 +1,164 @@
+# Binary Availability Checks for E2E Tests
+# Verifies that expected binaries are available in the container
+
+checks:
+  # Python template binaries
+  python:
+    required:
+      - name: python3
+        description: Python interpreter
+        check_command: python3 --version
+        expected_output_pattern: "Python 3\\.(10|11|12)\\."
+      - name: python
+        description: Python interpreter symlink
+        check_command: python --version
+        expected_output_pattern: "Python 3\\.(10|11|12)\\."
+      - name: pip
+        description: Python package installer
+        check_command: pip --version
+        expected_output_pattern: "pip "
+      - name: uv
+        description: Fast Python package installer
+        check_command: uv --version
+        expected_output_pattern: "uv "
+      - name: pytest
+        description: Python testing framework
+        check_command: pytest --version
+        expected_output_pattern: "pytest "
+      - name: ruff
+        description: Python linter and formatter
+        check_command: ruff --version
+        expected_output_pattern: "ruff "
+    optional:
+      - name: jupyter
+        description: Jupyter notebook server
+        check_command: jupyter --version
+        expected_output_pattern: "jupyter "
+      - name: black
+        description: Python code formatter
+        check_command: black --version
+        expected_output_pattern: "black "
+      - name: numpy
+        description: NumPy library
+        check_command: python3 -c "import numpy; print(numpy.__version__)"
+        expected_output_pattern: "\\d+\\.\\d+\\.\\d+"
+      - name: pandas
+        description: Pandas library
+        check_command: python3 -c "import pandas; print(pandas.__version__)"
+        expected_output_pattern: "\\d+\\.\\d+\\.\\d+"
+
+  # Node.js template binaries
+  nodejs:
+    required:
+      - name: node
+        description: Node.js runtime
+        check_command: node --version
+        expected_output_pattern: "v(18|20|22)\\."
+      - name: npm
+        description: Node package manager
+        check_command: npm --version
+        expected_output_pattern: "\\d+\\.\\d+\\.\\d+"
+      - name: npx
+        description: Node package executor
+        check_command: npx --version
+        expected_output_pattern: "\\d+\\.\\d+\\.\\d+"
+    optional:
+      - name: tsc
+        description: TypeScript compiler
+        check_command: tsc --version
+        expected_output_pattern: "Version \\d+\\.\\d+\\.\\d+"
+      - name: eslint
+        description: JavaScript/TypeScript linter
+        check_command: eslint --version
+        expected_output_pattern: "v\\d+\\.\\d+\\.\\d+"
+      - name: vitest
+        description: Unit testing framework
+        check_command: vitest --version
+        expected_output_pattern: "v\\d+\\.\\d+\\.\\d+"
+      - name: prettier
+        description: Code formatter
+        check_command: prettier --version
+        expected_output_pattern: "\\d+\\.\\d+\\.\\d+"
+
+  # Rust template binaries
+  rust:
+    required:
+      - name: rustc
+        description: Rust compiler
+        check_command: rustc --version
+        expected_output_pattern: "rustc "
+      - name: cargo
+        description: Rust package manager
+        check_command: cargo --version
+        expected_output_pattern: "cargo "
+    optional:
+      - name: rustup
+        description: Rust toolchain installer
+        check_command: rustup --version
+        expected_output_pattern: "rustup "
+      - name: clippy
+        description: Rust linter
+        check_command: cargo clippy --version
+        expected_output_pattern: "clippy "
+
+  # Go template binaries
+  go:
+    required:
+      - name: go
+        description: Go compiler and tools
+        check_command: go version
+        expected_output_pattern: "go version go"
+    optional:
+      - name: golangci-lint
+        description: Go linter
+        check_command: golangci-lint --version
+        expected_output_pattern: "golangci-lint "
+
+  # Generic template binaries
+  generic:
+    required:
+      - name: bash
+        description: Bash shell
+        check_command: bash --version
+        expected_output_pattern: "GNU bash"
+      - name: git
+        description: Git version control
+        check_command: git --version
+        expected_output_pattern: "git version"
+    optional: []
+
+  # Claude Code CLI
+  claude:
+    required:
+      - name: claude
+        description: Claude Code CLI
+        check_command: claude --version
+        expected_output_pattern: "Claude Code CLI"
+    optional: []
+
+  # Common utilities
+  common:
+    required:
+      - name: curl
+        description: HTTP client
+        check_command: curl --version
+        expected_output_pattern: "curl "
+      - name: wget
+        description: HTTP client
+        check_command: wget --version
+        expected_output_pattern: "GNU Wget"
+    optional:
+      - name: jq
+        description: JSON processor
+        check_command: jq --version
+        expected_output_pattern: "jq-"
+      - name: yq
+        description: YAML processor
+        check_command: yq --version
+        expected_output_pattern: "yq"
+
+# Check execution settings
+execution:
+  fail_on_missing_required: true
+  warn_on_missing_optional: true
+  timeout_seconds: 30

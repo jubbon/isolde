@@ -7,6 +7,7 @@ set -e
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Default: run Docker-based tests only
@@ -45,6 +46,34 @@ while [[ $# -gt 0 ]]; do
       TEST_TAGS="--tags=concurrent"
       shift
       ;;
+    --tags)
+      TEST_TAGS="--tags=$2"
+      shift 2
+      ;;
+    --layer-1)
+      TEST_TAGS="--tags=layer-1"
+      shift
+      ;;
+    --layer-2)
+      TEST_TAGS="--tags=layer-2"
+      shift
+      ;;
+    --layer-3)
+      TEST_TAGS="--tags=layer-3"
+      shift
+      ;;
+    --fast)
+      TEST_TAGS="--tags=fast"
+      shift
+      ;;
+    --slow)
+      TEST_TAGS="--tags=slow"
+      shift
+      ;;
+    --medium)
+      TEST_TAGS="--tags=medium"
+      shift
+      ;;
     --name)
       SCENARIO_NAME="$2"
       shift 2
@@ -64,6 +93,16 @@ while [[ $# -gt 0 ]]; do
       echo "  --edge       Run edge case and negative tests"
       echo "  --config     Run configuration option tests"
       echo "  --concurrent Run concurrent operation tests"
+      echo ""
+      echo "Three-Layer Testing:"
+      echo "  --layer-1    Build template images (slow)"
+      echo "  --layer-2    Test isolde.yaml scenarios (medium)"
+      echo "  --layer-3    In-container verification (fast)"
+      echo "  --fast       Run only fast tests"
+      echo "  --medium     Run fast + medium tests"
+      echo "  --slow       Run only slow tests"
+      echo "  --tags TAGS  Custom tag expression (e.g. 'layer-3 or fast')"
+      echo ""
       echo "  --name NAME  Run specific scenario by name"
       echo "  --verbose    Show verbose output"
       echo "  --help       Show this help message"

@@ -5,12 +5,12 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'support')))
 
-from behave import then, given, when
+from behave import then, given, when, step
 import subprocess
 import os
 
 
-@given('I start the devcontainer for the project')
+@step('I start the devcontainer for the project')
 def step_start_devcontainer(context):
     """Start the devcontainer using devcontainer CLI."""
     project_path = os.path.join(context.test_workspace, context.project_name)

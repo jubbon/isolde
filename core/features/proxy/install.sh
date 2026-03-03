@@ -99,9 +99,14 @@ HTTPS_PROXY='$FINAL_HTTPS_PROXY'
 NO_PROXY='$FINAL_NO_PROXY'
 EOF
 
-# Fix ownership
+# Fix ownership (only if user exists)
 if [ "$(id -u)" -eq 0 ]; then
-    chown -R "$TARGET_USER:$TARGET_USER" "$STATE_DIR"
+    # Check if target user exists before attempting chown
+    if id "$TARGET_USER" >/dev/null 2>&1; then
+        chown -R "$TARGET_USER:$TARGET_USER" "$STATE_DIR"
+    else
+        log_warn "User $TARGET_USER does not exist yet, skipping chown for $STATE_DIR"
+    fi
 fi
 
 log_info "Created proxy state file: $STATE_FILE"

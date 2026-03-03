@@ -1,0 +1,171 @@
+# Plugin Activation Checks for E2E Tests
+# Verifies that Claude plugins are properly installed and activated
+
+checks:
+  # oh-my-claudecode plugin
+  oh-my-claudecode:
+    name: oh-my-claudecode
+    description: Multi-agent orchestration layer
+    installation:
+      - type: file
+        path: ~/.claude/extensions/oh-my-claudecode/package.json
+        description: Plugin package.json exists
+      - type: file
+        path: ~/.claude/extensions/oh-my-claudecode/CLAUDE.md
+        description: Plugin documentation exists
+      - type: directory
+        path: ~/.claude/extensions/oh-my-claudecode/src
+        description: Plugin source directory exists
+    activation:
+      - type: config
+        check: grep -q "oh-my-claudecode" ~/.claude/settings.json
+        description: Plugin listed in settings
+      - type: skill
+        check: grep -q "/oh-my-claudecode:" ~/.claude/extensions/oh-my-claudecode/skills.yaml 2>/dev/null || grep -q "autopilot" ~/.claude/extensions/oh-my-claudecode/CLAUDE.md
+        description: Skills are registered
+    commands:
+      - name: autopilot
+        description: Autopilot skill available
+        trigger: "autopilot"
+      - name: ralph
+        description: Ralph skill available
+        trigger: "ralph"
+      - name: team
+        description: Team skill available
+        trigger: "team"
+
+  # tdd plugin
+  tdd:
+    name: tdd
+    description: Test-driven development support
+    installation:
+      - type: file
+        path: ~/.claude/extensions/tdd/package.json
+        description: Plugin package.json exists
+      - type: file
+        path: ~/.claude/extensions/tdd/CLAUDE.md
+        description: Plugin documentation exists
+    activation:
+      - type: config
+        check: grep -q "tdd" ~/.claude/settings.json
+        description: Plugin listed in settings
+    commands:
+      - name: tdd
+        description: TDD skill available
+        trigger: "tdd"
+      - name: test-driven
+        description: Test-driven development phrase
+        trigger: "test driven"
+
+  # security-review plugin
+  security-review:
+    name: security-review
+    description: Security review plugin
+    installation:
+      - type: file
+        path: ~/.claude/extensions/security-review/package.json
+        description: Plugin package.json exists
+      - type: file
+        path: ~/.claude/extensions/security-review/CLAUDE.md
+        description: Plugin documentation exists
+    activation:
+      - type: config
+        check: grep -q "security-review" ~/.claude/settings.json
+        description: Plugin listed in settings
+    commands:
+      - name: security-review
+        description: Security review skill available
+        trigger: "security review"
+
+  # writer-memory plugin
+  writer-memory:
+    name: writer-memory
+    description: Writer memory plugin
+    installation:
+      - type: file
+        path: ~/.claude/extensions/writer-memory/package.json
+        description: Plugin package.json exists
+      - type: file
+        path: ~/.claude/extensions/writer-memory/CLAUDE.md
+        description: Plugin documentation exists
+    activation:
+      - type: config
+        check: grep -q "writer-memory" ~/.claude/settings.json
+        description: Plugin listed in settings
+    commands:
+      - name: writer-memory
+        description: Writer memory skill available
+        trigger: "writer memory"
+
+# Provider activation checks
+providers:
+  claude:
+    name: claude
+    description: Anthropic Claude provider
+    check:
+      - type: env
+        var: ANTHROPIC_API_KEY
+        optional: true
+        description: API key configured (optional for tests)
+      - type: config
+        check: claude provider list
+        pattern: "claude"
+        description: Claude provider available
+
+  openai:
+    name: openai
+    description: OpenAI provider
+    check:
+      - type: env
+        var: OPENAI_API_KEY
+        optional: true
+        description: API key configured (optional for tests)
+      - type: config
+        check: claude provider list
+        pattern: "openai"
+        description: OpenAI provider available
+
+  bedrock:
+    name: bedrock
+    description: AWS Bedrock provider
+    check:
+      - type: env
+        var: AWS_ACCESS_KEY_ID
+        optional: true
+        description: AWS credentials configured (optional for tests)
+      - type: config
+        check: claude provider list
+        pattern: "bedrock"
+        description: Bedrock provider available
+
+# Plugin activation methods
+activation_methods:
+  settings_json:
+    description: Plugin activated via ~/.claude/settings.json
+    check_type: config_file
+    path: ~/.claude/settings.json
+    format: json
+
+  isolde_yaml:
+    description: Plugin activated via isolde.yaml claude_plugins.activate
+    check_type: project_config
+    path: isolde.yaml
+    format: yaml
+
+# Skill invocation checks
+skill_checks:
+  - name: help_skill
+    description: Help command lists available skills
+    check_command: claude /help
+    expected_output: "Available skills"
+  - name: skill_discovery
+    description: Skills are discoverable
+    check_command: grep -r "skills:" ~/.claude/extensions/*/CLAUDE.md
+    expected_output: "skills:"
+
+# Execution settings
+execution:
+  fail_on_missing_plugin: true
+  fail_on_activation_failure: true
+  warn_on_missing_optional: false
+  timeout_seconds: 30

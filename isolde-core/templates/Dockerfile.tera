@@ -30,8 +30,8 @@ WORKDIR /workspaces
 RUN apt-get update && apt-get install -y sudo && rm -rf /var/lib/apt/lists/*
 
 # Create user with sudo access
-RUN groupadd --gid ${USER_GID} ${USERNAME} \
-    && useradd --uid ${USER_UID} --gid ${USERNAME} --shell /bin/bash --create-home ${USERNAME} \
+RUN groupadd --gid ${USER_GID} ${USERNAME} 2>/dev/null || true \
+    && useradd --uid ${USER_UID} --gid ${USER_GID} --shell /bin/bash --create-home ${USERNAME} 2>/dev/null || useradd --uid ${USER_UID} --gid ${USERNAME} --shell /bin/bash --create-home ${USERNAME} \
     && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # Set ownership for workspace directory

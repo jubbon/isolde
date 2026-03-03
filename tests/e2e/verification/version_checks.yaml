@@ -1,0 +1,156 @@
+# Version Correctness Checks for E2E Tests
+# Verifies that installed versions match expected configurations
+
+checks:
+  # Python version checks
+  python:
+    - version: "3.12"
+      expected_minor: 12
+      check_command: python3 --version
+      version_extract: "Python (\\d+\\.\\d+)\\."
+      checks:
+        - name: minor_version_matches
+          description: Python 3.12.x is installed
+          expected_pattern: "3\\.12\\."
+    - version: "3.11"
+      expected_minor: 11
+      check_command: python3 --version
+      version_extract: "Python (\\d+\\.\\d+)\\."
+      checks:
+        - name: minor_version_matches
+          description: Python 3.11.x is installed
+          expected_pattern: "3\\.11\\."
+    - version: "3.10"
+      expected_minor: 10
+      check_command: python3 --version
+      version_extract: "Python (\\d+\\.\\d+)\\."
+      checks:
+        - name: minor_version_matches
+          description: Python 3.10.x is installed
+          expected_pattern: "3\\.10\\."
+
+  # Node.js version checks
+  nodejs:
+    - version: "22"
+      expected_major: 22
+      check_command: node --version
+      version_extract: "v(\\d+)\\."
+      checks:
+        - name: major_version_matches
+          description: Node.js v22.x is installed
+          expected_pattern: "v22\\."
+    - version: "20"
+      expected_major: 20
+      check_command: node --version
+      version_extract: "v(\\d+)\\."
+      checks:
+        - name: major_version_matches
+          description: Node.js v20.x is installed
+          expected_pattern: "v20\\."
+    - version: "18"
+      expected_major: 18
+      check_command: node --version
+      version_extract: "v(\\d+)\\."
+      checks:
+        - name: major_version_matches
+          description: Node.js v18.x is installed
+          expected_pattern: "v18\\."
+
+  # Rust version checks
+  rust:
+    - version: "latest"
+      check_command: rustc --version
+      checks:
+        - name: rust_installed
+          description: Rust is installed
+          expected_pattern: "rustc "
+    - version: "stable"
+      check_command: rustc --version
+      checks:
+        - name: rust_stable_installed
+          description: Rust stable is installed
+          expected_pattern: "rustc \\d+\\.\\d+\\.\\d+"
+
+  # Go version checks
+  go:
+    - version: "latest"
+      check_command: go version
+      checks:
+        - name: go_installed
+          description: Go is installed
+          expected_pattern: "go version go"
+    - version: "1.22"
+      expected_minor: 22
+      check_command: go version
+      version_extract: "go version go1\\.(\\d+)"
+      checks:
+        - name: go122_installed
+          description: Go 1.22.x is installed
+          expected_pattern: "go1\\.22"
+    - version: "1.21"
+      expected_minor: 21
+      check_command: go version
+      version_extract: "go version go1\\.(\\d+)"
+      checks:
+        - name: go121_installed
+          description: Go 1.21.x is installed
+          expected_pattern: "go1\\.21"
+
+  # Claude Code CLI version checks
+  claude:
+    - version: "latest"
+      check_command: claude --version
+      checks:
+        - name: claude_installed
+          description: Claude Code CLI is installed
+          expected_pattern: "claude"
+
+# Feature version checks
+feature_versions:
+  uv:
+    check_command: uv --version
+    min_version: "0.1.0"
+    description: uv package installer
+
+  pytest:
+    check_command: pytest --version
+    min_version: "7.0.0"
+    description: pytest testing framework
+
+  ruff:
+    check_command: ruff --version
+    min_version: "0.1.0"
+    description: ruff linter
+
+  typescript:
+    check_command: tsc --version
+    min_version: "5.0.0"
+    description: TypeScript compiler
+
+  eslint:
+    check_command: eslint --version
+    min_version: "8.0.0"
+    description: ESLint linter
+
+  vitest:
+    check_command: vitest --version
+    min_version: "1.0.0"
+    description: Vitest testing framework
+
+# Version comparison utilities
+comparison:
+  semver:
+    # Semantic versioning comparison for packages
+    method: semver
+    check_command: echo "$VERSION"
+
+  major_minor:
+    # Compare only major.minor versions
+    method: major_minor
+    check_command: echo "$VERSION"
+
+# Execution settings
+execution:
+  fail_on_mismatch: true
+  warn_on_outdated: true
+  timeout_seconds: 30

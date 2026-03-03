@@ -1,0 +1,54 @@
+# E2E Test Fixture: Fullstack
+# Full-stack Node.js project for testing isolde init
+
+name: fullstack-e2e
+description: E2E test fixture for fullstack preset
+
+# Template configuration
+template: nodejs
+lang_version: "22"
+
+# Preset to use
+preset: fullstack
+
+# Features to verify
+features:
+  - typescript
+  - eslint
+  - vitest
+  - prettier
+
+# Expected binaries after build
+expected_binaries:
+  - node
+  - npm
+  - npx
+
+# Expected versions
+expected_versions:
+  node: "22"
+  
+# Functional tests
+functional_tests:
+  - name: node_hello_world
+    command: 'node -e "console.log(\"Hello, World!\")"'
+    expected_output: "Hello, World!"
+    
+  - name: typescript_version
+    command: "npx tsc --version"
+    
+  - name: eslint_version
+    command: "npx eslint --version"
+    
+  - name: vitest_version
+    command: "npx vitest --version"
+    
+  - name: prettier_version
+    command: "npx prettier --version"
+
+# Claude plugins to activate
+claude_plugins:
+  activate:
+    - oh-my-claudecode
+    - tdd
+    - security-review

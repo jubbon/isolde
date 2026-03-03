@@ -1,0 +1,286 @@
+# Functional Smoke Tests for E2E Tests
+# End-to-end functional tests to verify the devcontainer works correctly
+
+tests:
+  # Project initialization tests
+  project_init:
+    - name: create_python_project
+      description: Create a basic Python project
+      template: python
+      lang_version: "3.12"
+      features: [uv, pytest]
+      steps:
+        - name: run_init
+          command: isolde init test-python-project --template python --lang-version 3.12
+          expected_exit: 0
+        - name: project_dir_exists
+          check: test -d test-python-project
+          expected: true
+        - name: devcontainer_exists
+          check: test -f test-python-project/.devcontainer/devcontainer.json
+          expected: true
+        - name: git_initialized
+          check: test -d test-python-project/.git
+          expected: true
+        - name: cleanup
+          command: rm -rf test-python-project
+
+    - name: create_nodejs_project
+      description: Create a basic Node.js project
+      template: nodejs
+      lang_version: "22"
+      features: [typescript, eslint]
+      steps:
+        - name: run_init
+          command: isolde init test-nodejs-project --template nodejs --lang-version 22
+          expected_exit: 0
+        - name: project_dir_exists
+          check: test -d test-nodejs-project
+          expected: true
+        - name: devcontainer_exists
+          check: test -f test-nodejs-project/.devcontainer/devcontainer.json
+          expected: true
+        - name: git_initialized
+          check: test -d test-nodejs-project/.git
+          expected: true
+        - name: cleanup
+          command: rm -rf test-nodejs-project
+
+  # Container build tests
+  container_build:
+    - name: build_python_container
+      description: Build Python devcontainer
+      template: python
+      lang_version: "3.12"
+      steps:
+        - name: create_project
+          command: isolde init test-build --template python
+        - name: sync_project
+          command: cd test-build && isolde sync
+          expected_exit: 0
+        - name: build_container
+          command: cd test-build && isolde build --no-cache
+          expected_exit: 0
+          timeout: 300
+        - name: image_exists
+          check: docker images | grep -q "test-build"
+          expected: true
+        - name: cleanup
+          command: rm -rf test-build && docker rmi test-build || true
+
+  # Container execution tests
+  container_execution:
+    - name: run_python_container
+      description: Start and interact with Python container
+      template: python
+      lang_version: "3.12"
+      steps:
+        - name: create_project
+          command: isolde init test-run --template python
+        - name: sync_project
+          command: cd test-run && isolde sync
+        - name: build_container
+          command: cd test-run && isolde build
+        - name: start_container
+          command: cd test-run && isolde run --detach
+          expected_exit: 0
+        - name: container_running
+          check: isolde ps | grep -q "test-run"
+          expected: true
+        - name: execute_command
+          command: isolde exec python3 --version
+          expected_output: "Python 3.12"
+        - name: stop_container
+          command: cd test-run && isolde stop
+          expected_exit: 0
+        - name: cleanup
+          command: rm -rf test-run
+
+  # Language-specific tests
+  language_tests:
+    python:
+      - name: python_hello_world
+        description: Run a simple Python script
+        steps:
+          - name: create_script
+            command: echo 'print("Hello, World!")' > hello.py
+          - name: run_script
+            command: python3 hello.py
+            expected_output: "Hello, World!"
+          - name: cleanup
+            command: rm hello.py
+
+      - name: python_package_install
+        description: Install a Python package with uv
+        steps:
+          - name: install_requests
+            command: uv pip install requests
+            expected_exit: 0
+          - name: import_requests
+            command: python3 -c "import requests; print(requests.__version__)"
+            expected_output: "\\d+\\.\\d+\\.\\d+"
+
+      - name: run_pytest
+        description: Run pytest tests
+        steps:
+          - name: create_test
+            command: |
+              cat > test_example.py << 'EOF'
+              def test_addition():
+                  assert 1 + 1 == 2
+              EOF
+          - name: run_test
+            command: pytest test_example.py -v
+            expected_output: "1 passed"
+          - name: cleanup
+            command: rm test_example.py
+
+    nodejs:
+      - name: nodejs_hello_world
+        description: Run a simple Node.js script
+        steps:
+          - name: create_script
+            command: echo 'console.log("Hello, World!");' > hello.js
+          - name: run_script
+            command: node hello.js
+            expected_output: "Hello, World!"
+          - name: cleanup
+            command: rm hello.js
+
+      - name: typescript_compile
+        description: Compile TypeScript code
+        steps:
+          - name: create_ts_file
+            command: |
+              cat > hello.ts << 'EOF'
+              const message: string = "Hello, TypeScript!";
+              console.log(message);
+              EOF
+          - name: compile
+            command: tsc hello.ts
+            expected_exit: 0
+          - name: run_js
+            command: node hello.js
+            expected_output: "Hello, TypeScript!"
+          - name: cleanup
+            command: rm hello.ts hello.js
+
+      - name: run_vitest
+        description: Run Vitest tests
+        steps:
+          - name: init_package
+            command: npm init -y
+          - name: install_vitest
+            command: npm install --save-dev vitest
+          - name: create_test
+            command: |
+              cat > test.test.ts << 'EOF'
+              import { test, expect } from 'vitest';
+
+              test('addition', () => {
+                expect(1 + 1).toBe(2);
+              });
+              EOF
+          - name: run_test
+            command: npx vitest run test.test.ts
+            expected_output: "PASS"
+          - name: cleanup
+            command: rm -rf node_modules package.json package-lock.json test.test.ts
+
+    rust:
+      - name: rust_cargo_init
+        description: Initialize a Rust project
+        steps:
+          - name: init_project
+            command: cargo init --name test_project
+          - name: build_project
+            command: cargo build
+            expected_exit: 0
+          - name: run_tests
+            command: cargo test
+            expected_output: "test result: ok"
+          - name: cleanup
+            command: rm -rf src/ Cargo.toml Cargo.lock target/
+
+      - name: rust_clippy
+        description: Run clippy linter
+        steps:
+          - name: init_project
+            command: cargo init --name clippy_test
+          - name: run_clippy
+            command: cargo clippy -- -D warnings
+          - name: cleanup
+            command: rm -rf src/ Cargo.toml Cargo.lock target/
+
+    go:
+      - name: go_module_init
+        description: Initialize a Go module
+        steps:
+          - name: init_module
+            command: go mod init test_module
+          - name: create_go_file
+            command: |
+              cat > main.go << 'EOF'
+              package main
+              import "fmt"
+              func main() {
+                  fmt.Println("Hello, Go!")
+              }
+              EOF
+          - name: run_go
+            command: go run main.go
+            expected_output: "Hello, Go!"
+          - name: cleanup
+            command: rm -f main.go go.mod
+
+  # Claude CLI tests
+  claude_tests:
+    - name: claude_version
+      description: Check Claude CLI version
+      steps:
+        - name: run_version
+          command: claude --version
+          expected_output: "Claude Code CLI"
+
+    - name: claude_help
+      description: Check Claude CLI help
+      steps:
+        - name: run_help
+          command: claude --help
+          expected_output: "Usage"
+
+  # Git integration tests
+  git_tests:
+    - name: git_repo_initialized
+      description: Verify Git repository is initialized
+      steps:
+        - name: check_git_dir
+          check: test -d .git
+          expected: true
+        - name: check_git_config
+          command: git remote -v
+          expected_exit: 0
+
+    - name: git_status_clean
+      description: Check initial Git status
+      steps:
+        - name: check_status
+          command: git status --porcelain
+          expected_output: ""
+
+  # Cleanup and teardown
+  cleanup:
+    - name: remove_test_projects
+      description: Clean up test projects
+      command: find . -maxdepth 1 -name "test-*" -type d -exec rm -rf {} +
+    - name: remove_test_images
+      description: Clean up test Docker images
+      command: docker images | grep "test-" | awk '{print $3}' | xargs -r docker rmi -f || true
+
+# Execution settings
+execution:
+  parallel_tests: true
+  max_parallel: 3
+  timeout_seconds: 120
+  cleanup_on_failure: true
+  stop_on_first_failure: false

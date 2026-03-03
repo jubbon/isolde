@@ -2,3 +2,10 @@
 .worktrees
 target/
 .claude/
+
+# Test artifacts
+pretty.output
+tests/e2e/pretty.output
+
+# OMC agent state files
+core/features/claude-code/.omc/

@@ -1,0 +1,224 @@
+# E2E Test Matrix for Isolde
+# Defines templates, versions, and plugin combinations to test
+
+matrix:
+  # Template tests - basic functionality per template
+  templates:
+    - name: python
+      description: Python development environment
+      versions:
+        - "3.12"
+        - "3.11"
+        - "3.10"
+      features:
+        - uv
+        - pytest
+        - ruff
+      minimal_features: [uv]
+      all_features: [uv, pytest, ruff]
+
+    - name: nodejs
+      description: Node.js development environment
+      versions:
+        - "22"
+        - "20"
+        - "18"
+      features:
+        - typescript
+        - eslint
+        - vitest
+      minimal_features: [typescript]
+      all_features: [typescript, eslint, vitest]
+
+    - name: rust
+      description: Rust development environment
+      versions:
+        - "latest"
+      features:
+        - cargo
+        - clippy
+        - rustfmt
+      minimal_features: [cargo]
+      all_features: [cargo, clippy, rustfmt]
+
+    - name: go
+      description: Go development environment
+      versions:
+        - "latest"
+      features:
+        - modules
+        - golangci-lint
+      minimal_features: [modules]
+      all_features: [modules, golangci-lint]
+
+    - name: generic
+      description: Generic/minimal devcontainer
+      versions:
+        - ""
+      features: []
+      minimal_features: []
+      all_features: []
+
+  # Preset tests - predefined configurations
+  presets:
+    - name: python-ml
+      template: python
+      description: Machine learning environment
+      lang_version: "3.12"
+      features:
+        - uv
+        - jupyter
+        - pytest
+        - numpy
+        - pandas
+      claude_plugins:
+        - oh-my-claudecode
+        - tdd
+
+    - name: python-web
+      template: python
+      description: Web development environment
+      lang_version: "3.11"
+      features:
+        - uv
+        - pytest
+        - ruff
+        - black
+      claude_plugins:
+        - oh-my-claudecode
+
+    - name: node-api
+      template: nodejs
+      description: API development environment
+      lang_version: "22"
+      features:
+        - typescript
+        - eslint
+        - vitest
+        - prettier
+      claude_plugins:
+        - oh-my-claudecode
+        - security-review
+
+    - name: fullstack
+      template: nodejs
+      description: Full-stack development
+      lang_version: "22"
+      features:
+        - typescript
+        - eslint
+        - vitest
+        - prettier
+      claude_plugins:
+        - oh-my-claudecode
+        - tdd
+        - security-review
+
+  # Claude plugin combinations to test
+  claude_plugins:
+    - name: minimal
+      plugins: [oh-my-claudecode]
+
+    - name: standard
+      plugins: [oh-my-claudecode, tdd]
+
+    - name: full
+      plugins: [oh-my-claudecode, tdd, security-review]
+
+  # Configuration variations
+  configurations:
+    - name: default
+      claude_provider: ""
+      claude_version: ""
+      http_proxy: ""
+      https_proxy: ""
+
+    - name: with-provider
+      claude_provider: "anthropic"
+      claude_version: "latest"
+      http_proxy: ""
+      https_proxy: ""
+
+    - name: with-proxy
+      claude_provider: ""
+      claude_version: ""
+      http_proxy: "http://proxy.example.com:8080"
+      https_proxy: "http://proxy.example.com:8080"
+
+  # Scenarios for fixture-based testing
+  scenarios:
+    - name: python-basic
+      template: python
+      description: Basic Python project setup
+
+    - name: python-ml
+      template: python
+      description: Python ML project with Jupyter
+
+    - name: fullstack
+      template: nodejs
+      description: Full-stack Node.js application
+
+# Test priorities - which tests to run in each mode
+test_suites:
+  smoke:
+    # Quick smoke tests - run on every commit
+    - template: python
+      version: "3.12"
+      preset: null
+      features: minimal
+
+    - template: nodejs
+      version: "22"
+      preset: null
+      features: minimal
+
+    - preset: python-ml
+      features: minimal
+
+  standard:
+    # Standard test suite - run on PRs
+    - template: python
+      version: "3.12"
+      preset: null
+      features: all
+
+    - template: nodejs
+      version: "22"
+      preset: null
+      features: all
+
+    - template: rust
+      version: "latest"
+      preset: null
+      features: all
+
+    - preset: python-ml
+      features: all
+
+    - preset: fullstack
+      features: all
+
+  full:
+    # Full test suite - run before releases
+    - template: python
+      versions: all
+      presets: all
+      features: all
+
+    - template: nodejs
+      versions: all
+      presets: all
+      features: all
+
+    - template: rust
+      versions: all
+      presets: all
+      features: all
+
+    - template: go
+      versions: all
+      presets: all
+      features: all
+
+    - all_scenarios: true

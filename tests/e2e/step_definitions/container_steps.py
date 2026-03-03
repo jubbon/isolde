@@ -183,6 +183,7 @@ def step_typescript_installed(context):
 
 
 @then('Vitest should be available')
+@then('vitest should be available')
 def step_vitest_available(context):
     """Verify Vitest is available."""
     # Note: Vitest is installed via postCreateCommand which doesn't run during Docker build
