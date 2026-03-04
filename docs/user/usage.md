@@ -136,7 +136,7 @@ Then rebuild the container.
 
 ## Sync Command
 
-The `isolde sync` command updates the devcontainer with the latest changes from the template:
+The `isolde sync` command regenerates devcontainer configuration from `isolde.yaml`:
 
 ```bash
 cd ~/workspace/my-project
@@ -144,9 +144,12 @@ isolde sync
 ```
 
 This will:
-- Pull latest template changes
-- Update features while preserving your customizations
-- Rebuild the container if needed
+- Generate `.devcontainer/devcontainer.json` and `Dockerfile`
+- Generate `.claude/CLAUDE.md` with project-specific guidance
+- Copy `core/features/` (claude-code, proxy, plugin-manager) to `.devcontainer/features/`
+- Create the `project/` workspace directory if it does not exist
+
+Run `isolde sync` after editing `isolde.yaml` to apply changes, then rebuild the container.
 
 ## Container Management Commands
 

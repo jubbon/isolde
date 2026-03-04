@@ -18,7 +18,22 @@ sudo systemctl start docker
 sudo systemctl enable docker
 ```
 
-### Permission denied
+### Permission denied in workspace directory
+**Problem:** `touch: cannot touch 'file': Permission denied` inside the container's workspace (`/workspaces/<project>`).
+
+**Root cause:** The base devcontainer image (`mcr.microsoft.com/devcontainers/base:ubuntu`) includes a `vscode` user at UID 1000. If your host user also has UID 1000, the bind-mounted `project/` directory appears owned by `vscode` inside the container, not by your user.
+
+**Solution:** This is handled automatically by `isolde sync` — it generates a Dockerfile that deletes the `vscode` user and configures `common-utils` to create your user with the correct UID matching the host. Rebuild the container after running `isolde sync`.
+
+If `project/` on the host already has wrong ownership (e.g. from a previous failed attempt), fix it manually on the host before rebuilding:
+```bash
+sudo chown -R $(id -u):$(id -g) ./project
+```
+
+**Anti-patterns to avoid:**
+- Do NOT run `sudo chown` inside the container on a bind-mounted directory — it changes ownership on the host too.
+
+### Permission denied on Docker socket
 **Problem:** "permission denied" when running Docker commands or accessing Docker socket inside container.
 
 **Solution:** Add your user to the docker group.

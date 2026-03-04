@@ -59,6 +59,23 @@ isolde init --list-presets
 
 **Note:** The `pull` command is currently disabled (requires async/network support). Use `sync` to update from local templates.
 
+### Sync Command
+
+`isolde sync` generates devcontainer configuration from `isolde.yaml` in the current directory:
+
+```bash
+isolde sync               # Generate configuration
+isolde sync --dry-run     # Preview without writing
+isolde sync --force       # Overwrite existing files
+```
+
+This generates:
+- `.devcontainer/devcontainer.json` — devcontainer spec with features and mounts
+- `.devcontainer/Dockerfile` — Dockerfile with base image and user setup
+- `.devcontainer/features/` — copies of `core/features/*` (required because Docker cannot follow symlinks)
+- `.claude/CLAUDE.md` — project-specific guidance for Claude Code
+- `project/` — workspace directory for bind mount (created if absent)
+
 ### Validation and Diagnostics
 ```bash
 # Validate project configuration
@@ -193,6 +210,18 @@ When `isolde init` creates a project:
 6. **Git Init** - Git repository created for the project
 
 **Note:** `.gitignore` files are **not** created automatically. Users manage their own `.gitignore` files based on their needs.
+
+### User UID Handling in Generated Devcontainers
+
+The base devcontainer image (`mcr.microsoft.com/devcontainers/base:ubuntu`) includes a `vscode` user at UID 1000. Without intervention, the local user (e.g. `dmanakulikov`, also UID 1000) would appear as `vscode` inside the container on bind-mounted directories, causing permission errors.
+
+The generated Dockerfile and devcontainer.json address this:
+
+1. **Dockerfile** — deletes `vscode` user/group if `USERNAME != vscode`, freeing UID 1000
+2. **`common-utils` feature** — creates the local user with `userUid: "automatic"` and `userGid: "automatic"`, matching the host UID/GID
+3. **`updateRemoteUserUID`** (devcontainers default: on) — adjusts the container user's UID to match the host after build
+
+Result: bind-mounted `project/` directory has the same owner on host and inside the container.
 
 ### Template Metadata Format
 
