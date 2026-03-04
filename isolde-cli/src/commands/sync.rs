@@ -56,6 +56,8 @@ pub fn run(opts: SyncOptions) -> Result<()> {
     let claude_dir = opts.cwd.join(".claude");
     let features_dir = devcontainer_dir.join("features");
 
+    let project_dir = opts.cwd.join("project");
+
     if !opts.dry_run {
         fs::create_dir_all(&devcontainer_dir)
             .map_err(|e| Error::FileError(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
@@ -63,6 +65,10 @@ pub fn run(opts: SyncOptions) -> Result<()> {
             .map_err(|e| Error::FileError(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
         fs::create_dir_all(&features_dir)
             .map_err(|e| Error::FileError(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
+        if !project_dir.exists() {
+            fs::create_dir_all(&project_dir)
+                .map_err(|e| Error::FileError(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
+        }
     }
 
     // Generate devcontainer.json
