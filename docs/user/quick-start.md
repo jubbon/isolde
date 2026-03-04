@@ -4,7 +4,7 @@ Get started with Isolde in 5 minutes.
 
 ## What is Isolde?
 
-Isolde (ISOLated Development Environment) is a Rust CLI tool for creating isolated development environments with Claude Code CLI support. Each project gets its own devcontainer with pre-configured tools, language runtimes, and Claude Code integration.
+Isolde (ISOLated Development Environment) is a Rust CLI tool for creating isolated development environments with coding agent support. Each project gets its own devcontainer with pre-configured tools, language runtimes, and a coding agent (Claude Code, Codex, Gemini, or Aider).
 
 ## Prerequisites
 
@@ -85,7 +85,7 @@ isolde init --list-presets
 Each created project has:
 - A `project/` directory for your code and devcontainer configuration
 - A single git repository that includes both code and config
-- Pre-installed language tools and Claude Code CLI
+- Pre-installed language tools and a coding agent CLI (default: Claude Code)
 
 ## Building and Running
 

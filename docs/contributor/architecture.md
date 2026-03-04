@@ -154,8 +154,11 @@ templates/python/
 | Feature | Purpose |
 |---------|---------|
 | `claude-code/` | Claude Code CLI installation with multi-provider support |
+| `codex/` | OpenAI Codex CLI (stub, coming soon) |
+| `gemini/` | Google Gemini CLI (stub, coming soon) |
+| `aider/` | Aider AI pair programming (stub, coming soon) |
 | `proxy/` | HTTP proxy configuration for enterprise networks |
-| `plugin-manager/` | Plugin activation and management |
+| `plugin-manager/` | Plugin activation and management (claude-code only) |
 
 Features are **copied** (not symlinked) to each project because Docker's build context cannot follow symlinks outside the build directory.
 
@@ -193,7 +196,9 @@ isolde init my-app --template python
 5. isolde-core::templates applies substitutions to devcontainer.json
     │   - {{PROJECT_NAME}}
     │   - {{LANG_VERSION}}
-    │   - {{FEATURES_CLAUDE_CODE}}
+    │   - {{agent_feature_path}}
+    │   - {{agent_options_json}}
+    │   - {{plugin_manager_block}}
     │   - etc.
     │
     ▼

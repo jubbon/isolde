@@ -16,7 +16,7 @@ version: "0.1"         # REQUIRED: Schema version (must be "0.1")
 name: project-name     # REQUIRED: Project identifier
 workspace: {...}       # Workspace configuration
 docker: {...}          # Docker configuration
-claude: {...}          # Claude Code CLI configuration
+agent: {...}           # Coding agent configuration
 runtime: {...}         # OPTIONAL: Runtime environment
 proxy: {...}           # OPTIONAL: Proxy configuration
 marketplaces: {...}   # OPTIONAL: Marketplace definitions
@@ -82,28 +82,33 @@ docker:
     - USERNAME=user
 ```
 
-### claude
+### agent
 
 - **Type:** `object`
 - **Required:** Yes
-- **Description:** Claude Code CLI configuration
+- **Description:** Coding agent configuration. Exactly one agent per project.
 
 | Field | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
-| `version` | `string` | No | `"latest"` | Claude Code CLI version |
-| `provider` | `string` | No | `"anthropic"` | Claude API provider |
-| `models` | `object` | No | `{}` | Model name mappings |
+| `name` | `string` | No | `"claude-code"` | Agent identifier (`claude-code`, `codex`, `gemini`, `aider`) |
+| `version` | `string` | No | `"latest"` | Agent CLI version to install |
+| `options` | `object` | No | `{}` | Agent-specific key-value options |
 
-**Valid providers:** `anthropic`, `openai`, `bedrock`, `vertex`, `azure`
+**Agent-specific options for `claude-code`:**
+
+| Option | Description |
+|--------|-------------|
+| `provider` | Claude API provider (e.g. `anthropic`, `z.ai`) |
+| `models` | Comma-separated `role:model` pairs, e.g. `"haiku:claude-3-5-haiku,sonnet:claude-3-5-sonnet"` |
 
 ```yaml
-claude:
+# Coding agent configuration
+agent:
+  name: claude-code
   version: latest
-  provider: anthropic
-  models:
-    haiku: claude-3-5-haiku-20241022
-    sonnet: claude-3-5-sonnet-20241022
-    opus: claude-3-5-sonnet-20241022
+  options:
+    provider: anthropic
+    models: "haiku:claude-3-5-haiku-20241022,sonnet:claude-3-5-sonnet-20241022,opus:claude-3-5-sonnet-20241022"
 ```
 
 ### runtime
@@ -211,13 +216,13 @@ docker:
   image: mcr.microsoft.com/devcontainers/base:ubuntu
   build_args: []
 
-claude:
+# Coding agent configuration
+agent:
+  name: claude-code
   version: latest
-  provider: anthropic
-  models:
-    haiku: claude-3-5-haiku-20241022
-    sonnet: claude-3-5-sonnet-20241022
-    opus: claude-3-5-sonnet-20241022
+  options:
+    provider: anthropic
+    models: "haiku:claude-3-5-haiku-20241022,sonnet:claude-3-5-sonnet-20241022,opus:claude-3-5-sonnet-20241022"
 
 runtime:
   language: python
@@ -251,7 +256,7 @@ git:
 2. **version must be supported** - Unknown versions (e.g., "99.9") will cause an error
 3. **name field is required** - Must be non-empty
 4. **docker.image is required** - Must be non-empty
-5. **claude.provider must be valid** - Must be one of: anthropic, openai, bedrock, vertex, azure
+5. **agent.name must be non-empty** - Defaults to `claude-code` if omitted
 6. **plugins must reference existing marketplaces** - Each plugin's marketplace must be defined in `marketplaces`
 
 ## Schema Evolution
@@ -269,4 +274,5 @@ When adding a new schema version:
 
 | Version | Date | Description |
 |---------|------|-------------|
-| 0.1 | 2025-02-24 | Initial schema version |
+| 0.1 | 2025-02-24 | Initial schema version with `claude:` section |
+| 0.1 | 2026-03-04 | Hard break: `claude:` replaced by generic `agent:` section |

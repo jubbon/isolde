@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Isolde (ISOLated Development Environment)** - A Rust CLI tool for creating isolated development environments with Claude Code CLI support. The project uses a workspace structure:
+**Isolde (ISOLated Development Environment)** - A Rust CLI tool for creating isolated development environments with coding agent support (Claude Code, Codex, Gemini, Aider). The project uses a workspace structure:
 
 1. **isolde-core** - Core library with template processing, git operations, and configuration
 2. **isolde-cli** - Command-line interface built with clap
@@ -248,10 +248,11 @@ supported_versions:
 |-------------|-------------|
 | `{{PROJECT_NAME}}` | Project name |
 | `{{PYTHON_VERSION}}`, `{{NODE_VERSION}}`, etc. | Language version from `--lang-version` |
-| `{{FEATURES_CLAUDE_CODE}}` | Replaced with `./features/claude-code` |
+| `{{agent_feature_path}}` | Resolved to `./features/<agent-name>` (e.g. `./features/claude-code`) |
+| `{{agent_options_json}}` | JSON object with version, options, and injected proxy settings |
+| `{{plugin_manager_block}}` | Plugin-manager feature block (only for `claude-code` agent) |
+| `{{feature_install_order_json}}` | JSON array of feature install order |
 | `{{FEATURES_PROXY}}` | Replaced with `./features/proxy` |
-| `{{CLAUDE_VERSION}}` | From `--claude-version` or `latest` |
-| `{{CLAUDE_PROVIDER}}` | From `--claude-provider` |
 | `{{HTTP_PROXY}}`, `{{HTTPS_PROXY}}` | From proxy options |
 
 Substitutions happen in Rust via the `templates` module.
@@ -273,8 +274,11 @@ This approach allows:
 
 `core/features/` contains reusable devcontainer features:
 - `claude-code/` - Claude Code CLI installation with multi-provider support
+- `codex/` - OpenAI Codex CLI (stub, coming soon)
+- `gemini/` - Google Gemini CLI (stub, coming soon)
+- `aider/` - Aider AI pair programming (stub, coming soon)
 - `proxy/` - HTTP proxy configuration for enterprise networks
-- `plugin-manager/` - Plugin activation and management
+- `plugin-manager/` - Plugin activation and management (claude-code only)
 
 Features are **copied** (not symlinked) to each project because Docker's build context cannot follow symlinks outside the build directory.
 
@@ -284,10 +288,10 @@ Features are **copied** (not symlinked) to each project because Docker's build c
 Isolde **does not create** `.gitignore` files automatically. Users must create and manage their own `.gitignore` files based on their project needs. This design choice gives users full control over what gets ignored in their repositories.
 
 ### Feature Path Resolution
-In created projects, features are referenced as `./features/claude-code` (relative to `.devcontainer/`), not via absolute paths from the template repository.
+In created projects, features are referenced as `./features/<agent-name>` (relative to `.devcontainer/`), e.g. `./features/claude-code` for the default agent. Absolute paths from the template repository are never used.
 
 ### Preset Format
-`presets.yaml` defines preset configurations. When adding a new preset, follow the existing format and include `template`, `lang_version`, `features`, and optional `claude_plugins`.
+`presets.yaml` defines preset configurations. When adding a new preset, follow the existing format and include `template`, `lang_version`, `features`, and optional `claude_plugins`. Presets always use the `claude-code` agent.
 
 ### CLI Development
 When modifying the CLI:

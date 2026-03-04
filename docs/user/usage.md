@@ -12,7 +12,7 @@ The wizard will guide you through:
 1. Project name
 2. Template or preset selection
 3. Language version (if applicable)
-4. Claude Code configuration
+4. Coding agent configuration
 5. Proxy settings (optional)
 
 ## Command-Line Mode
@@ -48,17 +48,17 @@ By default, projects are created in `~/workspace`. Use `--workspace` to specify 
 isolde init my-app --template python --workspace ~/projects
 ```
 
-### Claude Code Configuration
+### Agent Configuration
 
 ```bash
-# Specific version
-isolde init my-app --template python --claude-version 1.2.41
+# Specific agent (default: claude-code)
+isolde init my-app --template python --agent claude-code
 
-# Custom provider
-isolde init my-app --template python --claude-provider z.ai
+# Specific agent version
+isolde init my-app --template python --agent-version 1.2.41
 
-# Custom models
-isolde init my-app --template python --claude-models "haiku:glm-4.5-air,sonnet:glm-4.7"
+# Use a different agent
+isolde init my-app --template python --agent codex
 ```
 
 ### Proxy Configuration
@@ -98,8 +98,6 @@ You can set defaults via environment variables:
 
 ```bash
 export ISOLDE_WORKSPACE=~/projects
-export CLAUDE_VERSION=latest
-export CLAUDE_PROVIDER=z.ai
 export HTTP_PROXY=http://proxy:8080
 ```
 
@@ -347,20 +345,21 @@ docker:
   image: mcr.microsoft.com/devcontainers/base:ubuntu
   build_args: []
 
-claude:
+# Coding agent configuration
+agent:
+  name: claude-code
   version: latest
-  provider: anthropic
-  models:
-    haiku: claude-3-5-haiku-20241022
-    sonnet: claude-3-5-sonnet-20241022
+  options:
+    provider: anthropic
+    models: "haiku:claude-3-5-haiku-20241022,sonnet:claude-3-5-sonnet-20241022,opus:claude-3-5-sonnet-20241022"
 
-# Optional: runtime environment
+# Runtime configuration (optional)
 # runtime:
 #   language: python
 #   version: "3.12"
 #   package_manager: uv
 
-# Optional: proxy configuration
+# Proxy configuration (optional)
 # proxy:
 #   http: http://proxy.corp.com:8080
 #   https: http://proxy.corp.com:8080
@@ -422,6 +421,8 @@ presets:
       - pytest
     claude_plugins: oh-my-claudecode,tdd
 ```
+
+> **Note:** Custom presets always use the `claude-code` agent.
 
 Then use it:
 
