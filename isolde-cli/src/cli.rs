@@ -61,13 +61,13 @@ pub enum Commands {
         #[arg(long, value_name = "VERSION")]
         lang_version: Option<String>,
 
-        /// Claude Code version to install
-        #[arg(long, value_name = "VERSION", default_value = "latest")]
-        claude_version: String,
+        /// Coding agent to use (claude-code, codex, gemini, aider)
+        #[arg(long, value_name = "AGENT", default_value = "claude-code")]
+        agent: String,
 
-        /// Claude provider (anthropic, openai, azure)
-        #[arg(long, value_name = "PROVIDER")]
-        claude_provider: Option<String>,
+        /// Agent CLI version to install
+        #[arg(long, value_name = "VERSION", default_value = "latest")]
+        agent_version: String,
 
         /// HTTP proxy URL for enterprise environments
         #[arg(long, value_name = "URL")]
@@ -558,8 +558,8 @@ mod tests {
                 template: None,
                 preset: None,
                 lang_version: None,
-                claude_version: "latest".to_string(),
-                claude_provider: None,
+                agent: "claude-code".to_string(),
+                agent_version: "latest".to_string(),
                 http_proxy: None,
                 https_proxy: None,
                 target_dir: None,

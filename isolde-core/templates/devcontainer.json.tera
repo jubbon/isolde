@@ -1,14 +1,12 @@
 {
-  "name": "{{ project_name }} - Development Environment",
+  "name": "{{project_name}} - Development Environment",
 
   "build": {
     "dockerfile": "Dockerfile",
     "context": "..",
     "args": {
-      "USERNAME": "${localEnv:USER}"
-      {% if lang_version is defined -%}
-      ,"LANG_VERSION": "{{ lang_version }}"
-      {%- endif %}
+      "USERNAME": "${localEnv:USER}",
+      "LANG_VERSION": "{{lang_version}}"
     }
   },
 
@@ -23,38 +21,16 @@
       "nodeGypDependencies": true,
       "npxInstallCachedPackages": true
     },
-    "{{ features_proxy }}": {
-      "http_proxy": "{{ proxy_http | default(value=\"\") }}",
-      "https_proxy": "{{ proxy_https | default(value=\"\") }}",
-      "no_proxy": "{{ proxy_no_proxy | default(value=\"\") }}",
-      "enabled": {{ proxy_enabled | lower }}
+    "{{features_proxy}}": {
+      "http_proxy": "{{proxy_http}}",
+      "https_proxy": "{{proxy_https}}",
+      "no_proxy": "{{proxy_no_proxy}}",
+      "enabled": {{proxy_enabled}}
     },
-    "{{ features_claude_code }}": {
-      "version": "{{ claude_version }}",
-      "provider": "{{ claude_provider }}",
-      "models": {{ claude_models_json | safe }},
-      "http_proxy": "{{ proxy_http | default(value=\"\") }}",
-      "https_proxy": "{{ proxy_https | default(value=\"\") }}"
-    },
-    "{{ features_plugin_manager }}": {
-      "activate_plugins": [
-        {%- for plugin in claude_activate_plugins %}
-        "{{ plugin }}"{% if not loop.last %},{% endif %}
-        {%- endfor %}
-      ],
-      "deactivate_plugins": [
-        {%- for plugin in claude_deactivate_plugins %}
-        "{{ plugin }}"{% if not loop.last %},{% endif %}
-        {%- endfor %}
-      ]
-    }
+    "{{agent_feature_path}}": {{agent_options_json}}{{plugin_manager_block}}
   },
 
-  "overrideFeatureInstallOrder": [
-    "./features/proxy",
-    "./features/claude-code",
-    "./features/plugin-manager"
-  ],
+  "overrideFeatureInstallOrder": {{feature_install_order_json}},
 
   "customizations": {
     "vscode": {
@@ -76,5 +52,5 @@
   ],
 
   "remoteUser": "${localEnv:USER}",
-  "workspaceFolder": "/workspaces/{{ project_name }}"
+  "workspaceFolder": "/workspaces/{{project_name}}"
 }

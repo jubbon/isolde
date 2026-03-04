@@ -3,6 +3,7 @@
 //! This module contains the configuration structure for schema version 0.1.
 //! This is the initial schema version for isolde.yaml.
 
+use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 /// Main configuration for an Isolde project (isolde.yaml) - Schema v0.1
@@ -22,9 +23,9 @@ pub struct Config {
     /// Docker configuration
     pub docker: DockerConfig,
 
-    /// Claude Code CLI configuration
-    #[serde(default = "default_claude_config")]
-    pub claude: ClaudeConfig,
+    /// Coding agent configuration
+    #[serde(default = "default_agent_config")]
+    pub agent: AgentConfig,
 
     /// Runtime configuration (language, package manager, tools)
     pub runtime: Option<RuntimeConfig>,
@@ -45,11 +46,11 @@ pub struct Config {
     pub git: GitConfig,
 }
 
-fn default_claude_config() -> ClaudeConfig {
-    ClaudeConfig {
-        version: default_claude_version(),
-        provider: default_claude_provider(),
-        models: Default::default(),
+fn default_agent_config() -> AgentConfig {
+    AgentConfig {
+        name: default_agent_name(),
+        version: default_agent_version(),
+        options: Default::default(),
     }
 }
 
@@ -88,44 +89,37 @@ pub struct DockerConfig {
     pub build_args: Vec<String>,
 }
 
-/// Claude Code CLI configuration
+/// Coding agent configuration
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ClaudeConfig {
-    /// Claude Code CLI version
-    #[serde(default = "default_claude_version")]
+pub struct AgentConfig {
+    /// Agent name (e.g., "claude-code", "codex", "gemini", "aider")
+    #[serde(default = "default_agent_name")]
+    pub name: String,
+
+    /// Agent CLI version (e.g., "latest", "stable", or specific version)
+    #[serde(default = "default_agent_version")]
     pub version: String,
 
-    /// Claude API provider
-    #[serde(default = "default_claude_provider")]
-    pub provider: String,
-
-    /// Model mappings for different Claude models
+    /// Agent-specific options (free-form key-value pairs)
     #[serde(default)]
-    pub models: ModelsConfig,
+    pub options: HashMap<String, String>,
 }
 
-/// Models configuration as a HashMap-like structure
-pub type ModelsConfig = std::collections::HashMap<String, String>;
+fn default_agent_name() -> String {
+    "claude-code".to_string()
+}
 
-fn default_claude_version() -> String {
+fn default_agent_version() -> String {
     "latest".to_string()
 }
 
-fn default_claude_provider() -> String {
-    "anthropic".to_string()
-}
-
-impl ClaudeConfig {
-    /// Validate Claude configuration
+impl AgentConfig {
+    /// Validate agent configuration
     pub fn validate(&self) -> crate::Result<()> {
-        const VALID_CLAUDE_PROVIDERS: &[&str] = &["anthropic", "openai", "bedrock", "vertex", "azure"];
-
-        if !VALID_CLAUDE_PROVIDERS.contains(&self.provider.as_str()) {
-            return Err(crate::Error::InvalidTemplate(format!(
-                "Invalid Claude provider '{}'. Must be one of: {}",
-                self.provider,
-                VALID_CLAUDE_PROVIDERS.join(", ")
-            )));
+        if self.name.is_empty() {
+            return Err(crate::Error::InvalidTemplate(
+                "Agent name cannot be empty".to_string(),
+            ));
         }
         Ok(())
     }
@@ -254,8 +248,8 @@ impl Config {
             ));
         }
 
-        // Validate Claude config
-        self.claude.validate()?;
+        // Validate agent config
+        self.agent.validate()?;
 
         // Validate plugins reference existing marketplaces
         for plugin in &self.plugins {
@@ -285,16 +279,17 @@ workspace:
 docker:
   image: ubuntu:latest
   build_args: []
-claude:
+agent:
+  name: claude-code
   version: latest
-  provider: anthropic
-  models: {}
+  options: {}
 "#;
         let config: Config = serde_yaml::from_str(yaml).unwrap();
         assert_eq!(config.version, "0.1");
         assert_eq!(config.name, "test-project");
         assert_eq!(config.workspace.dir, "./project");
         assert_eq!(config.docker.image, "ubuntu:latest");
+        assert_eq!(config.agent.name, "claude-code");
     }
 
     #[test]
@@ -309,7 +304,8 @@ docker:
         assert_eq!(config.version, "0.1");
         assert_eq!(config.name, "minimal");
         assert_eq!(config.workspace.dir, "./project"); // default
-        assert_eq!(config.claude.provider, "anthropic"); // default
+        assert_eq!(config.agent.name, "claude-code"); // default
+        assert_eq!(config.agent.version, "latest"); // default
     }
 
     #[test]
@@ -321,8 +317,8 @@ workspace:
   dir: .
 docker:
   image: ubuntu:latest
-claude:
-  provider: anthropic
+agent:
+  name: claude-code
 "#;
         let config: Config = serde_yaml::from_str(yaml).unwrap();
         assert!(config.validate().is_ok());
@@ -337,8 +333,8 @@ workspace:
   dir: .
 docker:
   image: ubuntu:latest
-claude:
-  provider: anthropic
+agent:
+  name: claude-code
 "#;
         let config: Config = serde_yaml::from_str(yaml).unwrap();
         assert!(config.validate().is_err());
@@ -353,15 +349,15 @@ workspace:
   dir: .
 docker:
   image: ubuntu:latest
-claude:
-  provider: anthropic
+agent:
+  name: claude-code
 "#;
         let config: Config = serde_yaml::from_str(yaml).unwrap();
         assert!(config.validate().is_err());
     }
 
     #[test]
-    fn test_config_validate_invalid_provider() {
+    fn test_config_validate_empty_agent_name() {
         let yaml = r#"
 version: "0.1"
 name: test
@@ -369,11 +365,29 @@ workspace:
   dir: .
 docker:
   image: ubuntu:latest
-claude:
-  provider: invalid_provider
+agent:
+  name: ""
 "#;
         let config: Config = serde_yaml::from_str(yaml).unwrap();
         assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_config_validate_other_agents() {
+        let yaml = r#"
+version: "0.1"
+name: test
+workspace:
+  dir: .
+docker:
+  image: ubuntu:latest
+agent:
+  name: codex
+  version: latest
+  options: {}
+"#;
+        let config: Config = serde_yaml::from_str(yaml).unwrap();
+        assert!(config.validate().is_ok());
     }
 
     #[test]
@@ -392,5 +406,25 @@ name: test-plugin
 "#;
         let git: GitConfig = serde_yaml::from_str(yaml).unwrap();
         assert_eq!(git.generated, GitGeneratedHandling::Ignored);
+    }
+
+    #[test]
+    fn test_agent_options() {
+        let yaml = r#"
+version: "0.1"
+name: test
+docker:
+  image: ubuntu:latest
+agent:
+  name: claude-code
+  version: stable
+  options:
+    provider: anthropic
+    models: "haiku:claude-3-5-haiku-20241022,sonnet:claude-3-5-sonnet-20241022"
+"#;
+        let config: Config = serde_yaml::from_str(yaml).unwrap();
+        assert_eq!(config.agent.name, "claude-code");
+        assert_eq!(config.agent.version, "stable");
+        assert_eq!(config.agent.options.get("provider"), Some(&"anthropic".to_string()));
     }
 }

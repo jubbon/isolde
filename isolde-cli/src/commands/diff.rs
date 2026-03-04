@@ -637,7 +637,7 @@ fn generate_claude_md(config: &Config) -> Result<String> {
 Docker Image: {}
 Claude Provider: {}
 "#,
-        config.name, config.name, config.version, config.docker_image(), config.claude_provider()
+        config.name, config.name, config.version, config.docker_image(), config.agent_name()
     ))
 }
 

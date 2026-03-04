@@ -1,0 +1,14 @@
+{
+  "id": "codex",
+  "version": "0.1.0",
+  "name": "Codex CLI",
+  "description": "OpenAI Codex CLI coding agent (coming soon)",
+  "documentationURL": "https://github.com/jubbon/isolde",
+  "options": {
+    "version": {
+      "type": "string",
+      "default": "latest",
+      "description": "Version of Codex CLI to install"
+    }
+  }
+}

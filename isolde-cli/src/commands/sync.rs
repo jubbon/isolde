@@ -200,23 +200,29 @@ fn generate_devcontainer(config: &Config) -> Result<String> {
         );
     }
 
-    // Add Claude Code feature
-    let claude_models = if config.claude_models().is_empty() {
-        None
-    } else {
-        Some(serde_json::to_string(config.claude_models()).ok())
-    };
-
-    features.insert(
-        "./features/claude-code".to_string(),
-        serde_json::json!({
-            "version": config.claude_version(),
-            "provider": config.claude_provider(),
-            "models": claude_models,
-            "http_proxy": config.proxy().and_then(|p| p.http().cloned()),
-            "https_proxy": config.proxy().and_then(|p| p.https().cloned())
-        }),
-    );
+    // Add coding agent feature
+    let mut agent_opts = serde_json::Map::new();
+    agent_opts.insert("version".to_string(), serde_json::Value::String(config.agent_version().to_string()));
+    for (key, value) in config.agent_options() {
+        if key == "models" {
+            let mut models_obj = serde_json::Map::new();
+            for pair in value.split(',') {
+                let parts: Vec<&str> = pair.splitn(2, ':').collect();
+                if parts.len() == 2 {
+                    models_obj.insert(parts[0].trim().to_string(), serde_json::Value::String(parts[1].trim().to_string()));
+                }
+            }
+            agent_opts.insert(key.clone(), serde_json::Value::Object(models_obj));
+        } else {
+            agent_opts.insert(key.clone(), serde_json::Value::String(value.clone()));
+        }
+    }
+    if let Some(proxy) = config.proxy() {
+        if let Some(h) = proxy.http() { agent_opts.insert("http_proxy".to_string(), serde_json::Value::String(h.clone())); }
+        if let Some(h) = proxy.https() { agent_opts.insert("https_proxy".to_string(), serde_json::Value::String(h.clone())); }
+    }
+    let agent_feature_path = format!("./features/{}", config.agent_name());
+    features.insert(agent_feature_path, serde_json::Value::Object(agent_opts));
 
     // Add plugin manager feature if plugins are configured
     let plugins = config.plugins_vec();
@@ -331,14 +337,14 @@ This is an Isolde-managed isolated development environment.
 ## Configuration
 
 - **Docker Image**: {}
-- **Claude Provider**: {}
+- **Agent**: {}
 - **Workspace Directory**: {}
 "#,
         config.name,
         config.name,
         config.version,
         config.docker_image(),
-        config.claude_provider(),
+        config.agent_name(),
         config.workspace_dir()
     );
 

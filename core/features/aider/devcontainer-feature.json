@@ -1,0 +1,14 @@
+{
+  "id": "aider",
+  "version": "0.1.0",
+  "name": "Aider",
+  "description": "Aider AI pair programming tool (coming soon)",
+  "documentationURL": "https://github.com/jubbon/isolde",
+  "options": {
+    "version": {
+      "type": "string",
+      "default": "latest",
+      "description": "Version of Aider to install"
+    }
+  }
+}

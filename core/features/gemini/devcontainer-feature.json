@@ -1,0 +1,14 @@
+{
+  "id": "gemini",
+  "version": "0.1.0",
+  "name": "Gemini CLI",
+  "description": "Google Gemini CLI coding agent (coming soon)",
+  "documentationURL": "https://github.com/jubbon/isolde",
+  "options": {
+    "version": {
+      "type": "string",
+      "default": "latest",
+      "description": "Version of Gemini CLI to install"
+    }
+  }
+}

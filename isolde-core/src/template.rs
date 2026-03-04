@@ -121,10 +121,25 @@ impl TemplateEngine {
     ///
     /// This converts the high-level configuration into template variables
     pub fn build_context(config: &Config) -> TemplateContext {
-        // Build models JSON string for devcontainer
-        let models_json = serde_json::to_string(config.claude_models()).unwrap_or_default();
+        let agent_name = config.agent_name().to_string();
+        let agent_feature_path = format!("./features/{}", agent_name);
+        let include_plugin_manager = agent_name == "claude-code";
 
-        // Plugin activation lists
+        // Build agent options JSON object
+        let agent_options_json = build_agent_options_json(config);
+
+        // Build feature install order JSON array
+        let mut install_order = vec![
+            "./features/proxy".to_string(),
+            format!("./features/{}", agent_name),
+        ];
+        if include_plugin_manager {
+            install_order.push("./features/plugin-manager".to_string());
+        }
+        let feature_install_order_json =
+            serde_json::to_string(&install_order).unwrap_or_else(|_| "[]".to_string());
+
+        // Plugin activation lists (only relevant for claude-code)
         let plugins = config.plugins_vec();
         let active_plugins: Vec<String> = plugins
             .iter()
@@ -141,9 +156,11 @@ impl TemplateEngine {
             project_name: config.name.clone(),
             docker_image: config.docker_image().to_string(),
             lang_version: config.runtime().map(|r| r.version().to_string()),
-            claude_version: config.claude_version().to_string(),
-            claude_provider: config.claude_provider().to_string(),
-            claude_models_json: models_json,
+            agent_name,
+            agent_feature_path,
+            agent_options_json,
+            include_plugin_manager,
+            feature_install_order_json,
             proxy_http: config.proxy().and_then(|p| p.http().cloned()),
             proxy_https: config.proxy().and_then(|p| p.https().cloned()),
             proxy_no_proxy: config.proxy().and_then(|p| p.no_proxy().cloned()),
@@ -173,6 +190,57 @@ impl Default for TemplateEngine {
     }
 }
 
+/// Build the agent options JSON object string from config
+fn build_agent_options_json(config: &Config) -> String {
+    use serde_json::{Map, Value};
+
+    let mut map = Map::new();
+
+    // Add version first
+    map.insert(
+        "version".to_string(),
+        Value::String(config.agent_version().to_string()),
+    );
+
+    // Add all agent options (special handling for "models" key)
+    for (key, value) in config.agent_options() {
+        if key == "models" {
+            map.insert(key.clone(), parse_models_string(value));
+        } else {
+            map.insert(key.clone(), Value::String(value.clone()));
+        }
+    }
+
+    // Inject proxy settings if configured
+    if let Some(proxy) = config.proxy() {
+        if let Some(http) = proxy.http() {
+            map.insert("http_proxy".to_string(), Value::String(http.clone()));
+        }
+        if let Some(https) = proxy.https() {
+            map.insert("https_proxy".to_string(), Value::String(https.clone()));
+        }
+    }
+
+    serde_json::to_string_pretty(&Value::Object(map)).unwrap_or_else(|_| "{}".to_string())
+}
+
+/// Parse "haiku:val,sonnet:val" format into a JSON object {"haiku":"val","sonnet":"val"}
+fn parse_models_string(models: &str) -> serde_json::Value {
+    use serde_json::{Map, Value};
+
+    let mut map = Map::new();
+    for pair in models.split(',') {
+        let parts: Vec<&str> = pair.splitn(2, ':').collect();
+        if parts.len() == 2 {
+            map.insert(
+                parts[0].trim().to_string(),
+                Value::String(parts[1].trim().to_string()),
+            );
+        }
+    }
+    Value::Object(map)
+}
+
 /// Simple template renderer that replaces {{variable}} placeholders
 fn render_template_simple(template: &str, context: &TemplateContext) -> String {
     let mut result = template.to_string();
@@ -180,16 +248,16 @@ fn render_template_simple(template: &str, context: &TemplateContext) -> String {
     // Basic scalar replacements
     result = result.replace("{{project_name}}", &context.project_name);
     result = result.replace("{{docker_image}}", &context.docker_image);
-    result = result.replace("{{claude_version}}", &context.claude_version);
-    result = result.replace("{{claude_provider}}", &context.claude_provider);
-    result = result.replace("{{claude_models_json}}", &context.claude_models_json);
+    result = result.replace("{{agent_name}}", &context.agent_name);
+    result = result.replace("{{agent_feature_path}}", &context.agent_feature_path);
+    result = result.replace("{{agent_options_json}}", &context.agent_options_json);
+    result = result.replace("{{feature_install_order_json}}", &context.feature_install_order_json);
 
     // Optional values with defaults
     let lang_version = context.lang_version.as_deref().unwrap_or("");
     result = result.replace("{{lang_version}}", lang_version);
 
-    // Feature paths
-    result = result.replace("{{features_claude_code}}", "./features/claude-code");
+    // Static feature paths
     result = result.replace("{{features_proxy}}", "./features/proxy");
     result = result.replace("{{features_plugin_manager}}", "./features/plugin-manager");
 
@@ -200,17 +268,28 @@ fn render_template_simple(template: &str, context: &TemplateContext) -> String {
     result = result.replace("{{proxy_http}}", proxy_http);
     result = result.replace("{{proxy_https}}", proxy_https);
     result = result.replace("{{proxy_no_proxy}}", proxy_no_proxy);
+    result = result.replace(
+        "{{proxy_enabled}}",
+        if context.proxy_enabled { "true" } else { "false" },
+    );
 
-    // Plugin lists
-    let activate_list = format_plugin_list(&context.claude_activate_plugins);
-    let deactivate_list = format_plugin_list(&context.claude_deactivate_plugins);
-    result = result.replace("{{claude_activate_plugins}}", &activate_list);
-    result = result.replace("{{claude_deactivate_plugins}}", &deactivate_list);
+    // Plugin manager block (conditional - only for claude-code agent)
+    if context.include_plugin_manager {
+        let activate = format_plugin_list(&context.claude_activate_plugins);
+        let deactivate = format_plugin_list(&context.claude_deactivate_plugins);
+        let block = format!(
+            ",\n    \"./features/plugin-manager\": {{\n      \"activate_plugins\": [{}],\n      \"deactivate_plugins\": [{}]\n    }}",
+            activate, deactivate
+        );
+        result = result.replace("{{plugin_manager_block}}", &block);
+    } else {
+        result = result.replace("{{plugin_manager_block}}", "");
+    }
 
     result
 }
 
-/// Format a list of plugin names as a JSON array string
+/// Format a list of plugin names as a JSON array inline string
 fn format_plugin_list(plugins: &[String]) -> String {
     plugins
         .iter()
@@ -234,17 +313,20 @@ pub struct TemplateContext {
     /// Language version (e.g., PYTHON_VERSION, NODE_VERSION)
     pub lang_version: Option<String>,
 
-    /// Claude Code version
-    #[serde(default = "default_claude_version")]
-    pub claude_version: String,
+    /// Agent name (e.g., "claude-code", "codex", "gemini", "aider")
+    pub agent_name: String,
 
-    /// Claude provider
-    #[serde(default = "default_claude_provider")]
-    pub claude_provider: String,
+    /// Agent feature path (e.g., "./features/claude-code")
+    pub agent_feature_path: String,
 
-    /// Claude models as JSON string
-    #[serde(default)]
-    pub claude_models_json: String,
+    /// Agent options as a JSON object string (version + options + proxy)
+    pub agent_options_json: String,
+
+    /// Whether to include the plugin manager feature (only for claude-code)
+    pub include_plugin_manager: bool,
+
+    /// Feature install order as a JSON array string
+    pub feature_install_order_json: String,
 
     /// HTTP proxy URL
     pub proxy_http: Option<String>,
@@ -259,33 +341,27 @@ pub struct TemplateContext {
     #[serde(default)]
     pub proxy_enabled: bool,
 
-    /// Active plugins
+    /// Active plugins (used by plugin-manager feature, claude-code only)
     #[serde(default)]
     pub claude_activate_plugins: Vec<String>,
 
-    /// Inactive plugins
+    /// Inactive plugins (used by plugin-manager feature, claude-code only)
     #[serde(default)]
     pub claude_deactivate_plugins: Vec<String>,
 }
 
-fn default_claude_version() -> String {
-    "latest".to_string()
-}
-
-fn default_claude_provider() -> String {
-    "anthropic".to_string()
-}
-
 impl TemplateContext {
-    /// Create a new template context with minimal required fields
+    /// Create a new template context with minimal required fields (defaults to claude-code agent)
     pub fn new(project_name: String, docker_image: String) -> Self {
         Self {
             project_name,
             docker_image,
             lang_version: None,
-            claude_version: default_claude_version(),
-            claude_provider: default_claude_provider(),
-            claude_models_json: "{}".to_string(),
+            agent_name: "claude-code".to_string(),
+            agent_feature_path: "./features/claude-code".to_string(),
+            agent_options_json: "{\"version\": \"latest\"}".to_string(),
+            include_plugin_manager: true,
+            feature_install_order_json: "[\"./features/proxy\",\"./features/claude-code\",\"./features/plugin-manager\"]".to_string(),
             proxy_http: None,
             proxy_https: None,
             proxy_no_proxy: None,
@@ -299,7 +375,6 @@ impl TemplateContext {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::config::{ClaudeConfig, DockerConfig, WorkspaceConfig};
     use std::path::PathBuf;
 
     fn create_test_config() -> Config {
@@ -313,13 +388,28 @@ docker:
   image: mcr.microsoft.com/devcontainers/base:ubuntu
   build_args:
     - USERNAME=user
-claude:
+agent:
+  name: claude-code
   version: latest
-  provider: anthropic
-  models:
-    haiku: claude-3-5-haiku-20241022
-    sonnet: claude-3-5-sonnet-20241022
-    opus: claude-3-5-sonnet-20241022
+  options:
+    provider: anthropic
+    models: "haiku:claude-3-5-haiku-20241022,sonnet:claude-3-5-sonnet-20241022,opus:claude-3-5-sonnet-20241022"
+"#,
+        )
+        .unwrap()
+    }
+
+    fn create_codex_config() -> Config {
+        Config::from_str(
+            r#"
+version: "0.1"
+name: test-codex
+docker:
+  image: mcr.microsoft.com/devcontainers/base:ubuntu
+agent:
+  name: codex
+  version: latest
+  options: {}
 "#,
         )
         .unwrap()
@@ -341,15 +431,30 @@ claude:
     }
 
     #[test]
-    fn test_build_context() {
+    fn test_build_context_claude_code() {
         let config = create_test_config();
         let context = TemplateEngine::build_context(&config);
 
         assert_eq!(context.project_name, "test-project");
         assert_eq!(context.docker_image, "mcr.microsoft.com/devcontainers/base:ubuntu");
-        assert_eq!(context.claude_version, "latest");
-        assert_eq!(context.claude_provider, "anthropic");
+        assert_eq!(context.agent_name, "claude-code");
+        assert_eq!(context.agent_feature_path, "./features/claude-code");
+        assert!(context.include_plugin_manager);
         assert!(!context.proxy_enabled);
+        assert!(context.agent_options_json.contains("\"version\""));
+        assert!(context.agent_options_json.contains("\"provider\""));
+    }
+
+    #[test]
+    fn test_build_context_codex() {
+        let config = create_codex_config();
+        let context = TemplateEngine::build_context(&config);
+
+        assert_eq!(context.agent_name, "codex");
+        assert_eq!(context.agent_feature_path, "./features/codex");
+        assert!(!context.include_plugin_manager);
+        assert!(context.feature_install_order_json.contains("./features/codex"));
+        assert!(!context.feature_install_order_json.contains("plugin-manager"));
     }
 
     #[test]
@@ -361,8 +466,9 @@ claude:
 
         assert_eq!(ctx.project_name, "my-project");
         assert_eq!(ctx.docker_image, "ubuntu:latest");
-        assert_eq!(ctx.claude_version, "latest");
-        assert_eq!(ctx.claude_provider, "anthropic");
+        assert_eq!(ctx.agent_name, "claude-code");
+        assert_eq!(ctx.agent_feature_path, "./features/claude-code");
+        assert!(ctx.include_plugin_manager);
         assert!(!ctx.proxy_enabled);
         assert!(ctx.claude_activate_plugins.is_empty());
     }
@@ -421,6 +527,47 @@ claude:
     }
 
     #[test]
+    fn test_render_agent_feature_path() {
+        let template = "feature: {{agent_feature_path}}";
+        let ctx = TemplateContext::new(
+            "my-project".to_string(),
+            "ubuntu:latest".to_string(),
+        );
+
+        let result = render_template_simple(template, &ctx);
+        assert_eq!(result, "feature: ./features/claude-code");
+    }
+
+    #[test]
+    fn test_render_plugin_manager_block_included() {
+        let template = "{{agent_feature_path}}: {}{{plugin_manager_block}}";
+        let mut ctx = TemplateContext::new(
+            "my-project".to_string(),
+            "ubuntu:latest".to_string(),
+        );
+        ctx.include_plugin_manager = true;
+
+        let result = render_template_simple(template, &ctx);
+        assert!(result.contains("plugin-manager"));
+        assert!(result.contains("activate_plugins"));
+    }
+
+    #[test]
+    fn test_render_plugin_manager_block_excluded() {
+        let template = "{{agent_feature_path}}: {}{{plugin_manager_block}}";
+        let mut ctx = TemplateContext::new(
+            "my-project".to_string(),
+            "ubuntu:latest".to_string(),
+        );
+        ctx.include_plugin_manager = false;
+        ctx.agent_feature_path = "./features/codex".to_string();
+
+        let result = render_template_simple(template, &ctx);
+        assert!(!result.contains("plugin-manager"));
+        assert_eq!(result, "./features/codex: {}");
+    }
+
+    #[test]
     fn test_from_dir_loads_templates() {
         let temp_dir = tempfile::tempdir().unwrap();
         let templates_dir = temp_dir.path();
@@ -475,12 +622,13 @@ claude:
 
     #[test]
     fn test_format_plugin_list_empty() {
-        // Test indirectly through render_template_simple
         let template = "{{claude_activate_plugins}}";
         let ctx = TemplateContext::new("test".to_string(), "ubuntu:latest".to_string());
 
+        // Note: {{claude_activate_plugins}} is not a direct replacement - it's used
+        // inside the plugin_manager_block expansion. This template variable won't be replaced.
         let result = render_template_simple(template, &ctx);
-        assert_eq!(result, "");
+        assert_eq!(result, "{{claude_activate_plugins}}");
     }
 
     #[test]
@@ -491,8 +639,28 @@ claude:
         let result = engine.render_with_config("devcontainer.json", &config);
         assert!(result.is_ok());
         let rendered = result.unwrap();
-        // The template uses spaced {{ project_name }} which doesn't match {{project_name}} replacement
-        // Check for feature paths which are correctly replaced
         assert!(rendered.contains("./features/claude-code"));
+        assert!(rendered.contains("./features/plugin-manager"));
+    }
+
+    #[test]
+    fn test_render_with_codex_config_no_plugin_manager() {
+        let config = create_codex_config();
+        let engine = TemplateEngine::new().unwrap();
+
+        let result = engine.render_with_config("devcontainer.json", &config);
+        assert!(result.is_ok());
+        let rendered = result.unwrap();
+        assert!(rendered.contains("./features/codex"));
+        assert!(!rendered.contains("./features/plugin-manager"));
+    }
+
+    #[test]
+    fn test_parse_models_string() {
+        let models = "haiku:claude-3-5-haiku-20241022,sonnet:claude-3-5-sonnet-20241022";
+        let result = parse_models_string(models);
+        let obj = result.as_object().unwrap();
+        assert_eq!(obj.get("haiku").unwrap().as_str().unwrap(), "claude-3-5-haiku-20241022");
+        assert_eq!(obj.get("sonnet").unwrap().as_str().unwrap(), "claude-3-5-sonnet-20241022");
     }
 }

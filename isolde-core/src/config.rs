@@ -115,24 +115,24 @@ impl Config {
         }
     }
 
-    /// Get Claude version
-    pub fn claude_version(&self) -> &str {
+    /// Get agent name (e.g., "claude-code", "codex", "gemini", "aider")
+    pub fn agent_name(&self) -> &str {
         match &self.inner {
-            ConfigInner::V0_1(c) => &c.claude.version,
+            ConfigInner::V0_1(c) => &c.agent.name,
         }
     }
 
-    /// Get Claude provider
-    pub fn claude_provider(&self) -> &str {
+    /// Get agent version
+    pub fn agent_version(&self) -> &str {
         match &self.inner {
-            ConfigInner::V0_1(c) => &c.claude.provider,
+            ConfigInner::V0_1(c) => &c.agent.version,
         }
     }
 
-    /// Get Claude models mapping
-    pub fn claude_models(&self) -> &HashMap<String, String> {
+    /// Get agent options (free-form key-value pairs)
+    pub fn agent_options(&self) -> &HashMap<String, String> {
         match &self.inner {
-            ConfigInner::V0_1(c) => &c.claude.models,
+            ConfigInner::V0_1(c) => &c.agent.options,
         }
     }
 
@@ -156,7 +156,7 @@ impl Config {
             ConfigInner::V0_1(_) => {
                 // Return empty HashMap for v0.1 (marketplaces handled differently)
                 static EMPTY: std::sync::OnceLock<HashMap<String, MarketplaceConfigView>> = std::sync::OnceLock::new();
-                EMPTY.get_or_init(|| HashMap::new())
+                EMPTY.get_or_init(HashMap::new)
             }
         }
     }
@@ -275,7 +275,7 @@ pub struct GitConfigView {
     pub generated: v0_1::GitGeneratedHandling,
 }
 
-// ========== Legacy types for backward compatibility ==========
+// ========== Legacy types kept for backward compatibility ==========
 
 /// Workspace configuration (legacy)
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -292,20 +292,6 @@ pub struct DockerConfig {
     /// Build arguments for Docker
     #[serde(default)]
     pub build_args: Vec<String>,
-}
-
-/// Claude Code CLI configuration (legacy)
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ClaudeConfig {
-    /// Claude Code CLI version
-    #[serde(default = "default_claude_version")]
-    pub version: String,
-    /// Claude API provider
-    #[serde(default = "default_claude_provider")]
-    pub provider: String,
-    /// Model mappings for different Claude models
-    #[serde(default)]
-    pub models: HashMap<String, String>,
 }
 
 /// Runtime configuration (language, package manager, tools) - legacy
@@ -366,14 +352,6 @@ impl Default for GitConfig {
             generated: default_git_generated(),
         }
     }
-}
-
-fn default_claude_version() -> String {
-    "latest".to_string()
-}
-
-fn default_claude_provider() -> String {
-    "anthropic".to_string()
 }
 
 fn default_plugin_activate() -> bool {
@@ -440,7 +418,7 @@ pub struct Preset {
     /// Features to include
     #[serde(default)]
     pub features: Vec<String>,
-    /// Claude plugins to include
+    /// Claude plugins to include (only applied when agent is claude-code)
     #[serde(default)]
     pub claude_plugins: Vec<String>,
 }
@@ -457,13 +435,12 @@ workspace:
 docker:
   image: mcr.microsoft.com/devcontainers/base:ubuntu
   build_args: []
-claude:
+agent:
+  name: claude-code
   version: latest
-  provider: anthropic
-  models:
-    haiku: claude-3-5-haiku-20241022
-    sonnet: claude-3-5-sonnet-20241022
-    opus: claude-3-5-sonnet-20241022
+  options:
+    provider: anthropic
+    models: "haiku:claude-3-5-haiku-20241022,sonnet:claude-3-5-sonnet-20241022,opus:claude-3-5-sonnet-20241022"
 runtime:
   language: python
   version: "3.12"
@@ -491,7 +468,7 @@ git:
         assert_eq!(config.version, SchemaVersion::V0_1);
         assert_eq!(config.workspace_dir(), "./project");
         assert_eq!(config.docker_image(), "mcr.microsoft.com/devcontainers/base:ubuntu");
-        assert_eq!(config.claude_provider(), "anthropic");
+        assert_eq!(config.agent_name(), "claude-code");
     }
 
     #[test]
@@ -505,7 +482,8 @@ docker:
         let config = Config::from_str(yaml).unwrap();
         assert_eq!(config.name, "minimal-app");
         assert_eq!(config.version, SchemaVersion::V0_1);
-        assert_eq!(config.claude_version(), "latest"); // default
+        assert_eq!(config.agent_name(), "claude-code"); // default
+        assert_eq!(config.agent_version(), "latest"); // default
         assert_eq!(config.workspace_dir(), "./project"); // default
         assert!(config.runtime().is_none());
         assert!(config.proxy().is_none());
@@ -519,8 +497,8 @@ workspace:
   dir: ./project
 docker:
   image: ubuntu:latest
-claude:
-  provider: anthropic
+agent:
+  name: claude-code
 "#;
         let result = Config::from_str(yaml);
         assert!(result.is_err());
@@ -536,8 +514,8 @@ workspace:
   dir: ./project
 docker:
   image: ubuntu:latest
-claude:
-  provider: anthropic
+agent:
+  name: claude-code
 "#;
         let result = Config::from_str(yaml);
         assert!(result.is_err());
@@ -552,8 +530,8 @@ workspace:
   dir: ./project
 docker:
   image: ubuntu:latest
-claude:
-  provider: anthropic
+agent:
+  name: claude-code
 "#;
         let result = Config::from_str(yaml);
         assert!(result.is_err());
@@ -566,8 +544,8 @@ version: "0.1"
 name: test
 workspace:
   dir: ./project
-claude:
-  provider: anthropic
+agent:
+  name: claude-code
 "#;
         let result = Config::from_str(yaml);
         assert!(result.is_err());
@@ -581,9 +559,9 @@ claude:
         assert_eq!(config.workspace_dir(), "./project");
         assert_eq!(config.docker_image(), "mcr.microsoft.com/devcontainers/base:ubuntu");
         assert_eq!(config.docker_build_args(), &[] as &[String]);
-        assert_eq!(config.claude_version(), "latest");
-        assert_eq!(config.claude_provider(), "anthropic");
-        assert_eq!(config.claude_models().len(), 3);
+        assert_eq!(config.agent_name(), "claude-code");
+        assert_eq!(config.agent_version(), "latest");
+        assert_eq!(config.agent_options().get("provider"), Some(&"anthropic".to_string()));
 
         // Test runtime
         let runtime = config.runtime().unwrap();
@@ -629,5 +607,22 @@ supported_versions: ["3.12", "3.11", "3.10"]
         let info: TemplateInfo = serde_yaml::from_str(yaml).unwrap();
         assert_eq!(info.name, "Python");
         assert_eq!(info.lang_version_default, "3.12");
+    }
+
+    #[test]
+    fn test_config_with_codex_agent() {
+        let yaml = r#"
+version: "0.1"
+name: my-app
+docker:
+  image: ubuntu:latest
+agent:
+  name: codex
+  version: latest
+  options: {}
+"#;
+        let config = Config::from_str(yaml).unwrap();
+        assert_eq!(config.agent_name(), "codex");
+        assert_eq!(config.agent_version(), "latest");
     }
 }
