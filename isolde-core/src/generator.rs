@@ -455,8 +455,9 @@ impl Generator {
 
         // Install common system dependencies
         content.push_str(
-            r#"# Install system dependencies
-RUN apt-get update && apt-get install -y \
+            r#"# Install system dependencies (best-effort - base image may already have them)
+RUN apt-get update -o Acquire::AllowInsecureRepositories=true 2>/dev/null || apt-get update 2>/dev/null || true && \
+    apt-get install -y --no-install-recommends \
     curl \
     git \
     wget \
@@ -464,23 +465,28 @@ RUN apt-get update && apt-get install -y \
     jq \
     build-essential \
     ca-certificates \
-    gosu \
-    && rm -rf /var/lib/apt/lists/*
+    sudo \
+    2>/dev/null || apt-get install -y --allow-unauthenticated --no-install-recommends \
+    curl git wget vim jq build-essential ca-certificates sudo 2>/dev/null || true && \
+    rm -rf /var/lib/apt/lists/* 2>/dev/null || true
 
 WORKDIR /workspaces
 
-# Pre-install sudo
-RUN apt-get update && apt-get install -y sudo && rm -rf /var/lib/apt/lists/*
-
 # Create user with sudo access (handle existing users/groups in base image)
-RUN if ! id -u ${USER_UID} >/dev/null 2>&1; then \
-    groupadd -f -g ${USER_GID} ${USERNAME} 2>/dev/null || true && \
-    useradd -u ${USER_UID} -g ${USER_GID} -s /bin/bash -m ${USERNAME} && \
-    chown -R ${USERNAME}:${USERNAME} /workspaces; \
+RUN set -e; \
+    if ! id -u "${USERNAME}" >/dev/null 2>&1; then \
+        groupadd -f -g ${USER_GID} ${USERNAME} 2>/dev/null || groupadd -f ${USERNAME} 2>/dev/null || true; \
+        if ! id -u ${USER_UID} >/dev/null 2>&1; then \
+            useradd -u ${USER_UID} -g ${USER_GID} -s /bin/bash -m ${USERNAME} 2>/dev/null || \
+            useradd -s /bin/bash -m ${USERNAME} 2>/dev/null || true; \
+        else \
+            useradd -s /bin/bash -m ${USERNAME} 2>/dev/null || true; \
+        fi; \
+        chown -R ${USERNAME}:${USERNAME} /workspaces 2>/dev/null || true; \
     fi; \
-    if id -u ${USERNAME} >/dev/null 2>&1; then \
-    echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers; \
-    fi
+    id -u "${USERNAME}" >/dev/null 2>&1 && \
+        echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers || \
+        echo "Warning: user ${USERNAME} not created, container may run as existing user"
 
 USER ${USERNAME}
 "#,

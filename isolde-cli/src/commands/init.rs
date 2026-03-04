@@ -26,6 +26,15 @@ pub struct InitOptions {
 
     /// Project name (for non-interactive mode)
     pub name: Option<String>,
+
+    /// Language version (optional)
+    pub lang_version: Option<String>,
+
+    /// HTTP proxy URL (optional)
+    pub http_proxy: Option<String>,
+
+    /// HTTPS proxy URL (optional)
+    pub https_proxy: Option<String>,
 }
 
 impl Default for InitOptions {
@@ -36,8 +45,70 @@ impl Default for InitOptions {
             yes: false,
             cwd: PathBuf::from("."),
             name: None,
+            lang_version: None,
+            http_proxy: None,
+            https_proxy: None,
         }
     }
+}
+
+/// Generate configuration from a template name
+fn generate_config_from_template(project_name: &str, template: &str) -> String {
+    let (docker_image, runtime_section) = match template {
+        "python" => (
+            "mcr.microsoft.com/devcontainers/python:3.12",
+            "runtime:\n  language: python\n  version: \"3.12\"\n  package_manager: uv\n  tools: []\n",
+        ),
+        "nodejs" => (
+            "mcr.microsoft.com/devcontainers/javascript-node:22",
+            "runtime:\n  language: nodejs\n  version: \"22\"\n  package_manager: pnpm\n  tools: []\n",
+        ),
+        "rust" => (
+            "mcr.microsoft.com/devcontainers/rust:latest",
+            "runtime:\n  language: rust\n  version: stable\n  package_manager: cargo\n  tools: []\n",
+        ),
+        "go" => (
+            "mcr.microsoft.com/devcontainers/go:1.22",
+            "runtime:\n  language: go\n  version: \"1.22\"\n  package_manager: go\n  tools: []\n",
+        ),
+        _ => (
+            "mcr.microsoft.com/devcontainers/base:ubuntu",
+            "",
+        ),
+    };
+
+    format!(
+        r#"# Isolde Configuration for {name}
+# Generated from template: {template}
+version: "0.1"
+template: {template}
+
+name: {name}
+workspace:
+  dir: ./project
+
+docker:
+  image: {image}
+  build_args: []
+
+claude:
+  version: latest
+  provider: anthropic
+  models:
+    haiku: claude-3-5-haiku-20241022
+    sonnet: claude-3-5-sonnet-20241022
+    opus: claude-3-5-sonnet-20241022
+
+{runtime}
+# Git configuration
+git:
+  generated: ignored
+"#,
+        name = project_name,
+        template = template,
+        image = docker_image,
+        runtime = runtime_section,
+    )
 }
 
 /// Generate a default isolde.yaml configuration
@@ -155,7 +226,22 @@ git:
     Ok(config)
 }
 
-/// Load presets.yaml from the current directory or template repository
+/// Search upward from a directory for presets.yaml
+fn search_presets_upward(start: &std::path::Path) -> Option<PathBuf> {
+    let mut dir = start;
+    loop {
+        let candidate = dir.join("presets.yaml");
+        if candidate.exists() {
+            return Some(candidate);
+        }
+        match dir.parent() {
+            Some(parent) => dir = parent,
+            None => return None,
+        }
+    }
+}
+
+/// Load presets.yaml from the current directory, binary location, or by searching upward
 fn load_presets_yaml() -> Result<String> {
     // Try current directory first
     let local_path = PathBuf::from("presets.yaml");
@@ -168,9 +254,32 @@ fn load_presets_yaml() -> Result<String> {
         });
     }
 
-    // Try to load from the isolde repository
-    // In a real implementation, this would use the repository path
-    // For now, return an error if not found locally
+    // Search upward from current directory
+    if let Ok(current_dir) = std::env::current_dir() {
+        if let Some(found) = search_presets_upward(&current_dir) {
+            return fs::read_to_string(&found).map_err(|e| {
+                Error::FileError(std::io::Error::new(
+                    std::io::ErrorKind::NotFound,
+                    format!("Failed to read presets.yaml: {}", e),
+                ))
+            });
+        }
+    }
+
+    // Search upward from the binary's location (handles cases where cwd is outside the repo)
+    if let Ok(exe_path) = std::env::current_exe() {
+        if let Some(exe_dir) = exe_path.parent() {
+            if let Some(found) = search_presets_upward(exe_dir) {
+                return fs::read_to_string(&found).map_err(|e| {
+                    Error::FileError(std::io::Error::new(
+                        std::io::ErrorKind::NotFound,
+                        format!("Failed to read presets.yaml: {}", e),
+                    ))
+                });
+            }
+        }
+    }
+
     Err(Error::InvalidTemplate(
         "presets.yaml not found. Please run this command from the Isolde repository root.".to_string(),
     ))
@@ -214,6 +323,64 @@ struct PresetData {
     claude_plugins: Vec<String>,
 }
 
+/// Valid template names
+const VALID_TEMPLATES: &[&str] = &["python", "nodejs", "rust", "go", "minimal", "generic"];
+
+/// Validate language version for the given template
+fn validate_lang_version(template: Option<&str>, version: &str) -> Result<()> {
+    // "latest" and empty string are always valid (use template defaults)
+    if version == "latest" || version.is_empty() {
+        return Ok(());
+    }
+
+    let is_valid = match template {
+        Some("python") => {
+            // Python versions: 3.x or 3.x.y where x is a reasonable minor version
+            version.starts_with("3.") && {
+                let minor = version.trim_start_matches("3.");
+                let minor_num: Option<u32> = minor.split('.').next().and_then(|s| s.parse().ok());
+                minor_num.map_or(false, |n| n <= 20)
+            }
+        }
+        Some("nodejs") => {
+            // Node.js versions: single number (18, 20, 22, etc.) or major.minor
+            let major: Option<u32> = version.split('.').next().and_then(|s| s.parse().ok());
+            major.map_or(false, |n| n >= 14 && n <= 30)
+        }
+        Some("rust") => {
+            // Rust: stable, nightly, beta, or semver
+            matches!(version, "stable" | "nightly" | "beta") || {
+                let parts: Vec<&str> = version.split('.').collect();
+                parts.len() >= 2 && parts[0].parse::<u32>().is_ok()
+            }
+        }
+        Some("go") => {
+            // Go versions: 1.x or 1.x.y
+            version.starts_with("1.") && {
+                let minor = version.trim_start_matches("1.");
+                let minor_num: Option<u32> = minor.split('.').next().and_then(|s| s.parse().ok());
+                minor_num.map_or(false, |n| n <= 30)
+            }
+        }
+        _ => {
+            // For unknown templates or minimal, do a basic sanity check
+            // Version numbers shouldn't have major version > 50
+            let major: Option<u32> = version.split('.').next().and_then(|s| s.parse().ok());
+            major.map_or(true, |n| n <= 50)
+        }
+    };
+
+    if is_valid {
+        Ok(())
+    } else {
+        Err(Error::Other(format!(
+            "Invalid language version '{}' for template '{}'",
+            version,
+            template.unwrap_or("unknown")
+        )))
+    }
+}
+
 /// Run the init command
 pub fn run(opts: InitOptions) -> Result<()> {
     let config_path = opts.cwd.join("isolde.yaml");
@@ -226,6 +393,24 @@ pub fn run(opts: InitOptions) -> Result<()> {
         )));
     }
 
+    // Validate template name if provided
+    if let Some(ref template) = opts.template {
+        if !VALID_TEMPLATES.contains(&template.as_str()) {
+            return Err(Error::InvalidTemplate(format!(
+                "Unknown template '{}'. Valid templates: {}",
+                template,
+                VALID_TEMPLATES.join(", ")
+            )));
+        }
+    }
+
+    // Validate lang_version if provided
+    if let Some(ref version) = opts.lang_version {
+        if let Err(e) = validate_lang_version(opts.template.as_deref(), version) {
+            return Err(e);
+        }
+    }
+
     // Determine project name
     let project_name = opts.name.unwrap_or_else(|| {
         opts
@@ -236,6 +421,24 @@ pub fn run(opts: InitOptions) -> Result<()> {
             .to_string()
     });
 
+    // Validate proxy URLs if provided
+    if let Some(ref proxy_url) = opts.http_proxy {
+        if !proxy_url.starts_with("http://") && !proxy_url.starts_with("https://") {
+            return Err(Error::InvalidTemplate(format!(
+                "Invalid proxy URL '{}': proxy URL must start with http:// or https://",
+                proxy_url
+            )));
+        }
+    }
+    if let Some(ref proxy_url) = opts.https_proxy {
+        if !proxy_url.starts_with("http://") && !proxy_url.starts_with("https://") {
+            return Err(Error::InvalidTemplate(format!(
+                "Invalid proxy URL '{}': proxy URL must start with http:// or https://",
+                proxy_url
+            )));
+        }
+    }
+
     // Generate configuration
     let config_content = if let Some(preset) = &opts.preset {
         print!(
@@ -243,6 +446,8 @@ pub fn run(opts: InitOptions) -> Result<()> {
             format!("Loading preset '{}'...\n", preset.cyan()).dimmed()
         );
         generate_config_from_preset(&project_name, preset)?
+    } else if let Some(ref template) = opts.template {
+        generate_config_from_template(&project_name, template)
     } else {
         generate_default_config(&project_name)
     };

@@ -15,9 +15,18 @@ import time
 import json
 
 
+def _ensure_generator(context):
+    """Initialize generator if not already set up."""
+    if not hasattr(context, 'generator'):
+        from generators import get_generator
+        context.generator = get_generator("shell-script")
+        context.generator_type = "shell-script"
+
+
 @given('I have a synced project')
 def step_have_synced_project(context):
     """Create and sync a project for testing."""
+    _ensure_generator(context)
     context.project_name = f"test-synced-{int(time.time())}"
     result = context.generator.generate(
         context.project_name,

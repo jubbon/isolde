@@ -98,7 +98,10 @@ fn execute_command(command: Commands, verbose: bool) -> anyhow::Result<()> {
             verbose: doctor_verbose,
             component,
             report,
-        } => execute_doctor(fix, doctor_verbose, component, report, verbose),
+            quick,
+            format: doctor_format,
+            dry_run,
+        } => execute_doctor(fix, doctor_verbose, component, report, quick, doctor_format, dry_run, verbose),
 
         Commands::Version {
             verbosity,
@@ -184,6 +187,9 @@ fn execute_init(
         yes: false,
         cwd,
         name: name.clone(),
+        lang_version,
+        http_proxy,
+        https_proxy,
     };
 
     commands::run_init(opts).map_err(|e| anyhow::anyhow!(e))
@@ -236,6 +242,25 @@ fn execute_validate(
 
     let report = commands::run_validate(opts).map_err(|e| anyhow::anyhow!(e))?;
 
+    // Print summary for text format
+    if format_enum == commands::ValidateFormat::Text {
+        if report.passed(warnings_as_errors) {
+            println!(
+                "\n{} Validation passed ({} checks, {} warnings)",
+                "✔".green(),
+                report.checks.len(),
+                report.warning_count
+            );
+        } else {
+            println!(
+                "\n{} Validation failed ({} errors, {} warnings)",
+                "✗".red(),
+                report.error_count,
+                report.warning_count
+            );
+        }
+    }
+
     // Exit with error code if validation failed
     if !report.passed(warnings_as_errors) {
         std::process::exit(1);
@@ -271,17 +296,29 @@ fn execute_doctor(
     doctor_verbose: bool,
     component: Option<String>,
     report: Option<String>,
+    quick: bool,
+    format: String,
+    dry_run: bool,
     verbose: bool,
 ) -> anyhow::Result<()> {
+    if dry_run {
+        println!("{}", "Running in dry-run mode - no changes will be made".yellow());
+    }
+
     let opts = commands::DoctorOptions {
-        fix,
+        fix: fix && !dry_run,
         verbose: doctor_verbose,
         component,
         report: report.map(PathBuf::from),
         cwd: PathBuf::from("."),
+        output_json: format.as_str() == "json",
     };
 
     let result = commands::run_doctor(opts).map_err(|e| anyhow::anyhow!(e))?;
+
+    if dry_run && fix {
+        println!("{}", "Would apply fixes for any issues found above.".yellow());
+    }
 
     // Exit with error code if diagnostics found errors
     if result.error_count > 0 {

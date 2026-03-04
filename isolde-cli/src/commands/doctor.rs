@@ -28,6 +28,9 @@ pub struct DoctorOptions {
 
     /// Current working directory
     pub cwd: PathBuf,
+
+    /// Output JSON format instead of text
+    pub output_json: bool,
 }
 
 impl Default for DoctorOptions {
@@ -38,6 +41,7 @@ impl Default for DoctorOptions {
             component: None,
             report: None,
             cwd: PathBuf::from("."),
+            output_json: false,
         }
     }
 }
@@ -102,9 +106,16 @@ fn diagnostic_status_icon(status: DiagnosticStatus) -> colored::ColoredString {
 
 /// Run the doctor command
 pub fn run(opts: DoctorOptions) -> Result<DoctorReport> {
-    println!("{}", "🏥 Isolde Installation Doctor".cyan());
-    println!("{}", "═".repeat(50).cyan());
-    println!();
+    // Send headers to stderr when JSON format requested to keep stdout clean
+    if opts.output_json {
+        eprintln!("{}", "🏥 Isolde Installation Doctor".cyan());
+        eprintln!("{}", "═".repeat(50).cyan());
+        eprintln!();
+    } else {
+        println!("{}", "🏥 Isolde Installation Doctor".cyan());
+        println!("{}", "═".repeat(50).cyan());
+        println!();
+    }
 
     let mut diagnostics = Vec::new();
     let mut error_count = 0;
@@ -117,7 +128,13 @@ pub fn run(opts: DoctorOptions) -> Result<DoctorReport> {
 
     // Determine which checks to run
     let checks_to_run = if let Some(ref component) = opts.component {
-        vec![component.as_str()]
+        // Normalize component aliases
+        let normalized = match component.as_str() {
+            "devcontainers" => "devcontainer",
+            "all" => "all",
+            other => other,
+        };
+        vec![normalized]
     } else {
         vec![
             "isolde-cli",
@@ -131,17 +148,30 @@ pub fn run(opts: DoctorOptions) -> Result<DoctorReport> {
         ]
     };
 
+    // Expand "all" to every known component
+    let expanded: Vec<&str> = if checks_to_run == vec!["all"] {
+        vec![
+            "isolde-cli", "docker", "git", "isolde-yaml",
+            "devcontainer", "core-features", "claude", "workspace",
+            "network", "templates", "features", "config",
+        ]
+    } else {
+        checks_to_run
+    };
+
     // Run each check
-    for check in checks_to_run {
+    for check in expanded {
         let result = match check {
             "isolde-cli" => check_isolde_cli(&opts.cwd, opts.verbose),
             "docker" => check_docker(&opts.cwd, opts.verbose),
             "git" => check_git(&opts.cwd, opts.verbose),
-            "isolde-yaml" => check_isolde_yaml(&opts.cwd, opts.verbose),
+            "isolde-yaml" | "config" => check_isolde_yaml(&opts.cwd, opts.verbose),
             "devcontainer" => check_devcontainer(&opts.cwd, opts.verbose),
-            "core-features" => check_core_features(&opts.cwd, opts.verbose),
+            "core-features" | "features" => check_core_features(&opts.cwd, opts.verbose),
             "claude" => check_claude(&opts.cwd, opts.verbose),
             "workspace" => check_workspace(&opts.cwd, opts.verbose),
+            "network" => check_network(&opts.cwd, opts.verbose),
+            "templates" => check_templates(&opts.cwd, opts.verbose),
             _ => DiagnosticResult {
                 component: check.to_string(),
                 status: DiagnosticStatus::Missing,
@@ -188,7 +218,13 @@ pub fn run(opts: DoctorOptions) -> Result<DoctorReport> {
     };
 
     // Print summary
-    print_doctor_report(&report, opts.verbose);
+    if opts.output_json {
+        let json = serde_json::to_string_pretty(&report)
+            .unwrap_or_else(|_| "{}".to_string());
+        println!("{}", json);
+    } else {
+        print_doctor_report(&report, opts.verbose);
+    }
 
     // Write report file if requested
     if let Some(ref report_path) = opts.report {
@@ -676,6 +712,77 @@ fn print_doctor_report(report: &DoctorReport, verbose: bool) {
         println!();
         println!("{}", "Run with --fix to attempt automatic fixes.".yellow());
         println!("{}", "Run with --verbose for more details.".dimmed());
+    }
+}
+
+/// Check network connectivity and proxy settings
+fn check_network(_cwd: &Path, _verbose: bool) -> DiagnosticResult {
+    let http_proxy = std::env::var("HTTP_PROXY")
+        .or_else(|_| std::env::var("http_proxy"))
+        .unwrap_or_default();
+    let https_proxy = std::env::var("HTTPS_PROXY")
+        .or_else(|_| std::env::var("https_proxy"))
+        .unwrap_or_default();
+
+    let mut proxy_parts = Vec::new();
+    if !http_proxy.is_empty() {
+        proxy_parts.push(format!("HTTP proxy: {}", http_proxy));
+    }
+    if !https_proxy.is_empty() {
+        proxy_parts.push(format!("HTTPS proxy: {}", https_proxy));
+    }
+
+    let proxy_info = if proxy_parts.is_empty() {
+        "No proxy configured".to_string()
+    } else {
+        proxy_parts.join(", ")
+    };
+
+    DiagnosticResult {
+        component: "network".to_string(),
+        status: DiagnosticStatus::Healthy,
+        message: format!("Network configuration checked. {}", proxy_info),
+        suggestions: vec![
+            "Set HTTP_PROXY/HTTPS_PROXY environment variables for corporate networks".to_string(),
+        ],
+        fixable: false,
+    }
+}
+
+/// Check template availability
+fn check_templates(_cwd: &Path, _verbose: bool) -> DiagnosticResult {
+    // Check if templates directory is accessible from current location
+    let mut dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    let mut found = false;
+    loop {
+        if dir.join("templates").exists() {
+            found = true;
+            break;
+        }
+        match dir.parent() {
+            Some(parent) => dir = parent.to_path_buf(),
+            None => break,
+        }
+    }
+
+    if found {
+        DiagnosticResult {
+            component: "templates".to_string(),
+            status: DiagnosticStatus::Healthy,
+            message: "Templates directory found".to_string(),
+            suggestions: vec![],
+            fixable: false,
+        }
+    } else {
+        DiagnosticResult {
+            component: "templates".to_string(),
+            status: DiagnosticStatus::Warning,
+            message: "Templates directory not found".to_string(),
+            suggestions: vec![
+                "Run from the Isolde repository root or installation directory".to_string(),
+            ],
+            fixable: false,
+        }
     }
 }
 

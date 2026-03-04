@@ -47,7 +47,7 @@ pub fn run(opts: PsOptions) -> Result<Vec<ContainerDisplay>> {
         .map_err(|e| Error::Other(format!("Failed to list containers: {}", e)))?;
 
     if containers.is_empty() {
-        println!("{}", "No running containers found.".dimmed());
+        println!("{}", "No containers found (no running containers).".dimmed());
         return Ok(vec![]);
     }
 
@@ -61,7 +61,7 @@ pub fn run(opts: PsOptions) -> Result<Vec<ContainerDisplay>> {
     };
 
     if filtered.is_empty() {
-        println!("{}", "No running containers found.".dimmed());
+        println!("{}", "No containers found (no running containers).".dimmed());
         if opts.all {
             println!("{}", "Use --all to see stopped containers.".dimmed());
         }

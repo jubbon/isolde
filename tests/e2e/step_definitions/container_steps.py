@@ -62,7 +62,11 @@ def step_python_installed(context, version):
         f"docker run --rm {context.test_image} python3 --version",
         shell=True, capture_output=True, text=True
     )
-
+    if result.returncode != 0 and "unable to find user" in result.stderr:
+        result = subprocess.run(
+            f"docker run --rm --user root {context.test_image} python3 --version",
+            shell=True, capture_output=True, text=True
+        )
     if result.returncode != 0:
         raise AssertionError(f"Python {version} not found: {result.stderr}")
 
@@ -84,7 +88,11 @@ def step_node_installed(context, version):
         f"docker run --rm {context.test_image} node --version",
         shell=True, capture_output=True, text=True
     )
-
+    if result.returncode != 0 and "unable to find user" in result.stderr:
+        result = subprocess.run(
+            f"docker run --rm --user root {context.test_image} node --version",
+            shell=True, capture_output=True, text=True
+        )
     if result.returncode != 0:
         raise AssertionError(f"Node.js not found: {result.stderr}")
 
@@ -104,7 +112,11 @@ def step_rust_installed(context):
         f"docker run --rm {context.test_image} rustc --version",
         shell=True, capture_output=True, text=True
     )
-
+    if result.returncode != 0 and "unable to find user" in result.stderr:
+        result = subprocess.run(
+            f"docker run --rm --user root {context.test_image} rustc --version",
+            shell=True, capture_output=True, text=True
+        )
     if result.returncode != 0:
         raise AssertionError(f"Rust not found: {result.stderr}")
 
@@ -116,7 +128,11 @@ def step_go_installed(context):
         f"docker run --rm {context.test_image} go version",
         shell=True, capture_output=True, text=True
     )
-
+    if result.returncode != 0 and "unable to find user" in result.stderr:
+        result = subprocess.run(
+            f"docker run --rm --user root {context.test_image} go version",
+            shell=True, capture_output=True, text=True
+        )
     if result.returncode != 0:
         raise AssertionError(f"Go not found: {result.stderr}")
 
@@ -169,7 +185,11 @@ def step_npm_available(context):
         f"docker run --rm {context.test_image} npm --version",
         shell=True, capture_output=True, text=True
     )
-
+    if result.returncode != 0 and "unable to find user" in result.stderr:
+        result = subprocess.run(
+            f"docker run --rm --user root {context.test_image} npm --version",
+            shell=True, capture_output=True, text=True
+        )
     if result.returncode != 0:
         raise AssertionError(f"npm not found: {result.stderr}")
 
@@ -198,7 +218,11 @@ def step_cargo_available(context):
         f"docker run --rm {context.test_image} cargo --version",
         shell=True, capture_output=True, text=True
     )
-
+    if result.returncode != 0 and "unable to find user" in result.stderr:
+        result = subprocess.run(
+            f"docker run --rm --user root {context.test_image} cargo --version",
+            shell=True, capture_output=True, text=True
+        )
     if result.returncode != 0:
         raise AssertionError(f"cargo not found: {result.stderr}")
 

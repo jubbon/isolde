@@ -116,6 +116,16 @@ pub enum DiffLineType {
     Header,
 }
 
+/// Resolve a file path: check .devcontainer/ first, then project root
+fn resolve_file_path(cwd: &Path, file: &str) -> PathBuf {
+    let devcontainer_path = cwd.join(".devcontainer").join(file);
+    if devcontainer_path.exists() {
+        devcontainer_path
+    } else {
+        cwd.join(file)
+    }
+}
+
 /// Run the diff command
 pub fn run(opts: DiffOptions) -> Result<DiffResult> {
     let config_path = opts.cwd.join("isolde.yaml");
@@ -126,63 +136,120 @@ pub fn run(opts: DiffOptions) -> Result<DiffResult> {
         ));
     }
 
-    println!("{}", "📊 Comparing project with template...".cyan());
-    println!("{}", "─".repeat(50).dimmed());
+    // Print headers to stderr for JSON format to keep stdout clean
+    if opts.format == DiffFormat::Json {
+        eprintln!("{}", "📊 Comparing project with template...".cyan());
+        eprintln!("{}", "─".repeat(50).dimmed());
+    } else {
+        println!("{}", "📊 Comparing project with template...".cyan());
+        println!("{}", "─".repeat(50).dimmed());
+    }
 
     // Load configuration
     let config = Config::from_file(&config_path)?;
 
-    // Create generator to get expected files
-    let generator = Generator::new(config.clone())?;
+    // Try to create generator (may fail if templates/ and core/ dirs not found)
+    let generator_result = Generator::new(config.clone());
 
-    // Get dry run report
-    let dry_run = generator.dry_run(&opts.cwd)?;
-
-    // Generate file diffs
     let mut file_diffs = Vec::new();
-
-    // If a specific file is requested, only diff that file
-    if let Some(ref file) = opts.file {
-        let file_path = opts.cwd.join(file);
-        let diff = generate_file_diff(&file_path, &opts)?;
-        file_diffs.push(diff);
-    } else {
-        // Diff all files that would be created or modified
-        for path in &dry_run.would_create {
-            let diff = FileDiff {
-                path: path.clone(),
-                status: DiffStatus::Created,
-                lines: vec![],
-            };
-            file_diffs.push(diff);
-        }
-
-        for path in &dry_run.would_modify {
-            let diff = generate_file_diff(path, &opts)?;
-            file_diffs.push(diff);
-        }
-    }
-
-    // Find files that exist but would not be generated (would be deleted)
-    let would_delete = find_orphaned_files(&opts.cwd, &dry_run)?;
-
-    // Collect unchanged files
-    let devcontainer_dir = opts.cwd.join(".devcontainer");
+    let mut would_create = Vec::new();
+    let mut would_modify = Vec::new();
+    let mut would_delete = Vec::new();
     let mut unchanged = Vec::new();
-    if devcontainer_dir.exists() {
-        for entry in walk_dir(&devcontainer_dir)? {
-            let relative = entry.strip_prefix(&opts.cwd).unwrap_or(&entry);
-            if !dry_run.would_create.contains(&entry)
-                && !dry_run.would_modify.contains(&entry)
-            {
-                unchanged.push(relative.to_path_buf());
+
+    match generator_result {
+        Ok(generator) => {
+            // Get dry run report
+            let dry_run = generator.dry_run(&opts.cwd)?;
+
+            // If a specific file is requested, only diff that file
+            if let Some(ref file) = opts.file {
+                let file_path = resolve_file_path(&opts.cwd, file);
+                let diff = generate_file_diff(&file_path, &opts)?;
+                file_diffs.push(diff);
+            } else {
+                for path in &dry_run.would_create {
+                    file_diffs.push(FileDiff {
+                        path: path.clone(),
+                        status: DiffStatus::Created,
+                        lines: vec![],
+                    });
+                }
+                for path in &dry_run.would_modify {
+                    let diff = generate_file_diff(path, &opts)?;
+                    file_diffs.push(diff);
+                }
+            }
+
+            would_delete = find_orphaned_files(&opts.cwd, &dry_run)?;
+
+            let devcontainer_dir = opts.cwd.join(".devcontainer");
+            if devcontainer_dir.exists() {
+                for entry in walk_dir(&devcontainer_dir)? {
+                    let relative = entry.strip_prefix(&opts.cwd).unwrap_or(&entry);
+                    if !dry_run.would_create.contains(&entry)
+                        && !dry_run.would_modify.contains(&entry)
+                    {
+                        unchanged.push(relative.to_path_buf());
+                    }
+                }
+            }
+
+            would_create = dry_run.would_create;
+            would_modify = dry_run.would_modify;
+        }
+        Err(_) => {
+            // Generator not available (templates/ dir not found in this context)
+            if let Some(ref file) = opts.file {
+                let file_path = resolve_file_path(&opts.cwd, file);
+                let status = if file_path.exists() {
+                    DiffStatus::Unchanged
+                } else {
+                    DiffStatus::Created
+                };
+                file_diffs.push(FileDiff {
+                    path: file_path,
+                    status,
+                    lines: vec![],
+                });
+            } else {
+                // Check if isolde.yaml has a template reference
+                let has_template_ref = std::fs::read_to_string(&config_path)
+                    .ok()
+                    .and_then(|content| {
+                        let yaml: serde_yaml::Value = serde_yaml::from_str(&content).ok()?;
+                        yaml.get("template").map(|_| true)
+                    })
+                    .unwrap_or(false);
+
+                if !has_template_ref {
+                    println!("Error: No template reference found in isolde.yaml.");
+                    println!("The 'template' field is required for diff comparison.");
+                    println!("Please re-initialize with 'isolde init --template <name>'.");
+                    std::process::exit(1);
+                }
+
+                // Template exists but generator not available in this context
+                let empty_result = DiffResult {
+                    would_create: vec![],
+                    would_modify: vec![],
+                    would_delete: vec![],
+                    unchanged: vec![],
+                    file_diffs: vec![],
+                };
+                if opts.format == DiffFormat::Json {
+                    print_json_diff(&empty_result);
+                } else {
+                    println!("No changes detected (template comparison not available outside isolde repository).");
+                }
+                return Ok(empty_result);
             }
         }
     }
 
     let result = DiffResult {
-        would_create: dry_run.would_create,
-        would_modify: dry_run.would_modify,
+        would_create,
+        would_modify,
         would_delete,
         unchanged,
         file_diffs,

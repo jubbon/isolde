@@ -40,6 +40,13 @@ impl Default for RunOptions {
 pub fn run(opts: RunOptions) -> Result<()> {
     let workspace = opts.workspace_folder.unwrap_or_else(|| opts.cwd.clone());
 
+    // Check if workspace folder exists (if explicitly specified)
+    if !workspace.exists() {
+        println!("Error: Workspace folder not found: {}", workspace.display());
+        println!("Please provide a valid workspace folder path.");
+        std::process::exit(1);
+    }
+
     // Check if .devcontainer exists
     if !workspace.join(".devcontainer").exists() {
         return Err(Error::Other(

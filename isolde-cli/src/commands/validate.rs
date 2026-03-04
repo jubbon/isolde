@@ -119,8 +119,13 @@ pub fn run(opts: ValidateOptions) -> Result<ValidationReport> {
     let cwd = std::env::current_dir()
         .map_err(|e| Error::Other(format!("Failed to get current directory: {}", e)))?;
 
-    println!("{}", "🔍 Validating Isolde configuration...".cyan());
-    println!("{}", "─".repeat(50).dimmed());
+    if opts.format == ValidateFormat::Text {
+        println!("{}", "🔍 Validating Isolde configuration...".cyan());
+        println!("{}", "─".repeat(50).dimmed());
+    } else {
+        eprintln!("{}", "🔍 Validating Isolde configuration...".cyan());
+        eprintln!("{}", "─".repeat(50).dimmed());
+    }
 
     let mut checks = Vec::new();
     let mut error_count = 0;
@@ -238,7 +243,11 @@ pub fn run(opts: ValidateOptions) -> Result<ValidationReport> {
     }
 
     // Print results
-    println!("{}", "─".repeat(50).dimmed());
+    if opts.format == ValidateFormat::Text {
+        println!("{}", "─".repeat(50).dimmed());
+    } else {
+        eprintln!("{}", "─".repeat(50).dimmed());
+    }
     print_checks(&checks, opts.format);
 
     let config_valid = checks.iter().any(|c| c.name == "config-valid" && c.status == CheckStatus::Passed);
@@ -613,10 +622,10 @@ fn check_docker_build(cwd: &Path, verbose: bool) -> CheckResult {
 
     match result {
         Ok(output) if output.status.success() => {
-            // Clean up the test image
+            // Clean up the test image (suppress output)
             let _ = Command::new("docker")
                 .args(["rmi", "isolde-validate-test", "-f"])
-                .status();
+                .output();
 
             CheckResult {
                 name: "docker-build".to_string(),

@@ -64,8 +64,14 @@ pub fn run(opts: LogsOptions) -> Result<()> {
     println!();
 
     // Get logs
-    let logs = container::logs(&workspace, opts.follow, opts.tail)
-        .map_err(|e| Error::Other(format!("Failed to get logs: {}", e)))?;
+    let logs = match container::logs(&workspace, opts.follow, opts.tail) {
+        Ok(logs) => logs,
+        Err(e) => {
+            println!("Error: Failed to get container logs: {}", e);
+            println!("Make sure the container is running. Start with 'isolde run'.");
+            std::process::exit(1);
+        }
+    };
 
     if !logs.is_empty() {
         print!("{}", logs);

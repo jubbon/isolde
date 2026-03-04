@@ -430,7 +430,8 @@ pub struct FeatureInfo {
 /// Preset configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Preset {
-    /// Preset name
+    /// Preset name (may be omitted when preset is a YAML map value keyed by name)
+    #[serde(default)]
     pub name: String,
     /// Template to use
     pub template: String,

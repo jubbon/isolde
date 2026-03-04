@@ -173,6 +173,10 @@ if [ -n "$PROXY_URL" ]; then
     echo "[INFO] Using proxy: $PROXY_URL"
     curl --proxy "$PROXY_URL" -fsSL --http1.1 --tlsv1.2 https://claude.ai/install.sh -o "$INSTALL_SCRIPT"
 else
+    # No explicit proxy configured - clear any ambient proxy env vars to prevent
+    # "couldn't resolve proxy" failures (exit code 5) in Docker build environments
+    # where the daemon may inject proxy settings that are unreachable from inside containers
+    unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY
     curl -fsSL --http1.1 --tlsv1.2 https://claude.ai/install.sh -o "$INSTALL_SCRIPT"
 fi
 echo "[INFO] Running Claude Code installer..."

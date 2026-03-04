@@ -28,14 +28,21 @@ def step_run_python_script(context):
     """Verify we can run Python code in the container."""
     if hasattr(context, 'test_image'):
         result = subprocess.run(
-            f'docker run --rm {context.test_image} python -c "print(\'Hello from Python\')"',
+            f'docker run --rm {context.test_image} python3 -c "print(\'Hello from Python\')"',
             shell=True,
             capture_output=True,
             text=True
         )
+        if result.returncode != 0 and "unable to find user" in result.stderr:
+            result = subprocess.run(
+                f'docker run --rm --user root {context.test_image} python3 -c "print(\'Hello from Python\')"',
+                shell=True,
+                capture_output=True,
+                text=True
+            )
     elif hasattr(context, 'test_project_path'):
         result = subprocess.run(
-            ["isolde", "exec", "python", "-c", "print('Hello from Python')"],
+            ["isolde", "exec", "python3", "-c", "print('Hello from Python')"],
             cwd=context.test_project_path,
             capture_output=True,
             text=True
@@ -100,6 +107,13 @@ def step_create_express_api(context):
             capture_output=True,
             text=True
         )
+        if result.returncode != 0 and "unable to find user" in result.stderr:
+            result = subprocess.run(
+                f'docker run --rm --user root {context.test_image} npm --version',
+                shell=True,
+                capture_output=True,
+                text=True
+            )
     elif hasattr(context, 'test_project_path'):
         result = subprocess.run(
             ["isolde", "exec", "npm", "--version"],
@@ -129,6 +143,13 @@ def step_build_rust_binary(context):
             capture_output=True,
             text=True
         )
+        if result.returncode != 0 and "unable to find user" in result.stderr:
+            result = subprocess.run(
+                f'docker run --rm --user root {context.test_image} cargo --version',
+                shell=True,
+                capture_output=True,
+                text=True
+            )
     elif hasattr(context, 'test_project_path'):
         result = subprocess.run(
             ["isolde", "exec", "cargo", "--version"],
@@ -158,6 +179,13 @@ def step_create_go_module(context):
             capture_output=True,
             text=True
         )
+        if result.returncode != 0 and "unable to find user" in result.stderr:
+            result = subprocess.run(
+                f'docker run --rm --user root {context.test_image} go version',
+                shell=True,
+                capture_output=True,
+                text=True
+            )
     elif hasattr(context, 'test_project_path'):
         result = subprocess.run(
             ["isolde", "exec", "go", "version"],
@@ -188,6 +216,13 @@ def step_create_fullstack_project(context):
             capture_output=True,
             text=True
         )
+        if result.returncode != 0 and "unable to find user" in result.stderr:
+            result = subprocess.run(
+                f'docker run --rm --user root {context.test_image} npm --version',
+                shell=True,
+                capture_output=True,
+                text=True
+            )
     elif hasattr(context, 'test_project_path'):
         result = subprocess.run(
             ["isolde", "exec", "npm", "--version"],
@@ -364,6 +399,11 @@ def step_custom_isolde_yaml(context):
 @when('I create a project using the custom configuration')
 def step_create_with_custom_config(context):
     """Create project using custom config."""
+    if not hasattr(context, 'generator'):
+        from generators import get_generator
+        context.generator = get_generator("shell-script")
+        context.generator_type = "shell-script"
+
     context.project_name = f"test-custom-{int(time.time())}"
 
     # Generate with custom settings

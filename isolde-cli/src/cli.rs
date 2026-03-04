@@ -239,6 +239,18 @@ pub enum Commands {
         /// Generate diagnostic report
         #[arg(long, value_name = "FILE")]
         report: Option<String>,
+
+        /// Quick check (skip optional components)
+        #[arg(long)]
+        quick: bool,
+
+        /// Output format (text, json)
+        #[arg(long, value_name = "FORMAT", default_value = "text")]
+        format: String,
+
+        /// Show what would be fixed without making changes
+        #[arg(long)]
+        dry_run: bool,
     },
 
     /// Show version information
@@ -583,6 +595,9 @@ mod tests {
                 verbose: false,
                 component: None,
                 report: None,
+                quick: false,
+                format: "text".to_string(),
+                dry_run: false,
             },
             Commands::Version {
                 verbosity: 0,

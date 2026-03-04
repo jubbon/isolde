@@ -13,9 +13,8 @@ presets:
       - numpy
       - pandas
     claude_plugins:
-      activate:
-        - oh-my-claudecode
-        - tdd
+      - oh-my-claudecode
+      - tdd
 
   python-web:
     template: python
@@ -27,8 +26,7 @@ presets:
       - ruff
       - black
     claude_plugins:
-      activate:
-        - oh-my-claudecode
+      - oh-my-claudecode
 
   node-api:
     template: nodejs
@@ -40,9 +38,8 @@ presets:
       - vitest
       - prettier
     claude_plugins:
-      activate:
-        - oh-my-claudecode
-        - security-review
+      - oh-my-claudecode
+      - security-review
 
   rust-cli:
     template: rust
@@ -53,8 +50,7 @@ presets:
       - clippy
       - rustfmt
     claude_plugins:
-      activate:
-        - oh-my-claudecode
+      - oh-my-claudecode
 
   go-service:
     template: go
@@ -64,8 +60,7 @@ presets:
       - modules
       - golangci-lint
     claude_plugins:
-      activate:
-        - oh-my-claudecode
+      - oh-my-claudecode
 
   minimal:
     template: generic
@@ -73,8 +68,7 @@ presets:
     lang_version: ""
     features: []
     claude_plugins:
-      activate:
-        - oh-my-claudecode
+      - oh-my-claudecode
 
   fullstack:
     template: nodejs
@@ -86,7 +80,6 @@ presets:
       - vitest
       - prettier
     claude_plugins:
-      activate:
-        - oh-my-claudecode
-        - tdd
-        - security-review
+      - oh-my-claudecode
+      - tdd
+      - security-review

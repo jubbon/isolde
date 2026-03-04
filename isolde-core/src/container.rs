@@ -289,6 +289,10 @@ pub fn logs(workspace: &Path, follow: bool, tail: usize) -> Result<String> {
     } else {
         let output = cmd.output()
             .map_err(|e| Error::Other(format!("Failed to get logs: {}", e)))?;
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(Error::Other(format!("No container logs available (container may not be running): {}", stderr)));
+        }
         Ok(String::from_utf8_lossy(&output.stdout).to_string())
     }
 }
