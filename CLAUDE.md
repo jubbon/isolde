@@ -25,12 +25,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Building the CLI
 ```bash
 # Development build (faster)
-make rust-dev-build
+make build/dev
 # or
 cargo build
 
 # Release build
-make rust-build
+make build/app
 # or
 cargo build --release
 
@@ -145,22 +145,22 @@ isolde logs --tail 50
 ### Development Workflow
 ```bash
 # Format code
-make rust-fmt
+make build/fmt
 # or
 cargo fmt
 
 # Run linter
-make rust-lint
+make build/lint
 # or
 cargo clippy
 
 # Run tests
-make rust-test
+make build/test
 # or
 cargo test
 
 # Run all checks
-make rust-check
+make build/check
 ```
 
 ### Testing

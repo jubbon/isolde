@@ -11,7 +11,7 @@ ISOLDE_HOME ?= $(HOME)/.isolde
 install: install-local
 
 ## Install Isolde to ~/.local/bin/
-install-local: rust-build install-features
+install-local: build/app install-features
 	@echo "$(CYAN)Installing $(BINARY_NAME) to ~/.local/bin...$(RESET)"
 	@mkdir -p $(HOME)/.local/bin
 	@cp -f $(BINARY_PATH) $(HOME)/.local/bin/$(BINARY_NAME)
