@@ -123,13 +123,17 @@ pub fn run(opts: SyncOptions) -> Result<()> {
 fn generate_devcontainer(config: &Config) -> Result<String> {
     let mut features = serde_json::Map::new();
 
-    // Add common utils
+    // Add common utils - userUid/userGid "automatic" makes devcontainers match the host user's UID/GID,
+    // so bind-mounted directories owned by the host user appear with the correct owner inside the container.
     features.insert(
         "ghcr.io/devcontainers/features/common-utils:2".to_string(),
         serde_json::json!({
             "installZsh": false,
             "installOhMyZsh": false,
-            "upgradePackages": false
+            "upgradePackages": false,
+            "username": "${localEnv:USER}",
+            "userUid": "automatic",
+            "userGid": "automatic"
         }),
     );
 
@@ -290,46 +294,20 @@ FROM ${{BASE_IMAGE}}
 
 # User arguments with defaults
 ARG USERNAME=user
-ARG USER_UID=1000
-ARG USER_GID=1000
 
 # Set DEBIAN_FRONTEND for non-interactive apt
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies (best-effort - base image may already have them)
-RUN apt-get update -o Acquire::AllowInsecureRepositories=true 2>/dev/null || apt-get update 2>/dev/null || true && \
-    apt-get install -y --no-install-recommends \
-    curl \
-    git \
-    wget \
-    vim \
-    jq \
-    build-essential \
-    ca-certificates \
-    sudo \
-    2>/dev/null || apt-get install -y --allow-unauthenticated --no-install-recommends \
-    curl git wget vim jq build-essential ca-certificates sudo 2>/dev/null || true && \
-    rm -rf /var/lib/apt/lists/* 2>/dev/null || true
-
 WORKDIR /workspaces
 
-# Create user with sudo access (handle existing users/groups in base image)
-RUN set -e; \
-    if ! id -u "${{USERNAME}}" >/dev/null 2>&1; then \
-        groupadd -f -g ${{USER_GID}} ${{USERNAME}} 2>/dev/null || groupadd -f ${{USERNAME}} 2>/dev/null || true; \
-        if ! id -u ${{USER_UID}} >/dev/null 2>&1; then \
-            useradd -u ${{USER_UID}} -g ${{USER_GID}} -s /bin/bash -m ${{USERNAME}} 2>/dev/null || \
-            useradd -s /bin/bash -m ${{USERNAME}} 2>/dev/null || true; \
-        else \
-            useradd -s /bin/bash -m ${{USERNAME}} 2>/dev/null || true; \
-        fi; \
-        chown -R ${{USERNAME}}:${{USERNAME}} /workspaces 2>/dev/null || true; \
-    fi; \
-    id -u "${{USERNAME}}" >/dev/null 2>&1 && \
-        echo "${{USERNAME}} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers || \
-        echo "Warning: user ${{USERNAME}} not created, container may run as existing user"
-
-USER ${{USERNAME}}
+# If the base image has a 'vscode' user at UID 1000 and the requested user is different,
+# reassign vscode to a high UID so that updateRemoteUserUID can give UID 1000 to USERNAME.
+# This ensures bind-mounted host directories (owned by UID 1000) appear with the correct
+# owner inside the container without needing chown on the bind mount.
+RUN if [ "${{USERNAME}}" != "vscode" ] && id vscode >/dev/null 2>&1; then \
+        userdel -r vscode 2>/dev/null || true; \
+        groupdel vscode 2>/dev/null || true; \
+    fi
 "#,
         config.docker_image()
     );
