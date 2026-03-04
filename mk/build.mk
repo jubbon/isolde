@@ -1,7 +1,7 @@
 # =============================================================================
-# Build Targets
+# Rust Build Targets
 # =============================================================================
-# Builds the Isolde Rust CLI
+# Builds the Isolde v2 Rust CLI utility
 
 # Cargo binary name
 BINARY_NAME = isolde
@@ -13,79 +13,67 @@ TARGET_DIR = $(CARGO_DIR)/target
 RELEASE_DIR = $(TARGET_DIR)/release
 BINARY_PATH = $(RELEASE_DIR)/$(BINARY_NAME)
 
-# Rust build flags
-CARGO_BUILD_FLAGS = --release
 CARGO_FEATURES =
 
-.PHONY: build/app build/dev build/test build/test-verbose build/lint build/check build/fmt build/clean build/install build/update build/info
+.PHONY: build/release build/clean build/test build/dev
 
-## Build the release binary
-build/app:
-	@echo "$(CYAN)Building Isolde (release)...$(RESET)"
-	@cd $(CARGO_DIR) && cargo build $(CARGO_BUILD_FLAGS) $(if $(CARGO_FEATURES),--features $(CARGO_FEATURES),)
+## Build the Rust release binary
+build/release:
+	@echo "$(CYAN)Building Isolde v2 (Rust)...$(RESET)"
+	@cd $(CARGO_DIR) && cargo build --release $(if $(CARGO_FEATURES),--features $(CARGO_FEATURES),)
 	@echo "$(GREEN)Build complete: $(BINARY_PATH)$(RESET)"
 	@echo "$(YELLOW)Binary size: $$(du -h $(BINARY_PATH) | cut -f1)$(RESET)"
 
-## Build the binary in dev mode (faster compilation)
+## Build the Rust binary (dev mode, faster compilation)
 build/dev:
-	@echo "$(CYAN)Building Isolde (dev)...$(RESET)"
-	@cd $(CARGO_DIR) && cargo build
+	@echo "$(CYAN)Building Isolde v2 (Rust, dev mode)...$(RESET)"
+	@cd $(CARGO_DIR) && cargo build $(if $(CARGO_FEATURES),--features $(CARGO_FEATURES),)
 	@echo "$(GREEN)Dev build complete: $(TARGET_DIR)/debug/$(BINARY_NAME)$(RESET)"
 
-## Run tests
+## Run Rust tests
 build/test:
-	@echo "$(CYAN)Running tests...$(RESET)"
+	@echo "$(CYAN)Running Rust tests...$(RESET)"
 	@cd $(CARGO_DIR) && cargo test --all
 	@echo "$(GREEN)Tests passed$(RESET)"
 
-## Run tests with output
+## Run Rust tests with output
 build/test-verbose:
-	@echo "$(CYAN)Running tests (verbose)...$(RESET)"
+	@echo "$(CYAN)Running Rust tests (verbose)...$(RESET)"
 	@cd $(CARGO_DIR) && cargo test --all -- --nocapture
 	@echo "$(GREEN)Tests passed$(RESET)"
 
-## Run clippy linter
+## Run Rust clippy linter
 build/lint:
-	@echo "$(CYAN)Running linter (clippy)...$(RESET)"
+	@echo "$(CYAN)Running Rust linter (clippy)...$(RESET)"
 	@cd $(CARGO_DIR) && cargo clippy --all-targets --all-features -- -D warnings
 	@echo "$(GREEN)Clippy checks passed$(RESET)"
 
-## Check code formatting and lint
+## Check Rust code (format and lint)
 build/check: build/lint
-	@echo "$(CYAN)Checking code formatting...$(RESET)"
+	@echo "$(CYAN)Checking Rust code formatting...$(RESET)"
 	@cd $(CARGO_DIR) && cargo fmt --all -- --check
 	@echo "$(GREEN)Code formatting check passed$(RESET)"
 
-## Format code
+## Format Rust code
 build/fmt:
-	@echo "$(CYAN)Formatting code...$(RESET)"
+	@echo "$(CYAN)Formatting Rust code...$(RESET)"
 	@cd $(CARGO_DIR) && cargo fmt --all
 
-## Clean build artifacts
+## Clean Rust build artifacts
 build/clean:
-	@echo "$(CYAN)Cleaning build artifacts...$(RESET)"
+	@echo "$(CYAN)Cleaning Rust build artifacts...$(RESET)"
 	@cd $(CARGO_DIR) && cargo clean
-	@echo "$(GREEN)Build artifacts cleaned$(RESET)"
+	@echo "$(GREEN)Rust artifacts cleaned$(RESET)"
 
-## Install binary locally via cargo
-build/install: build/app
-	@echo "$(CYAN)Installing $(BINARY_NAME)...$(RESET)"
-	@cargo install --path $(CARGO_DIR) --force
-	@echo "$(GREEN)$(BINARY_NAME) installed to ~/.cargo/bin/$(RESET)"
-	@echo ""
-	@echo "$(YELLOW)Next steps:$(RESET)"
-	@echo "  1. Verify: $(CYAN)isolde --version$(RESET)"
-	@echo "  2. Create a project: $(CYAN)isolde init my-project$(RESET)"
-
-## Update dependencies
+## Update Rust dependencies
 build/update:
-	@echo "$(CYAN)Updating dependencies...$(RESET)"
+	@echo "$(CYAN)Updating Rust dependencies...$(RESET)"
 	@cd $(CARGO_DIR) && cargo update
 	@echo "$(GREEN)Dependencies updated$(RESET)"
 
-## Show build information
+## Show Rust build info
 build/info:
-	@echo "$(CYAN)Isolde Build Information$(RESET)"
+	@echo "$(CYAN)Isolde v2 Rust Build Information$(RESET)"
 	@echo ""
 	@echo "Binary: $(BINARY_NAME)"
 	@echo "Target: $(BINARY_PATH)"
@@ -97,13 +85,12 @@ build/info:
 		echo "Status: $(YELLOW)Not built$(RESET)"; \
 	fi
 	@echo ""
-	@echo "$(ARROW) $(GREEN)Build commands:$(RESET)"
-	@echo "  make build/app          - Build release binary"
+	@echo "$(ARROW) $(GREEN)Rust commands:$(RESET)"
+	@echo "  make build/release      - Build release binary"
 	@echo "  make build/dev          - Build dev binary (faster)"
-	@echo "  make build/test         - Run tests"
-	@echo "  make build/lint         - Run clippy"
-	@echo "  make build/check        - Check code (format + lint)"
-	@echo "  make build/fmt          - Format code"
-	@echo "  make build/clean        - Clean build artifacts"
-	@echo "  make build/install      - Install to ~/.cargo/bin/"
-	@echo "  make build/info         - Show build information"
+	@echo "  make build/test          - Run tests"
+	@echo "  make build/lint          - Run clippy"
+	@echo "  make build/check         - Check code (format + lint)"
+	@echo "  make build/fmt           - Format code"
+	@echo "  make build/clean         - Clean build artifacts"
+	@echo "  make build/info          - Show build information"

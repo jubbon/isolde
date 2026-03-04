@@ -10,7 +10,7 @@
 #   make help       - Show all available targets
 # =============================================================================
 
-.PHONY: all build test clean lint install help
+.PHONY: all build rebuild test clean lint install help
 
 # Include modular makefiles
 include mk/common.mk
@@ -24,20 +24,23 @@ include mk/install.mk
 # Default Target
 # =============================================================================
 # Default to Rust build for v2, fallback to Docker for v1
-all: build
+all: build/test build install
 
 # =============================================================================
 # Main Entry Points - High-Level Targets
 # =============================================================================
 
-# Build target (delegates to Rust build)
-build: build/app
+# Build target (release profile)
+build: build/release
 
-# Test target (comprehensive CI parity)
-test: lint test-build test-config test-runtime test-providers test-e2e
+# Rebuild target (clean then release build)
+rebuild: build/clean build/release
 
-# Lint target (all fast checks, including Rust)
+# Test target (unit tests + CI parity)
+test: build/test lint test-build test-config test-runtime test-providers test-e2e
+
+# Lint target (all fast checks)
 lint: lint-json lint-bats build/lint
 
-# Clean target (containers and Rust artifacts)
+# Clean target (containers and build artifacts)
 clean: clean-containers build/clean

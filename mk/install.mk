@@ -5,13 +5,10 @@
 # Installation directory (legacy, for uninstall target)
 ISOLDE_HOME ?= $(HOME)/.isolde
 
-.PHONY: install uninstall install-info
+.PHONY: install uninstall install-info install-features
 
 ## Install Isolde to ~/.local/bin/
-install: install-local
-
-## Install Isolde to ~/.local/bin/
-install-local: build/app install-features
+install: build/release install-features
 	@echo "$(CYAN)Installing $(BINARY_NAME) to ~/.local/bin...$(RESET)"
 	@mkdir -p $(HOME)/.local/bin
 	@cp -f $(BINARY_PATH) $(HOME)/.local/bin/$(BINARY_NAME)
@@ -46,16 +43,6 @@ install-features:
 		echo "  Features will need to be copied manually."; \
 	fi
 
-## Install Isolde via cargo install (to ~/.cargo/bin/)
-install-cargo:
-	@echo "$(CYAN)Installing $(BINARY_NAME) via cargo install...$(RESET)"
-	@cargo install --path $(CARGO_DIR) --force
-	@echo "$(GREEN)$(BINARY_NAME) installed to ~/.cargo/bin/$(RESET)"
-	@echo ""
-	@echo "$(YELLOW)Next steps:$(RESET)"
-	@echo "  1. Verify: $(CYAN)isolde --version$(RESET)"
-	@echo "  2. Create a project: $(CYAN)isolde init my-project$(RESET)"
-
 ## Uninstall Isolde
 uninstall:
 	@echo "$(YELLOW)Removing Isolde...$(RESET)"
@@ -83,6 +70,5 @@ install-info:
 	@echo ""
 	@echo "$(ARROW) $(GREEN)Installation commands:$(RESET)"
 	@echo "  make install          - Install Isolde to ~/.local/bin/"
-	@echo "  make install-cargo    - Install via cargo to ~/.cargo/bin/"
 	@echo "  make uninstall        - Remove Isolde installation"
 	@echo "  make install-info     - Show installation status"

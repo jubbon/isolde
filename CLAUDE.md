@@ -30,7 +30,7 @@ make build/dev
 cargo build
 
 # Release build
-make build/app
+make build/release
 # or
 cargo build --release
 
