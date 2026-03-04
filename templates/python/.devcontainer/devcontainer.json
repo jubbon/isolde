@@ -68,6 +68,7 @@
   "postCreateCommand": "bash -c 'if [ -f ~/.config/devcontainer/provider ]; then sed -i \"s#local provider=\\\\\\\"#local provider=\\\\\\\"\\$(cat ~/.config/devcontainer/provider)\\\\\\\"#\" ~/.bashrc; fi && pip install --user uv pytest ruff'",
 
   "mounts": [
+    "source=./project,target=/workspaces/{{PROJECT_NAME}},type=bind,consistency=cached",
     "source=${localEnv:HOME}/.claude,target=/home/${localEnv:USER}/.claude,type=bind,consistency=cached",
     "source=${localEnv:HOME}/.claude.json,target=/home/${localEnv:USER}/.claude.json,type=bind,consistency=cached",
     "source=${localEnv:HOME}/.config/devcontainer/machine-id,target=/etc/machine-id,type=bind,consistency=cached"
