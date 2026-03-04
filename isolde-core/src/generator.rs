@@ -325,21 +325,20 @@ impl Generator {
 
         // Agent configuration
         map.insert("CLAUDE_VERSION".to_string(), self.config.agent_version().to_string());
-        let provider = self.config.agent_options().get("provider").map(|s| s.as_str()).unwrap_or("");
+        let provider = self.config.agent_option_str("provider").unwrap_or("");
         map.insert("CLAUDE_PROVIDER".to_string(), provider.to_string());
 
-        // Agent models as JSON (parsed from "haiku:val,sonnet:val" format)
-        let models_json = if let Some(models_str) = self.config.agent_options().get("models") {
-            let mut obj = serde_json::Map::new();
-            for pair in models_str.split(',') {
-                let parts: Vec<&str> = pair.splitn(2, ':').collect();
-                if parts.len() == 2 {
-                    obj.insert(parts[0].trim().to_string(), serde_json::Value::String(parts[1].trim().to_string()));
-                }
+        // Agent models as JSON object
+        use crate::config::AgentOptionValue;
+        let models_json = match self.config.agent_options().get("models") {
+            Some(AgentOptionValue::Map(m)) => {
+                let obj: serde_json::Map<String, serde_json::Value> = m
+                    .iter()
+                    .map(|(k, v)| (k.clone(), serde_json::Value::String(v.clone())))
+                    .collect();
+                serde_json::to_string(&serde_json::Value::Object(obj)).unwrap_or_else(|_| "{}".to_string())
             }
-            serde_json::to_string(&serde_json::Value::Object(obj)).unwrap_or_else(|_| "{}".to_string())
-        } else {
-            "{}".to_string()
+            _ => "{}".to_string(),
         };
         map.insert("CLAUDE_MODELS".to_string(), models_json);
 
@@ -564,23 +563,18 @@ USER ${USERNAME}
 
     /// Render Claude Code configuration
     fn render_claude_config(&self) -> Result<String> {
-        let provider = self.config.agent_options().get("provider").map(|s| s.as_str()).unwrap_or("");
+        use crate::config::AgentOptionValue;
+        let provider = self.config.agent_option_str("provider").unwrap_or("");
         let mut config = serde_json::json!({
             "provider": provider,
         });
 
-        // Add models mapping if present (parsed from "haiku:val,sonnet:val" format)
-        if let Some(models_str) = self.config.agent_options().get("models") {
-            let mut models_obj = serde_json::Map::new();
-            for pair in models_str.split(',') {
-                let parts: Vec<&str> = pair.splitn(2, ':').collect();
-                if parts.len() == 2 {
-                    models_obj.insert(
-                        parts[0].trim().to_string(),
-                        serde_json::Value::String(parts[1].trim().to_string()),
-                    );
-                }
-            }
+        // Add models mapping if present
+        if let Some(AgentOptionValue::Map(m)) = self.config.agent_options().get("models") {
+            let models_obj: serde_json::Map<String, serde_json::Value> = m
+                .iter()
+                .map(|(k, v)| (k.clone(), serde_json::Value::String(v.clone())))
+                .collect();
             if !models_obj.is_empty() {
                 config["models"] = serde_json::Value::Object(models_obj);
             }
@@ -642,7 +636,9 @@ agent:
   version: latest
   options:
     provider: anthropic
-    models: "haiku:claude-3-5-haiku-20241022,sonnet:claude-3-5-sonnet-20241022"
+    models:
+      haiku: claude-3-5-haiku-20241022
+      sonnet: claude-3-5-sonnet-20241022
 runtime:
   language: python
   version: "3.12"

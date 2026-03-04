@@ -204,18 +204,21 @@ fn generate_devcontainer(config: &Config) -> Result<String> {
     let mut agent_opts = serde_json::Map::new();
     agent_opts.insert("version".to_string(), serde_json::Value::String(config.agent_version().to_string()));
     for (key, value) in config.agent_options() {
-        if key == "models" {
-            let mut models_obj = serde_json::Map::new();
-            for pair in value.split(',') {
-                let parts: Vec<&str> = pair.splitn(2, ':').collect();
-                if parts.len() == 2 {
-                    models_obj.insert(parts[0].trim().to_string(), serde_json::Value::String(parts[1].trim().to_string()));
-                }
+        use isolde_core::config::AgentOptionValue;
+        // devcontainer-feature.json declares all options as "type": "string",
+        // so Map values must be serialized back to a comma-separated string.
+        let json_val = match value {
+            AgentOptionValue::Str(s) => serde_json::Value::String(s.clone()),
+            AgentOptionValue::Map(m) => {
+                let csv = m
+                    .iter()
+                    .map(|(k, v)| format!("{}:{}", k, v))
+                    .collect::<Vec<_>>()
+                    .join(",");
+                serde_json::Value::String(csv)
             }
-            agent_opts.insert(key.clone(), serde_json::Value::Object(models_obj));
-        } else {
-            agent_opts.insert(key.clone(), serde_json::Value::String(value.clone()));
-        }
+        };
+        agent_opts.insert(key.clone(), json_val);
     }
     if let Some(proxy) = config.proxy() {
         if let Some(h) = proxy.http() { agent_opts.insert("http_proxy".to_string(), serde_json::Value::String(h.clone())); }

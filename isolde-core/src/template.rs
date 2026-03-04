@@ -202,13 +202,23 @@ fn build_agent_options_json(config: &Config) -> String {
         Value::String(config.agent_version().to_string()),
     );
 
-    // Add all agent options (special handling for "models" key)
+    // Add all agent options
+    // Note: devcontainer-feature.json declares all options as "type": "string",
+    // so Map values must be serialized back to a comma-separated string.
     for (key, value) in config.agent_options() {
-        if key == "models" {
-            map.insert(key.clone(), parse_models_string(value));
-        } else {
-            map.insert(key.clone(), Value::String(value.clone()));
-        }
+        use crate::config::AgentOptionValue;
+        let json_val = match value {
+            AgentOptionValue::Str(s) => Value::String(s.clone()),
+            AgentOptionValue::Map(m) => {
+                let csv = m
+                    .iter()
+                    .map(|(k, v)| format!("{}:{}", k, v))
+                    .collect::<Vec<_>>()
+                    .join(",");
+                Value::String(csv)
+            }
+        };
+        map.insert(key.clone(), json_val);
     }
 
     // Inject proxy settings if configured
@@ -224,22 +234,6 @@ fn build_agent_options_json(config: &Config) -> String {
     serde_json::to_string_pretty(&Value::Object(map)).unwrap_or_else(|_| "{}".to_string())
 }
 
-/// Parse "haiku:val,sonnet:val" format into a JSON object {"haiku":"val","sonnet":"val"}
-fn parse_models_string(models: &str) -> serde_json::Value {
-    use serde_json::{Map, Value};
-
-    let mut map = Map::new();
-    for pair in models.split(',') {
-        let parts: Vec<&str> = pair.splitn(2, ':').collect();
-        if parts.len() == 2 {
-            map.insert(
-                parts[0].trim().to_string(),
-                Value::String(parts[1].trim().to_string()),
-            );
-        }
-    }
-    Value::Object(map)
-}
 
 /// Simple template renderer that replaces {{variable}} placeholders
 fn render_template_simple(template: &str, context: &TemplateContext) -> String {
@@ -393,7 +387,10 @@ agent:
   version: latest
   options:
     provider: anthropic
-    models: "haiku:claude-3-5-haiku-20241022,sonnet:claude-3-5-sonnet-20241022,opus:claude-3-5-sonnet-20241022"
+    models:
+      haiku: claude-3-5-haiku-20241022
+      sonnet: claude-3-5-sonnet-20241022
+      opus: claude-3-5-sonnet-20241022
 "#,
         )
         .unwrap()
@@ -656,11 +653,13 @@ agent:
     }
 
     #[test]
-    fn test_parse_models_string() {
-        let models = "haiku:claude-3-5-haiku-20241022,sonnet:claude-3-5-sonnet-20241022";
-        let result = parse_models_string(models);
-        let obj = result.as_object().unwrap();
-        assert_eq!(obj.get("haiku").unwrap().as_str().unwrap(), "claude-3-5-haiku-20241022");
-        assert_eq!(obj.get("sonnet").unwrap().as_str().unwrap(), "claude-3-5-sonnet-20241022");
+    fn test_build_agent_options_json_models_map() {
+        let config = create_test_config();
+        let json = build_agent_options_json(&config);
+        let val: serde_json::Value = serde_json::from_str(&json).unwrap();
+        // models must be a string (comma-separated) because devcontainer-feature.json type is "string"
+        let models_str = val.get("models").unwrap().as_str().unwrap();
+        assert!(models_str.contains("haiku:claude-3-5-haiku-20241022"), "got: {models_str}");
+        assert!(models_str.contains("sonnet:claude-3-5-sonnet-20241022"), "got: {models_str}");
     }
 }

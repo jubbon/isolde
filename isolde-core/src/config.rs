@@ -6,6 +6,8 @@
 pub mod version;
 pub mod v0_1;
 
+pub use v0_1::AgentOptionValue;
+
 use std::collections::HashMap;
 use std::path::Path;
 
@@ -130,9 +132,17 @@ impl Config {
     }
 
     /// Get agent options (free-form key-value pairs)
-    pub fn agent_options(&self) -> &HashMap<String, String> {
+    pub fn agent_options(&self) -> &HashMap<String, AgentOptionValue> {
         match &self.inner {
             ConfigInner::V0_1(c) => &c.agent.options,
+        }
+    }
+
+    /// Get a string-valued agent option by key (returns None for map values)
+    pub fn agent_option_str(&self, key: &str) -> Option<&str> {
+        match self.agent_options().get(key) {
+            Some(AgentOptionValue::Str(s)) => Some(s.as_str()),
+            _ => None,
         }
     }
 
@@ -440,7 +450,10 @@ agent:
   version: latest
   options:
     provider: anthropic
-    models: "haiku:claude-3-5-haiku-20241022,sonnet:claude-3-5-sonnet-20241022,opus:claude-3-5-sonnet-20241022"
+    models:
+      haiku: claude-3-5-haiku-20241022
+      sonnet: claude-3-5-sonnet-20241022
+      opus: claude-3-5-sonnet-20241022
 runtime:
   language: python
   version: "3.12"
@@ -561,7 +574,7 @@ agent:
         assert_eq!(config.docker_build_args(), &[] as &[String]);
         assert_eq!(config.agent_name(), "claude-code");
         assert_eq!(config.agent_version(), "latest");
-        assert_eq!(config.agent_options().get("provider"), Some(&"anthropic".to_string()));
+        assert_eq!(config.agent_options().get("provider"), Some(&AgentOptionValue::Str("anthropic".to_string())));
 
         // Test runtime
         let runtime = config.runtime().unwrap();

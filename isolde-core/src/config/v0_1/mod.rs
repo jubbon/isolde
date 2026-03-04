@@ -6,6 +6,14 @@
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
+/// A value in agent options: either a plain string or a nested string map.
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[serde(untagged)]
+pub enum AgentOptionValue {
+    Str(String),
+    Map(HashMap<String, String>),
+}
+
 /// Main configuration for an Isolde project (isolde.yaml) - Schema v0.1
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Config {
@@ -102,7 +110,7 @@ pub struct AgentConfig {
 
     /// Agent-specific options (free-form key-value pairs)
     #[serde(default)]
-    pub options: HashMap<String, String>,
+    pub options: HashMap<String, AgentOptionValue>,
 }
 
 fn default_agent_name() -> String {
@@ -420,11 +428,19 @@ agent:
   version: stable
   options:
     provider: anthropic
-    models: "haiku:claude-3-5-haiku-20241022,sonnet:claude-3-5-sonnet-20241022"
+    models:
+      haiku: claude-3-5-haiku-20241022
+      sonnet: claude-3-5-sonnet-20241022
 "#;
         let config: Config = serde_yaml::from_str(yaml).unwrap();
         assert_eq!(config.agent.name, "claude-code");
         assert_eq!(config.agent.version, "stable");
-        assert_eq!(config.agent.options.get("provider"), Some(&"anthropic".to_string()));
+        assert_eq!(config.agent.options.get("provider"), Some(&AgentOptionValue::Str("anthropic".to_string())));
+        if let Some(AgentOptionValue::Map(m)) = config.agent.options.get("models") {
+            assert_eq!(m.get("haiku").map(String::as_str), Some("claude-3-5-haiku-20241022"));
+            assert_eq!(m.get("sonnet").map(String::as_str), Some("claude-3-5-sonnet-20241022"));
+        } else {
+            panic!("models should be AgentOptionValue::Map");
+        }
     }
 }
