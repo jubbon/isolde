@@ -186,7 +186,7 @@ git:
 fn agent_options_yaml(agent: &str) -> String {
     match agent {
         "claude-code" => {
-            "    provider: anthropic\n    models:\n      haiku: claude-3-5-haiku-20241022\n      sonnet: claude-3-5-sonnet-20241022\n      opus: claude-3-5-sonnet-20241022".to_string()
+            "    provider: anthropic\n    # models: # Uncomment to pin specific model versions instead of using defaults\n    #   haiku: claude-3-5-haiku-20241022\n    #   sonnet: claude-3-5-sonnet-20241022\n    #   opus: claude-3-5-sonnet-20241022".to_string()
         }
         _ => {
             "    {}".to_string()

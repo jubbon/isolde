@@ -15,10 +15,10 @@ agent:
   version: latest
   options:
     provider: anthropic
-    models:
-      haiku: claude-3-5-haiku-20241022
-      sonnet: claude-3-5-sonnet-20241022
-      opus: claude-3-5-sonnet-20241022
+    # models: # Uncomment to pin specific model versions instead of using defaults
+    #   haiku: claude-3-5-haiku-20241022
+    #   sonnet: claude-3-5-sonnet-20241022
+    #   opus: claude-3-5-sonnet-20241022
 
 # Runtime configuration (optional)
 # runtime:
