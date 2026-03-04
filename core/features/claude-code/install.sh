@@ -147,7 +147,11 @@ if [ "$(id -u)" -eq 0 ]; then
 
     if ! id "$TARGET_USER" &>/dev/null; then
         log_error "User '$TARGET_USER' does not exist. Creating..."
-        useradd --create-home --shell /bin/bash "$TARGET_USER" || true
+        if getent group "$TARGET_USER" &>/dev/null; then
+            useradd --create-home --shell /bin/bash -g "$TARGET_USER" "$TARGET_USER"
+        else
+            useradd --create-home --shell /bin/bash "$TARGET_USER"
+        fi
         TARGET_HOME="/home/$TARGET_USER"
     fi
 
