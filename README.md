@@ -1,10 +1,10 @@
 # Isolde
 
-**ISOLated Development Environment** - A template-based system for creating isolated development environments with Claude Code CLI support.
+**ISOLated Development Environment** - A template-based system for creating isolated development environments with coding agent support (Claude Code, Codex, Gemini, Aider).
 
 ## Overview
 
-Isolde provides templates and tools for quickly setting up isolated development environments. Each project gets a dedicated devcontainer with language-specific tooling, a single git repository, and pre-configured Claude Code CLI with multi-provider support.
+Isolde provides templates and tools for quickly setting up isolated development environments. Each project gets a dedicated devcontainer with language-specific tooling, a single git repository, and a pre-configured coding agent CLI (Claude Code by default, with Codex, Gemini, and Aider support planned).
 
 ---
 
@@ -68,11 +68,11 @@ make shell
 ## Features
 
 - ✅ **Template-based project creation** - Language-specific devcontainers with pre-configured tooling
-- ✅ **Claude Code CLI pre-installed** - Multi-provider LLM support (Anthropic, Z.ai, custom)
+- ✅ **Coding agent integration** - Claude Code supported, Codex/Gemini/Aider planned
 - ✅ **Single git repository** - Code and devcontainer config tracked together
 - ✅ **Docker-in-Docker support** - Build containers within the dev container
 - ✅ **Enterprise proxy configuration** - HTTP/HTTPS proxy support for corporate networks
-- ✅ **Version control options** - Pin specific Claude Code versions or track latest
+- ✅ **Version control options** - Pin specific agent CLI versions or track latest
 - ✅ **Isolated development** - Each project in its own container with dedicated dependencies
 
 ---
@@ -99,6 +99,21 @@ make shell
 | **minimal** | Generic | Minimal setup |
 | **fullstack** | Node.js 22 | Full-stack with security plugins |
 
+## Supported Coding Agents
+
+| Agent | Status | Description |
+|-------|--------|-------------|
+| **Claude Code** | Supported | Anthropic CLI with multi-provider LLM support (Anthropic, Z.ai, custom) |
+| **Codex** | Planned | OpenAI Codex CLI |
+| **Gemini** | Planned | Google Gemini CLI |
+| **Aider** | Planned | AI pair programming tool |
+
+Claude Code is the default agent. Use `--agent <name>` to select a different agent:
+
+```bash
+isolde init my-app --template python --agent claude-code
+```
+
 ---
 
 ## Documentation
@@ -122,7 +137,7 @@ make shell
 | [Testing](docs/contributor/testing.md) | Test documentation |
 | [LLM Providers](docs/devcontainer/providers.md) | Multi-provider LLM support |
 | [Proxy Configuration](docs/devcontainer/proxy.md) | Enterprise proxy setup |
-| [Version Control](docs/devcontainer/version-control.md) | Managing Claude Code versions |
+| [Version Control](docs/devcontainer/version-control.md) | Managing agent CLI versions |
 
 ---
 
@@ -132,7 +147,10 @@ make shell
 isolde/
 ├── core/                  # Shared components
 │   ├── features/          # Reusable devcontainer features
-│   │   ├── claude-code/   # Claude Code CLI installation
+│   │   ├── claude-code/   # Claude Code CLI (default agent)
+│   │   ├── codex/         # OpenAI Codex CLI (planned)
+│   │   ├── gemini/        # Google Gemini CLI (planned)
+│   │   ├── aider/         # Aider AI pair programming (planned)
 │   │   └── proxy/         # HTTP proxy configuration
 │   └── base-Dockerfile    # Base container image
 ├── templates/             # Language templates
@@ -173,9 +191,9 @@ isolde/
 
 ## Configuration
 
-### LLM Provider
+### LLM Provider (Claude Code)
 
-Configure your LLM provider in `devcontainer.json`:
+Configure the LLM provider for the Claude Code agent in `devcontainer.json`:
 
 ```json
 {
@@ -211,9 +229,9 @@ For enterprise environments, configure proxy in `devcontainer.json`:
 
 See [docs/devcontainer/proxy.md](docs/devcontainer/proxy.md) for details.
 
-### Version Control
+### Agent Version Control
 
-Choose which Claude Code version to install:
+Choose which agent CLI version to install (example for Claude Code):
 
 ```json
 {

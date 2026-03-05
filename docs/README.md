@@ -1,6 +1,6 @@
 # Isolde Documentation
 
-Welcome to the Isolde documentation. Isolde (ISOLated Development Environment) is a Rust CLI tool for creating isolated development environments with Claude Code CLI support.
+Welcome to the Isolde documentation. Isolde (ISOLated Development Environment) is a Rust CLI tool for creating isolated development environments with coding agent support.
 
 ## 📖 Documentation by Audience
 
@@ -14,9 +14,9 @@ Creating projects and using Isolde templates and presets.
 ### Devcontainer Configuration
 Advanced configuration for development containers.
 - [Setup](devcontainer/setup.md) - Container setup and build
-- [Providers](devcontainer/providers.md) - Claude Code provider configuration
+- [Providers](devcontainer/providers.md) - LLM provider configuration
 - [Proxy](devcontainer/proxy.md) - HTTP proxy configuration
-- [Version Control](devcontainer/version-control.md) - Managing Claude versions
+- [Version Control](devcontainer/version-control.md) - Managing agent CLI versions
 
 ### For Contributors
 Contributing to Isolde itself.
