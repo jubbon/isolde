@@ -154,25 +154,37 @@ make build/lint
 # or
 cargo clippy
 
-# Run tests
-make build/test
+# Run Rust tests + lint
+make test
 # or
 cargo test
 
 # Run all checks
 make build/check
+
+# Run Docker container tests
+make test-docker
+
+# Run everything (Rust + Docker + E2E)
+make test-all
 ```
 
 ### Testing
 ```bash
-# Test container builds
-make test-build
+# Run Rust tests + lint
+make test
+
+# Run Docker container tests
+make test-docker
 
 # Run E2E tests
 make test-e2e
 
 # Run specific E2E scenario
 SCENARIO='basic_init' make test-e2e
+
+# Run everything
+make test-all
 ```
 
 ## Architecture

@@ -1,15 +1,21 @@
 # =============================================================================
 # Test Targets - All Test Categories
 # =============================================================================
-.PHONY: test test-build test-config test-runtime test-providers
+.PHONY: test test-all test-docker test-build test-config test-runtime test-providers
 .PHONY: test-e2e test-e2e-all test-e2e-cli
 .PHONY: test-e2e-fast test-e2e-medium test-e2e-full
 .PHONY: test-e2e-layer-1 test-e2e-layer-2 test-e2e-layer-3
 .PHONY: test-e2e-workflow test-e2e-clean test-e2e-help
 .PHONY: test-e2e-container test-e2e-error test-e2e-validation test-e2e-doctor
 
-# Run all tests (CI parity)
-test: lint test-build test-config test-runtime test-providers test-e2e
+# Run Rust tests + lint
+test: build/test lint
+
+# Run all Docker container tests
+test-docker: test-build test-config test-runtime test-providers
+
+# Run everything (Rust + Docker + E2E)
+test-all: test test-docker test-e2e
 	@echo ""
 	@echo "$(GREEN)=============================================$(RESET)"
 	@echo "$(GREEN)=== All tests passed! ====$(RESET)"

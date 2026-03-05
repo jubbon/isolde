@@ -245,7 +245,9 @@ See [docs/devcontainer/version-control.md](docs/devcontainer/version-control.md)
 | `make build` | Build the Docker image |
 | `make devcontainer` | Run container with current workspace |
 | `make shell` | Get shell in running container |
-| `make test` | Run all tests (CI parity) |
+| `make test` | Run Rust tests + lint |
+| `make test-docker` | Run Docker container tests |
+| `make test-all` | Run everything (Rust + Docker + E2E) |
 | `make lint` | Run linting checks |
 | `make test-e2e` | E2E tests (Docker-based) |
 | `make clean` | Remove running containers |
@@ -254,17 +256,20 @@ See [docs/devcontainer/version-control.md](docs/devcontainer/version-control.md)
 ### Quick Test Reference
 
 ```bash
-# Test container builds
-make build
-
-# Verify shell scripts
-make lint-shell
+# Run Rust tests + lint
+make test
 
 # Validate JSON files
 make lint-json
 
+# Run Docker container tests
+make test-docker
+
 # Run E2E tests
 make test-e2e SCENARIO="Create Python project"
+
+# Run everything
+make test-all
 ```
 
 ### Docker-in-Docker

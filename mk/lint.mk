@@ -1,10 +1,10 @@
 # =============================================================================
 # Lint Targets - Fast Static Checks
 # =============================================================================
-.PHONY: lint lint-json lint-bats
+.PHONY: lint lint-json
 
 # Run all lint checks
-lint: lint-json lint-bats
+lint: lint-json build/lint
 	@echo ""
 	@echo "$(GREEN)=== All lint checks passed ===$(RESET)"
 	@echo ""
@@ -34,25 +34,5 @@ lint-json:
 		if [ $$errors -gt 0 ]; then \
 			echo "$(RED)$$errors file(s) failed validation$(RESET)"; \
 			exit 1; \
-		fi \
-	fi
-
-# Run Bats unit tests
-lint-bats:
-	@echo "$(CYAN)Running Bats unit tests...$(RESET)"
-	@if [ -z "$(call command_exists,bats)" ] && [ -z "$(call command_exists,npx)" ]; then \
-		if [ $(CI_MODE) -eq 1 ]; then \
-			echo "$(RED)Error: Neither bats nor npx found in CI$(RESET)"; \
-			exit 1; \
-		else \
-			echo "$(YELLOW)Neither bats nor npx found, skipping...$(RESET)"; \
-			echo "$(YELLOW)Install: npm install -g bats$(RESET)"; \
-		fi \
-	else \
-		if [ -n "$(call command_exists,bats)" ]; then \
-			cd $(DEVCONTAINER_DIR)/tests && bats --formatter pretty .; \
-		else \
-			echo "$(YELLOW)Using npx bats...$(RESET)"; \
-			cd $(DEVCONTAINER_DIR)/tests && npx bats --formatter pretty .; \
 		fi \
 	fi

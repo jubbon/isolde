@@ -22,7 +22,7 @@ cd isolde
 git checkout -b feat/my-new-feature
 
 # Build the CLI
-make rust-build
+make build/release
 # or
 cargo build --release
 ```
@@ -90,7 +90,7 @@ cargo run -- --help
 
 ```bash
 # Build release binary
-make rust-build
+make build/release
 
 # Test with a sample project
 ./target/release/isolde init test-project --template python
@@ -106,22 +106,22 @@ This project enforces **atomic commits**. See [CLAUDE.md](../../CLAUDE.md) for f
 **Pre-commit Verification:**
 ```bash
 # Format code
-make rust-fmt
+make build/fmt
 # or
 cargo fmt
 
 # Run linter
-make rust-lint
+make build/lint
 # or
 cargo clippy
 
 # Run tests
-make rust-test
+make build/test
 # or
 cargo test
 
 # Build release
-make rust-build
+make build/release
 ```
 
 **Commit Message Format:**
@@ -328,16 +328,16 @@ mkdir core/features/new-feature
 
 ```bash
 # View container logs
-docker logs claude-code-dev
+docker logs isolde-dev
 
 # Inspect running container
-docker inspect claude-code-dev
+docker inspect isolde-dev
 
 # Interactive shell for debugging
-docker exec -it claude-code-dev bash
+docker exec -it isolde-dev bash
 
 # Check environment variables
-docker exec claude-code-dev env | sort
+docker exec isolde-dev env | sort
 ```
 
 ## Testing
@@ -347,8 +347,14 @@ For comprehensive testing documentation, see [testing.md](testing.md).
 ### Quick Test Reference
 
 ```bash
-# Run all tests
+# Run Rust tests + lint
 make test
+
+# Run Docker container tests
+make test-docker
+
+# Run everything (Rust + Docker + E2E)
+make test-all
 
 # Run specific test category
 make test-build     # Container builds

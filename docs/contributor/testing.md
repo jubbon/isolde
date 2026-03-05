@@ -26,8 +26,14 @@ This project uses a multi-layered testing approach:
 ## Quick Start
 
 ```bash
-# Run all tests (CI parity)
+# Run Rust tests + lint
 make test
+
+# Run Docker container tests
+make test-docker
+
+# Run everything (Rust + Docker + E2E)
+make test-all
 
 # Run specific test category
 make test-build     # Container builds
@@ -37,7 +43,7 @@ make test-providers # Provider configuration
 make test-e2e       # E2E tests (Rust CLI)
 
 # Rust-specific tests
-make rust-test      # Run Rust unit/integration tests
+make build/test     # Run Rust unit/integration tests
 
 # See all available targets
 make help
@@ -82,7 +88,8 @@ Located in `mk/tests.mk`, these provide fast feedback for common issues.
 
 **Run:**
 ```bash
-make test              # All tests
+make test              # Rust tests + lint
+make test-docker       # All Docker container tests
 make test-build        # Build test only
 make test-config       # Config test only
 ```
@@ -114,20 +121,19 @@ VERBOSE=1 make test-e2e
 
 1. **Before committing changes:**
    ```bash
-   make test              # Run all Makefile tests
-   make rust-test         # Run Rust tests
+   make test              # Rust tests + lint
    make test-e2e          # Run E2E tests
    ```
 
 2. **Quick iteration:**
    ```bash
-   make test-build       # Just test build
+   make test-build       # Just test Docker build
    cargo test -p isolde-core  # Just test core library
    ```
 
 3. **Full verification:**
    ```bash
-   make clean && make rust-build && make test
+   make clean && make build/release && make test-all
    ```
 
 ### CI/CD
@@ -197,9 +203,9 @@ test-new-feature:
 	@echo ""
 ```
 
-Then add to main `test` target in root `Makefile`:
+Then add to `test-docker` target in `mk/tests.mk`:
 ```makefile
-test: lint test-build test-config test-runtime test-providers test-e2e test-new-feature
+test-docker: test-build test-config test-runtime test-providers test-new-feature
 ```
 
 ## Best Practices
@@ -230,7 +236,7 @@ test: lint test-build test-config test-runtime test-providers test-e2e test-new-
 
 | Category | Makefile Target | Cargo Test | CI Job |
 |----------|-----------------|------------|---------|
-| Unit/Integration | `rust-test` | `cargo test` | `rust-test` |
+| Unit/Integration | `build/test` | `cargo test` | `rust-test` |
 | Build | `test-build` | - | `build` |
 | Configuration | `test-config` | - | `config` |
 | Runtime | `test-runtime` | - | `runtime` |
@@ -248,7 +254,7 @@ cat /tmp/build-test.log
 
 # Build manually for more details
 cd .devcontainer
-docker build -t claude-code-dev-test .
+docker build -t isolde-dev-test .
 ```
 
 ### Rust tests fail

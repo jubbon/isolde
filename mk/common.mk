@@ -3,8 +3,8 @@
 # =============================================================================
 
 # Image names
-IMAGE_NAME ?= claude-code-dev
-TEST_IMAGE_PREFIX = claude-code-dev-test
+IMAGE_NAME ?= isolde-dev
+TEST_IMAGE_PREFIX = isolde-dev-test
 
 # Paths
 DEVCONTAINER_DIR = .devcontainer
@@ -48,7 +48,7 @@ command_exists = $(shell command -v $(1) 2>/dev/null)
 
 .PHONY: help
 help: ## Show this help message
-	@echo "$(CYAN)Isolde v2 - YAML-First Devcontainer Generator$(RESET)"
+	@echo "$(CYAN)Isolde - Devcontainer Generator$(RESET)"
 	@echo ""
 	@echo "$(ARROW) $(GREEN)Build targets:$(RESET)"
 	@echo "  make build/dev        - Build dev binary (fast, debug profile)"
@@ -63,10 +63,11 @@ help: ## Show this help message
 	@echo "$(ARROW) $(GREEN)Lint targets:$(RESET)"
 	@echo "  make lint           - Run all lint checks (including Rust)"
 	@echo "  make lint-json      - Validate JSON files with jq"
-	@echo "  make lint-bats      - Run Bats unit tests"
 	@echo ""
 	@echo "$(ARROW) $(GREEN)Test targets:$(RESET)"
-	@echo "  make test           - Run all tests (CI parity)"
+	@echo "  make test           - Run Rust tests + lint"
+	@echo "  make test-docker    - Run all Docker container tests"
+	@echo "  make test-all       - Run everything (Rust + Docker + E2E)"
 	@echo "  make test-build     - Test container builds"
 	@echo "  make test-config    - Test environment configuration"
 	@echo "  make test-runtime   - Test Docker-in-Docker"

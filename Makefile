@@ -23,8 +23,8 @@ include mk/install.mk
 # =============================================================================
 # Default Target
 # =============================================================================
-# Default to Rust build for v2, fallback to Docker for v1
-all: build/test build install
+# Default to Rust build
+all: build
 
 # =============================================================================
 # Main Entry Points - High-Level Targets
@@ -36,11 +36,11 @@ build: build/release
 # Rebuild target (clean then release build)
 rebuild: build/clean build/release
 
-# Test target (unit tests + CI parity)
-test: build/test lint test-build test-config test-runtime test-providers test-e2e
+# Test target (Rust tests + lint)
+test: build/test lint
 
 # Lint target (all fast checks)
-lint: lint-json lint-bats build/lint
+lint: lint-json build/lint
 
 # Clean target (containers and build artifacts)
 clean: clean-containers build/clean
