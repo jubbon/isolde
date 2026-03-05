@@ -2,6 +2,8 @@
 
 **ISOLated Development Environment** - A template-based system for creating isolated development environments with coding agent support (Claude Code, Codex, Gemini, Aider).
 
+> **Note:** This project is under active development. You may encounter bugs or incomplete features. If you find any issues, please [open an issue](https://github.com/jubbon/isolde/issues) — all bug reports and feedback are appreciated!
+
 ## Overview
 
 Isolde provides templates and tools for quickly setting up isolated development environments. Each project gets a dedicated devcontainer with language-specific tooling, a single git repository, and a pre-configured coding agent CLI (Claude Code by default, with Codex, Gemini, and Aider support planned).
@@ -298,6 +300,10 @@ The container mounts `/var/run/docker.sock` for Docker-in-Docker support:
 - Test Docker-based projects in isolation
 
 Ensure your user has Docker permissions on the host machine.
+
+### Contributing
+
+Pull requests are welcome! Please check the [backlog](docs/backlog.md) for planned features or open an issue to discuss your idea before submitting a PR.
 
 ### Commit Standards
 
