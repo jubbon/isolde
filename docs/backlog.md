@@ -16,6 +16,7 @@ _Currently working on..._
 ## Planned Features 📋
 
 ### High Priority
+- [ ] **Switch to dev branch workflow** - Move development to a `dev` branch, keep `main` for stable releases
 - [ ] **Remove proxy duplication** - Find a way to share proxy settings between features without duplication
 - [ ] **Better error messages** - Improve error reporting when feature resolution fails
 
