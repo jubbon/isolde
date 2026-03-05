@@ -57,8 +57,6 @@ isolde init --list-templates
 isolde init --list-presets
 ```
 
-**Note:** The `pull` command is currently disabled (requires async/network support). Use `sync` to update from local templates.
-
 ### Sync Command
 
 `isolde sync` generates devcontainer configuration from `isolde.yaml` in the current directory:

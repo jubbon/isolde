@@ -8,7 +8,6 @@
 pub mod error;
 pub mod config;
 pub mod template;
-pub mod marketplace;
 pub mod generator;
 pub mod container;
 pub mod state;

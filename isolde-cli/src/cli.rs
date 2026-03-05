@@ -117,40 +117,6 @@ pub enum Commands {
         version: Option<String>,
     },
 
-    /// Pull a template or preset from a remote repository
-    ///
-    /// Downloads templates or presets from GitHub repositories, allowing you to
-    /// use community-maintained configurations.
-    ///
-    /// # Examples
-    ///
-    /// Pull from GitHub:
-    ///   isolde pull my-template --repo username/templates
-    ///
-    /// Pull specific branch:
-    ///   isolde pull custom-preset --repo username/isolde-presets --ref develop
-    Pull {
-        /// Name of the template or preset to pull
-        #[arg(value_name = "NAME")]
-        name: String,
-
-        /// Repository in OWNER/REPO format
-        #[arg(long, value_name = "OWNER/REPO")]
-        repo: String,
-
-        /// Git reference (branch, tag, or commit)
-        #[arg(long, value_name = "REF")]
-        r#ref: Option<String>,
-
-        /// Destination directory
-        #[arg(short, long, value_name = "PATH")]
-        output: Option<String>,
-
-        /// Verify checksum after download
-        #[arg(long)]
-        verify: bool,
-    },
-
     /// Validate project configuration
     ///
     /// Checks that the project's devcontainer configuration is valid and follows
@@ -435,7 +401,6 @@ impl Commands {
         match self {
             Commands::Init { .. } => "init".cyan().to_string(),
             Commands::Sync { .. } => "sync".cyan().to_string(),
-            Commands::Pull { .. } => "pull".cyan().to_string(),
             Commands::Validate { .. } => "validate".cyan().to_string(),
             Commands::Diff { .. } => "diff".cyan().to_string(),
             Commands::Doctor { .. } => "doctor".cyan().to_string(),
@@ -454,7 +419,6 @@ impl Commands {
         match self {
             Commands::Init { .. } => "init",
             Commands::Sync { .. } => "sync",
-            Commands::Pull { .. } => "pull",
             Commands::Validate { .. } => "validate",
             Commands::Diff { .. } => "diff",
             Commands::Doctor { .. } => "doctor",
@@ -514,19 +478,6 @@ mod tests {
     }
 
     #[test]
-    fn test_pull_command() {
-        let cli = Cli::try_parse_from([
-            "isolde",
-            "pull",
-            "my-template",
-            "--repo",
-            "owner/repo",
-        ])
-        .unwrap();
-        assert!(cli.command.is_some());
-    }
-
-    #[test]
     fn test_validate_command() {
         let cli = Cli::try_parse_from(["isolde", "validate", "--quick"]).unwrap();
         assert!(cli.command.is_some());
@@ -570,13 +521,6 @@ mod tests {
                 dry_run: false,
                 force: false,
                 version: None,
-            },
-            Commands::Pull {
-                name: "test".to_string(),
-                repo: "owner/repo".to_string(),
-                r#ref: None,
-                output: None,
-                verify: false,
             },
             Commands::Validate {
                 quick: false,

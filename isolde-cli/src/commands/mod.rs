@@ -4,7 +4,6 @@
 
 pub mod init;
 pub mod sync;
-pub mod pull;
 pub mod validate;
 pub mod diff;
 pub mod doctor;

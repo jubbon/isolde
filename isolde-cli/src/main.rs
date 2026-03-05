@@ -73,12 +73,6 @@ fn execute_command(command: Commands, verbose: bool) -> anyhow::Result<()> {
             version,
         } => execute_sync(dry_run, force, version, verbose),
 
-        Commands::Pull { .. } => {
-            eprintln!("Error: Pull command is disabled in this build (requires async/network support)");
-            eprintln!("Please manually download the configuration file from the marketplace.");
-            std::process::exit(1);
-        }
-
         Commands::Validate {
             quick,
             verbose: validate_verbose,
@@ -451,7 +445,6 @@ fn print_usage() -> anyhow::Result<()> {
     println!("{}", "Available Commands:".bold());
     println!("  {}  Initialize a new project", "init".cyan());
     println!("  {}  Sync project with template changes", "sync".cyan());
-    println!("  {}  Pull template from remote repository", "pull".cyan());
     println!("  {}  Validate project configuration", "validate".cyan());
     println!("  {}  Show differences with template", "diff".cyan());
     println!("  {}  Run diagnostics", "doctor".cyan());
