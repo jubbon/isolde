@@ -19,6 +19,7 @@ include mk/lint.mk
 include mk/tests.mk
 include mk/clean.mk
 include mk/install.mk
+include mk/release.mk
 
 # =============================================================================
 # Default Target

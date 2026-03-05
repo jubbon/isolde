@@ -368,29 +368,23 @@ make test-e2e       # E2E tests
 
 ### Version Bump
 
-Update version in:
-- `isolde-cli/Cargo.toml`
-- `isolde-core/Cargo.toml`
-- `README.md` if needed
+Update the version in these two files (both crates inherit from the workspace):
+- `VERSION` — single source of truth, read at compile time by `build.rs`
+- `Cargo.toml` — workspace-level `[workspace.package] version`
 
 ### Changelog
 
-Maintain `CHANGELOG.md` with entries:
-```markdown
-## [2.0.0] - 2025-02-20
-### Added
-- Rust CLI implementation
-- Plugin manager support
-
-### Changed
-- Migrated from shell scripts to Rust
-```
+Update `CHANGELOG.md` following [Keep a Changelog](https://keepachangelog.com/) format.
+Move items from `[Unreleased]` into a new version section with the release date.
 
 ### Tag Release
 
 ```bash
-git tag -a v2.0.0 -m "Release v2.0.0"
-git push origin v2.0.0
+# Runs preflight checks, tests, and creates an annotated tag
+make release
+
+# Then push the tag
+git push origin v<VERSION>
 ```
 
 ## Review Guidelines
