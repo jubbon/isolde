@@ -8,6 +8,7 @@ This file tracks planned features, bug fixes, and improvements for the Claude Co
 - [x] **Duplicate proxy settings** - Add proxy settings to both `proxy` and `claude-code` features
 - [x] **Add Node.js to all templates** - Node.js and npx are required by Claude Code tools
 - [x] **Match host paths inside container** - Use full host path as `workspaceFolder`
+- [x] **Switch to dev branch workflow** - Move development to a `dev` branch, keep `main` for stable releases
 
 ## In Progress 🚧
 
@@ -16,7 +17,6 @@ _Currently working on..._
 ## Planned Features 📋
 
 ### High Priority
-- [ ] **Switch to dev branch workflow** - Move development to a `dev` branch, keep `main` for stable releases
 - [ ] **Remove proxy duplication** - Find a way to share proxy settings between features without duplication
 - [ ] **Better error messages** - Improve error reporting when feature resolution fails
 
