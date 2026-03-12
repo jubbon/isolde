@@ -5,6 +5,7 @@
 use std::path::PathBuf;
 
 use colored::Colorize;
+use isolde_core::config::Config;
 use isolde_core::container;
 use isolde_core::state::{ContainerState, ContainerStatus};
 use isolde_core::{Error, Result};
@@ -52,6 +53,14 @@ pub fn run(opts: RunOptions) -> Result<()> {
         return Err(Error::Other(
             ".devcontainer directory not found. Run 'isolde sync' first.".to_string(),
         ));
+    }
+
+    // Ensure volume directories exist for isolation levels
+    let config_path = workspace.join("isolde.yaml");
+    if config_path.exists() {
+        if let Ok(config) = Config::from_file(&config_path) {
+            isolde_core::volumes::ensure_volumes(&workspace, &config)?;
+        }
     }
 
     if opts.verbose {

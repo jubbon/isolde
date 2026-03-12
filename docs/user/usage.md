@@ -328,6 +328,52 @@ Isolde maintains container state in `.isolde/state.json` in each project directo
 }
 ```
 
+## Isolation Levels
+
+Isolde supports configurable isolation levels that control how much host Claude Code state is shared with the devcontainer. Set the `isolation` field in `isolde.yaml`:
+
+```yaml
+isolation: session  # default
+```
+
+### Available Levels
+
+| Level | Description | Use case |
+|---|---|---|
+| `none` | Mount entire host `~/.claude` | Legacy behavior, full state sharing |
+| `session` | Isolate sessions and telemetry | **Default.** Clean session state, keep host plugins and settings |
+| `workspace` | Isolate sessions, telemetry, and plugins | Test plugin configurations without affecting host |
+| `full` | Only share auth credentials | Reproducible "zero environment" testing |
+
+### What Gets Isolated
+
+| Component | `none` | `session` | `workspace` | `full` |
+|---|---|---|---|---|
+| Auth credentials | host | host | host | host |
+| App state (`~/.claude.json`) | host | host | host | host |
+| Settings, keybindings | host | host | host | container |
+| Plugins | host | host | **container** | container |
+| Sessions | host | **container** | **container** | container |
+| Telemetry | host | **container** | **container** | container |
+
+Container-local state is persisted in `.isolde/volumes/` so it survives container rebuilds.
+
+### Full Isolation Setup
+
+For `full` isolation, auth files are mounted from the host only if they exist. If you haven't logged in yet:
+
+```bash
+# 1. Log in on the host first
+claude login
+
+# 2. Then sync to generate mounts with auth
+isolde sync
+```
+
+### Migration Note
+
+Existing projects without the `isolation` field default to `session` (not `none`). To keep the old behavior, add `isolation: none` to your `isolde.yaml`.
+
 ## isolde.yaml Format
 
 Every Isolde project has an `isolde.yaml` configuration file:
@@ -352,6 +398,9 @@ agent:
   options:
     provider: anthropic
     models: "haiku:claude-3-5-haiku-20241022,sonnet:claude-3-5-sonnet-20241022,opus:claude-3-5-sonnet-20241022"
+
+# Isolation level (none/session/workspace/full)
+isolation: session
 
 # Runtime configuration (optional)
 # runtime:

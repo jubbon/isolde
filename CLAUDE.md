@@ -221,6 +221,24 @@ When `isolde init` creates a project:
 
 **Note:** `.gitignore` files are **not** created automatically. Users manage their own `.gitignore` files based on their needs.
 
+### Isolation Levels
+
+The `isolation` field in `isolde.yaml` controls how much host Claude Code state is shared with the devcontainer:
+
+| Level | Default | Description |
+|---|---|---|
+| `none` | | Mount entire host `~/.claude` (legacy behavior) |
+| `session` | **yes** | Isolate sessions and telemetry; keep host plugins and settings |
+| `workspace` | | Same as `session` + isolate plugins |
+| `full` | | Only share auth credentials and `~/.claude.json` |
+
+Implementation files:
+- `isolde-core/src/mounts.rs` — mount generation per level
+- `isolde-core/src/volumes.rs` — `.isolde/volumes/` directory preparation
+- `isolde-core/src/config/v0_1/mod.rs` — `IsolationLevel` enum
+
+For `full` isolation, auth files (`.credentials.json`, `providers/`, `provider`) are conditionally mounted from host. The `~/.claude.json` (app state) is always mounted from host because Claude Code requires it to recognise existing authentication.
+
 ### User UID Handling in Generated Devcontainers
 
 The base devcontainer image (`mcr.microsoft.com/devcontainers/base:ubuntu`) includes a `vscode` user at UID 1000. Without intervention, the local user (e.g. `dmanakulikov`, also UID 1000) would appear as `vscode` inside the container on bind-mounted directories, causing permission errors.

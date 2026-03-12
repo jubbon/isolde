@@ -7,6 +7,7 @@ pub mod version;
 pub mod v0_1;
 
 pub use v0_1::AgentOptionValue;
+pub use v0_1::IsolationLevel;
 
 use std::collections::HashMap;
 use std::path::Path;
@@ -210,6 +211,13 @@ impl Config {
             ConfigInner::V0_1(c) => GitConfigView {
                 generated: c.git.generated,
             },
+        }
+    }
+
+    /// Get isolation level
+    pub fn isolation(&self) -> v0_1::IsolationLevel {
+        match &self.inner {
+            ConfigInner::V0_1(c) => c.isolation,
         }
     }
 }
@@ -590,6 +598,9 @@ agent:
         // Test git
         use crate::config::v0_1::GitGeneratedHandling;
         assert_eq!(config.git().generated, GitGeneratedHandling::Ignored);
+
+        // Test isolation (default)
+        assert_eq!(config.isolation(), IsolationLevel::Session);
     }
 
     #[test]

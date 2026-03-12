@@ -17,6 +17,7 @@ name: project-name     # REQUIRED: Project identifier
 workspace: {...}       # Workspace configuration
 docker: {...}          # Docker configuration
 agent: {...}           # Coding agent configuration
+isolation: session     # Isolation level (none/session/workspace/full)
 runtime: {...}         # OPTIONAL: Runtime environment
 proxy: {...}           # OPTIONAL: Proxy configuration
 marketplaces: {...}   # OPTIONAL: Marketplace definitions
@@ -184,6 +185,47 @@ plugins:
     activate: true
 ```
 
+### isolation
+
+- **Type:** `string`
+- **Required:** No
+- **Default:** `"session"`
+- **Valid values:** `none`, `session`, `workspace`, `full`
+- **Description:** Controls how much host Claude Code state is shared with the devcontainer
+
+| Component | `none` | `session` | `workspace` | `full` |
+|---|---|---|---|---|
+| Auth (`.credentials.json`, `providers/`, `provider`) | host | host | host | host |
+| App state (`~/.claude.json`) | host | host | host | host |
+| Settings, keybindings | host | host | host | container |
+| Plugins (`plugins/`) | host | host | **container** | container |
+| Sessions (`projects/`) | host | **container** | **container** | container |
+| Telemetry (`statsig/`) | host | **container** | **container** | container |
+| OMC config (`.omc-config.json`) | host | **container** | **container** | container |
+
+Container-local state is persisted in `.isolde/volumes/` (bind-mounted).
+
+**`none`** — current legacy behavior, mounts entire host `~/.claude` directory.
+
+**`session`** (default) — host `~/.claude` is mounted, but sessions, telemetry, and OMC config are overlaid with local volumes. Good for clean session state while keeping plugins and settings from host.
+
+**`workspace`** — same as `session`, plus plugins are container-local. Good for testing plugin configurations without affecting host.
+
+**`full`** — does not mount host `~/.claude` at all. Uses a local `claude-home` volume. Auth files (`.credentials.json`, `providers/`, `provider`) and `~/.claude.json` are conditionally mounted from host if they exist. Good for reproducible "zero environment" testing.
+
+```yaml
+# Default (session isolation)
+isolation: session
+
+# No isolation (legacy behavior)
+isolation: none
+
+# Full isolation (only auth shared)
+isolation: full
+```
+
+**Note:** For `full` isolation, if `~/.claude/.credentials.json` does not exist on the host, `isolde sync` prints a warning. Run `claude login` on the host first, then `isolde sync` again.
+
 ### git
 
 - **Type:** `object`
@@ -223,6 +265,8 @@ agent:
   options:
     provider: anthropic
     models: "haiku:claude-3-5-haiku-20241022,sonnet:claude-3-5-sonnet-20241022,opus:claude-3-5-sonnet-20241022"
+
+isolation: session
 
 runtime:
   language: python

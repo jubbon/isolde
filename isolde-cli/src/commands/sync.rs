@@ -6,7 +6,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use colored::Colorize;
-use isolde_core::config::Config;
+use isolde_core::config::{Config, IsolationLevel};
 use isolde_core::{Error, Result};
 
 /// Options for the sync command
@@ -69,6 +69,9 @@ pub fn run(opts: SyncOptions) -> Result<()> {
             fs::create_dir_all(&project_dir)
                 .map_err(|e| Error::FileError(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
         }
+
+        // Create volume directories for isolation
+        isolde_core::volumes::ensure_volumes(&opts.cwd, &config)?;
     }
 
     // Generate devcontainer.json
@@ -260,6 +263,29 @@ fn generate_devcontainer(config: &Config) -> Result<String> {
         override_order.push("./features/plugin-manager");
     }
 
+    // Detect host auth files for full isolation mode
+    let home = std::env::var("HOME").unwrap_or_default();
+    let host_auth_exists = !home.is_empty()
+        && Path::new(&home).join(".claude/.credentials.json").exists();
+    let host_providers_exist = !home.is_empty()
+        && Path::new(&home).join(".claude/providers").exists();
+    let host_provider_file_exists = !home.is_empty()
+        && Path::new(&home).join(".claude/provider").exists();
+    let mounts = isolde_core::mounts::generate_mounts(config, host_auth_exists, host_providers_exist, host_provider_file_exists);
+
+    // Warn if full isolation and no auth files found
+    if config.isolation() == IsolationLevel::Full && !host_auth_exists {
+        eprintln!(
+            "{} {}",
+            "⚠".yellow(),
+            "No auth credentials found at ~/.claude/.credentials.json".yellow()
+        );
+        eprintln!(
+            "{}",
+            "  Run 'claude login' and then 'isolde sync' again to mount auth into the container.".dimmed()
+        );
+    }
+
     let devcontainer = serde_json::json!({
         "name": format!("{} - Isolde Environment", config.name),
         "build": {
@@ -281,13 +307,7 @@ fn generate_devcontainer(config: &Config) -> Result<String> {
                 }
             }
         },
-        "mounts": [
-            format!("source=./project,target=/workspaces/{},type=bind,consistency=cached", config.name),
-            format!("source=./.claude,target=/workspaces/{}/.claude,type=bind,consistency=cached", config.name),
-            "source=${localEnv:HOME}/.claude,target=/home/${localEnv:USER}/.claude,type=bind,consistency=cached".to_string(),
-            "source=${localEnv:HOME}/.claude.json,target=/home/${localEnv:USER}/.claude.json,type=bind,consistency=cached".to_string(),
-            "source=${localEnv:HOME}/.config/devcontainer/machine-id,target=/etc/machine-id,type=bind,consistency=cached".to_string()
-        ],
+        "mounts": mounts,
         "remoteUser": "${localEnv:USER}",
         "workspaceFolder": format!("/workspaces/{}", config.name)
     });

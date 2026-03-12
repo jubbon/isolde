@@ -52,6 +52,10 @@ pub struct Config {
     /// Git configuration
     #[serde(default)]
     pub git: GitConfig,
+
+    /// Isolation level for devcontainer state sharing
+    #[serde(default)]
+    pub isolation: IsolationLevel,
 }
 
 fn default_agent_config() -> AgentConfig {
@@ -222,6 +226,21 @@ pub enum GitGeneratedHandling {
 
 fn default_git_generated() -> GitGeneratedHandling {
     GitGeneratedHandling::Ignored
+}
+
+/// Isolation level for devcontainer state sharing
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, Default, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum IsolationLevel {
+    /// No isolation — mount entire host ~/.claude
+    None,
+    /// Isolate sessions and telemetry (default)
+    #[default]
+    Session,
+    /// Isolate sessions, telemetry, and plugins
+    Workspace,
+    /// Full isolation — only share auth credentials
+    Full,
 }
 
 impl Config {
@@ -414,6 +433,57 @@ name: test-plugin
 "#;
         let git: GitConfig = serde_yaml::from_str(yaml).unwrap();
         assert_eq!(git.generated, GitGeneratedHandling::Ignored);
+    }
+
+    #[test]
+    fn test_isolation_level_default() {
+        let yaml = r#"
+version: "0.1"
+name: test
+docker:
+  image: ubuntu:latest
+"#;
+        let config: Config = serde_yaml::from_str(yaml).unwrap();
+        assert_eq!(config.isolation, IsolationLevel::Session);
+    }
+
+    #[test]
+    fn test_isolation_level_none() {
+        let yaml = r#"
+version: "0.1"
+name: test
+docker:
+  image: ubuntu:latest
+isolation: none
+"#;
+        let config: Config = serde_yaml::from_str(yaml).unwrap();
+        assert_eq!(config.isolation, IsolationLevel::None);
+    }
+
+    #[test]
+    fn test_isolation_level_workspace() {
+        let yaml = r#"
+version: "0.1"
+name: test
+docker:
+  image: ubuntu:latest
+isolation: workspace
+"#;
+        let config: Config = serde_yaml::from_str(yaml).unwrap();
+        assert_eq!(config.isolation, IsolationLevel::Workspace);
+    }
+
+    #[test]
+    fn test_isolation_level_full() {
+        let yaml = r#"
+version: "0.1"
+name: test
+docker:
+  image: ubuntu:latest
+isolation: full
+"#;
+        let config: Config = serde_yaml::from_str(yaml).unwrap();
+        assert_eq!(config.isolation, IsolationLevel::Full);
     }
 
     #[test]

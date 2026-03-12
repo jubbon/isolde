@@ -262,6 +262,19 @@ sudo usermod -aG docker $USER
 2. Manually install in container: Press `Ctrl+Shift+X`
 3. Rebuild container: `F1 → Dev Containers: Rebuild Container`
 
+## Isolation Levels
+
+Isolde controls how much host Claude Code state is shared with the devcontainer via the `isolation` field in `isolde.yaml`. This affects the bind mounts generated in `devcontainer.json`.
+
+- **`none`** — mounts entire `~/.claude` from host (5 mounts)
+- **`session`** (default) — mounts `~/.claude` from host, overlays `projects/`, `statsig/`, `.omc-config.json` with local volumes (8 mounts)
+- **`workspace`** — same as `session`, plus overlays `plugins/` (9 mounts)
+- **`full`** — mounts a local `claude-home` volume instead of host `~/.claude`; auth files (`.credentials.json`, `providers/`, `provider`) and `~/.claude.json` are conditionally mounted from host (5-8 mounts)
+
+Container-local state lives in `.isolde/volumes/` which is created by `isolde sync` and `isolde run`.
+
+For `full` isolation, if no auth files exist on the host, `isolde sync` prints a warning. Run `claude login` first, then `isolde sync` again.
+
 ## Advanced Setup
 
 ### Custom Features
