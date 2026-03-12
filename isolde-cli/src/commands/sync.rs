@@ -283,6 +283,7 @@ fn generate_devcontainer(config: &Config) -> Result<String> {
         },
         "mounts": [
             format!("source=./project,target=/workspaces/{},type=bind,consistency=cached", config.name),
+            format!("source=./.claude,target=/workspaces/{}/.claude,type=bind,consistency=cached", config.name),
             "source=${localEnv:HOME}/.claude,target=/home/${localEnv:USER}/.claude,type=bind,consistency=cached".to_string(),
             "source=${localEnv:HOME}/.claude.json,target=/home/${localEnv:USER}/.claude.json,type=bind,consistency=cached".to_string(),
             "source=${localEnv:HOME}/.config/devcontainer/machine-id,target=/etc/machine-id,type=bind,consistency=cached".to_string()

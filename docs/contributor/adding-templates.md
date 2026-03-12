@@ -159,6 +159,7 @@ Create `templates/{name}/.devcontainer/devcontainer.json` with placeholders:
   },
 
   "mounts": [
+    "source=./.claude,target=/workspaces/{{PROJECT_NAME}}/.claude,type=bind,consistency=cached",
     "source=${localEnv:HOME}/.claude,target=/home/${localEnv:USER}/.claude,type=bind,consistency=cached",
     "source=${localEnv:HOME}/.claude.json,target=/home/${localEnv:USER}/.claude.json,type=bind,consistency=cached",
     "source=${localEnv:HOME}/.config/devcontainer/machine-id,target=/etc/machine-id,type=bind,consistency=cached"
