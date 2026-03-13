@@ -21,6 +21,7 @@ _Currently working on..._
 - [ ] **Better error messages** - Improve error reporting when feature resolution fails
 
 ### Medium Priority
+- [ ] **Self-update command** - `isolde --self-update` to update the CLI binary from the latest release
 - [ ] **Auto-update templates** - Mechanism to update existing projects with new template changes
 - [ ] **Template validation** - Verify template syntax before applying
 - [ ] **Custom template directory** - Allow users to specify custom template locations

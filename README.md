@@ -147,13 +147,20 @@ isolde init my-app --template python --agent claude-code
 
 ```
 isolde/
+├── isolde-core/           # Core library (template processing, git ops, config)
+│   ├── src/
+│   └── Cargo.toml
+├── isolde-cli/            # CLI binary (clap-based)
+│   ├── src/
+│   └── Cargo.toml
 ├── core/                  # Shared components
 │   ├── features/          # Reusable devcontainer features
 │   │   ├── claude-code/   # Claude Code CLI (default agent)
 │   │   ├── codex/         # OpenAI Codex CLI (planned)
 │   │   ├── gemini/        # Google Gemini CLI (planned)
 │   │   ├── aider/         # Aider AI pair programming (planned)
-│   │   └── proxy/         # HTTP proxy configuration
+│   │   ├── proxy/         # HTTP proxy configuration
+│   │   └── plugin-manager/ # Plugin activation (claude-code only)
 │   └── base-Dockerfile    # Base container image
 ├── templates/             # Language templates
 │   ├── python/
@@ -161,17 +168,13 @@ isolde/
 │   ├── rust/
 │   ├── go/
 │   └── generic/
-├── scripts/               # Project creation tools
-│   ├── isolde.sh          # Main script
-│   ├── install/           # Installation scripts
-│   └── lib/               # Helper libraries
+├── Cargo.toml             # Workspace configuration
+├── Cargo.lock             # Dependency lock file
 ├── presets.yaml           # Built-in presets
 ├── docs/                  # Documentation
 ├── tests/                 # E2E tests
-├── .devcontainer/         # Self devcontainer setup
 ├── mk/                    # Makefile modules
-├── Makefile               # Root-level Makefile
-├── VERSION                # Version file
+├── Makefile               # Build and test commands
 ├── CLAUDE.md              # Claude Code project instructions
 └── README.md              # This file
 ```
@@ -184,9 +187,13 @@ isolde/
 ├── .devcontainer/        # Devcontainer configuration
 │   ├── devcontainer.json
 │   ├── Dockerfile
-│   └── features/
-├── isolde.yaml           # Isolde project configuration
-└── .claude/              # Claude Code config (not in git)
+│   └── features/         # Copied agent and proxy features
+├── .claude/              # Claude Code config
+│   └── CLAUDE.md         # Project-specific agent instructions
+├── .isolde/              # Isolde state (volumes, isolation data)
+│   └── volumes/
+├── project/              # Workspace directory (bind-mounted into container)
+└── isolde.yaml           # Isolde project configuration
 ```
 
 ---
@@ -315,25 +322,21 @@ This project follows specific conventions documented in [CLAUDE.md](CLAUDE.md):
 
 ### Updating
 
-**If installed via quick install:**
-```bash
-isolde --self-update
-```
-
-**If running from source:**
 ```bash
 cd isolde
 git pull origin main
+make install
 ```
 
 ---
 
 ## Requirements
 
-- Docker
-- VS Code with Dev Containers extension (recommended)
-- Bash shell
-- Git
+- **Rust toolchain** (for building from source) — install via [rustup](https://rustup.rs/)
+- **Docker** — for running devcontainers
+- **[devcontainers CLI](https://github.com/devcontainers/cli)** — for `isolde build`, `isolde run`, etc.
+- **Git**
+- VS Code with Dev Containers extension (optional, recommended)
 
 ---
 
