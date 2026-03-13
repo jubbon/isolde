@@ -193,14 +193,23 @@ make test-all
 isolde/
 ├── isolde-core/           # Core library
 │   ├── src/
-│   │   ├── templates.rs   # Template loading and processing
-│   │   ├── git.rs         # Git operations
+│   │   ├── lib.rs         # Public API
 │   │   ├── config.rs      # Configuration and presets
-│   │   └── features.rs    # Feature copying and management
+│   │   ├── config/        # Config versioning (v0_1/)
+│   │   ├── container.rs   # Container management (build, run, stop, ps, logs)
+│   │   ├── error.rs       # Error types
+│   │   ├── generator.rs   # Project generation and rendering
+│   │   ├── mounts.rs      # Mount generation per isolation level
+│   │   ├── state.rs       # Project state management
+│   │   ├── template.rs    # Template loading and processing
+│   │   └── volumes.rs     # Volume directory preparation
 │   └── Cargo.toml
 ├── isolde-cli/            # CLI binary
 │   ├── src/
-│   │   └── main.rs        # Entry point with clap CLI
+│   │   ├── main.rs        # Entry point
+│   │   ├── cli.rs         # Clap CLI definitions
+│   │   ├── commands/      # Subcommand implementations (init, sync, validate, etc.)
+│   │   └── version_info.rs
 │   └── Cargo.toml
 ├── Cargo.toml             # Workspace config
 ├── templates/             # Language templates
