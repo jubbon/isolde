@@ -6,7 +6,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use colored::Colorize;
-use isolde_core::config::Config;
+use isolde_core::config::{Config, TemplateInfo};
 use isolde_core::{Error, Result};
 
 /// Options for the init command
@@ -60,28 +60,137 @@ impl Default for InitOptions {
     }
 }
 
+/// Check if an agent has a working install.sh implementation
+fn is_agent_implemented(agent: &str) -> bool {
+    matches!(agent, "claude-code")
+}
+
+/// Hardcoded default language versions (fallback when template-info.yaml is unavailable)
+fn default_lang_version(template: &str) -> &'static str {
+    match template {
+        "python" => "3.12",
+        "nodejs" => "22",
+        "rust" => "latest",
+        "go" => "latest",
+        _ => "",
+    }
+}
+
+/// Try to find the templates directory
+fn find_templates_dir() -> Option<PathBuf> {
+    if let Ok(env_path) = std::env::var("ISOLDE_TEMPLATES") {
+        let p = PathBuf::from(&env_path);
+        if p.exists() {
+            return Some(p);
+        }
+    }
+
+    for rel in &["templates", "../templates", "../../templates"] {
+        let p = PathBuf::from(rel);
+        if p.exists() {
+            return Some(p);
+        }
+    }
+
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(exe_dir) = exe.parent() {
+            if let Some(prefix) = exe_dir.parent() {
+                let share_path = prefix.join("share").join("isolde").join("templates");
+                if share_path.exists() {
+                    return Some(share_path);
+                }
+            }
+            let p = exe_dir.join("templates");
+            if p.exists() {
+                return Some(p);
+            }
+        }
+    }
+
+    if let Ok(home) = std::env::var("HOME") {
+        let p = PathBuf::from(&home)
+            .join(".local/share/isolde/templates");
+        if p.exists() {
+            return Some(p);
+        }
+    }
+
+    None
+}
+
+/// Load template metadata from template-info.yaml
+fn load_template_info(template: &str) -> Option<TemplateInfo> {
+    let templates_dir = find_templates_dir()?;
+    let info_path = templates_dir.join(template).join("template-info.yaml");
+    let content = fs::read_to_string(info_path).ok()?;
+    serde_yaml::from_str(&content).ok()
+}
+
+/// Resolve the effective language version for a template
+fn resolve_lang_version(template: &str, user_version: Option<&str>) -> String {
+    if let Some(v) = user_version {
+        return v.to_string();
+    }
+
+    if let Some(info) = load_template_info(template) {
+        return info.lang_version_default;
+    }
+
+    default_lang_version(template).to_string()
+}
+
+/// Warn if the language version is not in the template's supported_versions list
+fn warn_unsupported_version(template: &str, version: &str) {
+    if version.is_empty() {
+        return;
+    }
+
+    if let Some(info) = load_template_info(template) {
+        if !info.supported_versions.contains(&version.to_string()) {
+            eprintln!(
+                "{} {}",
+                "⚠".yellow(),
+                format!(
+                    "Language version '{}' is not in the officially supported list for '{}' template: {}",
+                    version, template, info.supported_versions.join(", ")
+                ).yellow()
+            );
+            eprintln!(
+                "{}",
+                "  The project will be created, but the version may not work correctly.".dimmed()
+            );
+        }
+    }
+}
+
 /// Generate configuration from a template name
-fn generate_config_from_template(project_name: &str, template: &str, agent: &str, agent_version: &str) -> String {
+fn generate_config_from_template(
+    project_name: &str,
+    template: &str,
+    agent: &str,
+    agent_version: &str,
+    lang_version: &str,
+) -> String {
     let (docker_image, runtime_section) = match template {
         "python" => (
-            "mcr.microsoft.com/devcontainers/python:3.12",
-            "runtime:\n  language: python\n  version: \"3.12\"\n  package_manager: uv\n  tools: []\n",
+            format!("mcr.microsoft.com/devcontainers/python:{}", lang_version),
+            format!("runtime:\n  language: python\n  version: \"{}\"\n  package_manager: uv\n  tools: []\n", lang_version),
         ),
         "nodejs" => (
-            "mcr.microsoft.com/devcontainers/javascript-node:22",
-            "runtime:\n  language: nodejs\n  version: \"22\"\n  package_manager: pnpm\n  tools: []\n",
+            format!("mcr.microsoft.com/devcontainers/javascript-node:{}", lang_version),
+            format!("runtime:\n  language: nodejs\n  version: \"{}\"\n  package_manager: pnpm\n  tools: []\n", lang_version),
         ),
         "rust" => (
-            "mcr.microsoft.com/devcontainers/rust:latest",
-            "runtime:\n  language: rust\n  version: stable\n  package_manager: cargo\n  tools: []\n",
+            "mcr.microsoft.com/devcontainers/rust:latest".to_string(),
+            format!("runtime:\n  language: rust\n  version: \"{}\"\n  package_manager: cargo\n  tools: []\n", lang_version),
         ),
         "go" => (
-            "mcr.microsoft.com/devcontainers/go:1.22",
-            "runtime:\n  language: go\n  version: \"1.22\"\n  package_manager: go\n  tools: []\n",
+            format!("mcr.microsoft.com/devcontainers/go:{}", lang_version),
+            format!("runtime:\n  language: go\n  version: \"{}\"\n  package_manager: go\n  tools: []\n", lang_version),
         ),
         _ => (
-            "mcr.microsoft.com/devcontainers/base:ubuntu",
-            "",
+            "mcr.microsoft.com/devcontainers/base:ubuntu".to_string(),
+            String::new(),
         ),
     };
 
@@ -195,12 +304,19 @@ fn agent_options_yaml(agent: &str) -> String {
 }
 
 /// Generate configuration from a preset
-fn generate_config_from_preset(project_name: &str, preset_name: &str) -> Result<String> {
+fn generate_config_from_preset(
+    project_name: &str,
+    preset_name: &str,
+    lang_version_override: Option<&str>,
+) -> Result<String> {
     // Try to load presets.yaml from the current directory or template repository
     let preset_yaml = load_presets_yaml()?;
 
     // Parse the preset configuration
     let preset = find_preset(&preset_yaml, preset_name)?;
+
+    // Use CLI --lang-version override if provided, otherwise use preset's version
+    let version = lang_version_override.unwrap_or(&preset.lang_version);
 
     // Generate config based on preset (presets always use claude-code agent)
     let agent_options_section = agent_options_yaml("claude-code");
@@ -242,7 +358,7 @@ git:
         preset = preset_name,
         agent_options = agent_options_section,
         lang = preset.template,
-        version = preset.lang_version,
+        version = version,
         tools = serde_yaml::to_string(&preset.features).unwrap_or_else(|_| "[]".to_string()),
         plugins = preset
             .claude_plugins
@@ -468,15 +584,55 @@ pub fn run(opts: InitOptions) -> Result<()> {
         }
     }
 
+    // Warn about stub agents
+    if !is_agent_implemented(&opts.agent) {
+        eprintln!(
+            "\n{} {}",
+            "⚠".yellow(),
+            format!(
+                "Agent '{}' is experimental — its devcontainer feature has no install.sh yet.",
+                opts.agent
+            ).yellow()
+        );
+        eprintln!(
+            "{}",
+            "  The devcontainer will be created but the agent CLI won't be automatically installed.".dimmed()
+        );
+
+        if !opts.yes {
+            print!("{}", "\nContinue anyway? [y/N] ".bold());
+            use std::io::Write;
+            std::io::stdout().flush().unwrap();
+
+            let mut input = String::new();
+            std::io::stdin()
+                .read_line(&mut input)
+                .map_err(|e| Error::Other(format!("Failed to read input: {}", e)))?;
+
+            let input = input.trim().to_lowercase();
+            if input != "y" && input != "yes" {
+                println!("{}", "Aborted.".yellow());
+                return Ok(());
+            }
+        }
+    }
+
+    // Resolve effective language version and validate
+    if let Some(ref template) = opts.template {
+        let effective_version = resolve_lang_version(template, opts.lang_version.as_deref());
+        warn_unsupported_version(template, &effective_version);
+    }
+
     // Generate configuration
     let config_content = if let Some(preset) = &opts.preset {
         print!(
             "{}",
             format!("Loading preset '{}'...\n", preset.cyan()).dimmed()
         );
-        generate_config_from_preset(&project_name, preset)?
+        generate_config_from_preset(&project_name, preset, opts.lang_version.as_deref())?
     } else if let Some(ref template) = opts.template {
-        generate_config_from_template(&project_name, template, &opts.agent, &opts.agent_version)
+        let effective_version = resolve_lang_version(template, opts.lang_version.as_deref());
+        generate_config_from_template(&project_name, template, &opts.agent, &opts.agent_version, &effective_version)
     } else {
         generate_default_config(&project_name, &opts.agent, &opts.agent_version)
     };
@@ -563,11 +719,58 @@ mod tests {
 
     #[test]
     fn test_generate_config_from_template() {
-        let config = generate_config_from_template("my-app", "python", "claude-code", "latest");
+        let config = generate_config_from_template("my-app", "python", "claude-code", "latest", "3.12");
         assert!(config.contains("name: my-app"));
         assert!(config.contains("agent:"));
         assert!(config.contains("name: claude-code"));
         assert!(config.contains("python"));
+        assert!(config.contains("version: \"3.12\""));
+    }
+
+    #[test]
+    fn test_generate_config_with_custom_lang_version() {
+        let config = generate_config_from_template("my-app", "python", "claude-code", "latest", "3.11");
+        assert!(config.contains("version: \"3.11\""));
+        assert!(config.contains("mcr.microsoft.com/devcontainers/python:3.11"));
+    }
+
+    #[test]
+    fn test_generate_config_nodejs_lang_version() {
+        let config = generate_config_from_template("my-app", "nodejs", "claude-code", "latest", "20");
+        assert!(config.contains("version: \"20\""));
+        assert!(config.contains("mcr.microsoft.com/devcontainers/javascript-node:20"));
+    }
+
+    #[test]
+    fn test_generate_config_go_lang_version() {
+        let config = generate_config_from_template("my-app", "go", "claude-code", "latest", "1.21");
+        assert!(config.contains("version: \"1.21\""));
+        assert!(config.contains("mcr.microsoft.com/devcontainers/go:1.21"));
+    }
+
+    #[test]
+    fn test_generate_config_rust_always_latest_image() {
+        let config = generate_config_from_template("my-app", "rust", "claude-code", "latest", "stable");
+        assert!(config.contains("version: \"stable\""));
+        // Rust docker image always uses :latest regardless of lang_version
+        assert!(config.contains("mcr.microsoft.com/devcontainers/rust:latest"));
+    }
+
+    #[test]
+    fn test_is_agent_implemented() {
+        assert!(is_agent_implemented("claude-code"));
+        assert!(!is_agent_implemented("codex"));
+        assert!(!is_agent_implemented("gemini"));
+        assert!(!is_agent_implemented("aider"));
+    }
+
+    #[test]
+    fn test_default_lang_version() {
+        assert_eq!(default_lang_version("python"), "3.12");
+        assert_eq!(default_lang_version("nodejs"), "22");
+        assert_eq!(default_lang_version("rust"), "latest");
+        assert_eq!(default_lang_version("go"), "latest");
+        assert_eq!(default_lang_version("unknown"), "");
     }
 
     #[test]

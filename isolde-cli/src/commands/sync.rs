@@ -51,6 +51,26 @@ pub fn run(opts: SyncOptions) -> Result<()> {
     let config = Config::from_file(&config_path)?;
     println!("{}", "✔".green());
 
+    // Warn about stub agent features
+    let agent = config.agent_name();
+    if !matches!(agent, "claude-code") {
+        let has_install_sh = find_core_features_dir()
+            .ok()
+            .map(|dir| dir.join(agent).join("install.sh").exists())
+            .unwrap_or(false);
+
+        if !has_install_sh {
+            eprintln!(
+                "{} {}",
+                "⚠".yellow(),
+                format!(
+                    "Agent '{}' feature has no install.sh — the agent CLI won't be installed in the container.",
+                    agent
+                ).yellow()
+            );
+        }
+    }
+
     // Create output directories
     let devcontainer_dir = opts.cwd.join(".devcontainer");
     let claude_dir = opts.cwd.join(".claude");
@@ -140,15 +160,25 @@ fn generate_devcontainer(config: &Config) -> Result<String> {
         }),
     );
 
-    // Add Node.js (for Claude Code)
-    features.insert(
-        "ghcr.io/devcontainers/features/node:1".to_string(),
-        serde_json::json!({
-            "version": "lts",
-            "nodeGypDependencies": true,
-            "npxInstallCachedPackages": true
-        }),
-    );
+    // Add Node.js for agents that need it (claude-code and codex use npm for installation).
+    // Skip if the project language is already nodejs/javascript — the language-specific
+    // feature block below will add Node.js with the correct runtime version instead.
+    let agent_needs_node = matches!(config.agent_name(), "claude-code" | "codex");
+    let lang_is_node = config
+        .runtime()
+        .map(|r| matches!(r.language(), "nodejs" | "javascript"))
+        .unwrap_or(false);
+
+    if agent_needs_node && !lang_is_node {
+        features.insert(
+            "ghcr.io/devcontainers/features/node:1".to_string(),
+            serde_json::json!({
+                "version": "lts",
+                "nodeGypDependencies": true,
+                "npxInstallCachedPackages": true
+            }),
+        );
+    }
 
     // Add language-specific features
     if let Some(runtime) = config.runtime() {
@@ -254,13 +284,13 @@ fn generate_devcontainer(config: &Config) -> Result<String> {
     }
 
     // Build feature install order
-    let mut override_order = vec![];
+    let mut override_order: Vec<String> = vec![];
     if config.proxy().is_some() {
-        override_order.push("./features/proxy");
+        override_order.push("./features/proxy".to_string());
     }
-    override_order.push("./features/claude-code");
+    override_order.push(format!("./features/{}", config.agent_name()));
     if !plugins.is_empty() {
-        override_order.push("./features/plugin-manager");
+        override_order.push("./features/plugin-manager".to_string());
     }
 
     // Detect host auth files for full isolation mode
