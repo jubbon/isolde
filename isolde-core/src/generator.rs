@@ -230,6 +230,9 @@ impl Generator {
             content = content.replace(&placeholder, value);
         }
 
+        // Validate no unresolved placeholders remain
+        crate::template::validate_rendered(&content)?;
+
         Ok(content)
     }
 

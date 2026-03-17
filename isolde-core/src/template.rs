@@ -114,7 +114,9 @@ impl TemplateEngine {
             Error::InvalidTemplate(format!("Template '{name}' not found. Available: {:?}", self.templates.keys().collect::<Vec<_>>()))
         })?;
 
-        Ok(render_template_simple(template, context))
+        let rendered = render_template_simple(template, context);
+        validate_rendered(&rendered)?;
+        Ok(rendered)
     }
 
     /// Build template context from an Isolde configuration
@@ -234,6 +236,51 @@ fn build_agent_options_json(config: &Config) -> String {
     serde_json::to_string_pretty(&Value::Object(map)).unwrap_or_else(|_| "{}".to_string())
 }
 
+
+/// Find unresolved `{{...}}` placeholders in rendered output.
+///
+/// Scans the text for `{{name}}` patterns and returns a deduplicated
+/// list of placeholder names. Whitespace inside braces is trimmed.
+pub fn find_unresolved_placeholders(rendered: &str) -> Vec<String> {
+    use std::collections::HashSet;
+
+    let mut placeholders = Vec::new();
+    let mut seen = HashSet::new();
+    let mut search_from = 0;
+
+    while let Some(open_offset) = rendered[search_from..].find("{{") {
+        let abs_open = search_from + open_offset;
+        let after_open = abs_open + 2;
+
+        if let Some(close_offset) = rendered[after_open..].find("}}") {
+            let name = rendered[after_open..after_open + close_offset].trim();
+            if !name.is_empty() && seen.insert(name.to_string()) {
+                placeholders.push(name.to_string());
+            }
+            search_from = after_open + close_offset + 2;
+        } else {
+            break;
+        }
+    }
+
+    placeholders
+}
+
+/// Validate that rendered output has no unresolved `{{...}}` placeholders.
+///
+/// Returns `Ok(())` if all placeholders have been resolved, or
+/// `Err(InvalidSubstitution)` listing the unresolved placeholder names.
+pub fn validate_rendered(rendered: &str) -> Result<()> {
+    let unresolved = find_unresolved_placeholders(rendered);
+    if unresolved.is_empty() {
+        Ok(())
+    } else {
+        Err(Error::InvalidSubstitution(format!(
+            "Unresolved template placeholders: {}",
+            unresolved.join(", ")
+        )))
+    }
+}
 
 /// Simple template renderer that replaces {{variable}} placeholders
 fn render_template_simple(template: &str, context: &TemplateContext) -> String {
@@ -661,5 +708,114 @@ agent:
         let models_str = val.get("models").unwrap().as_str().unwrap();
         assert!(models_str.contains("haiku:claude-3-5-haiku-20241022"), "got: {models_str}");
         assert!(models_str.contains("sonnet:claude-3-5-sonnet-20241022"), "got: {models_str}");
+    }
+
+    // --- Placeholder validation tests ---
+
+    #[test]
+    fn test_find_unresolved_no_placeholders() {
+        let text = "Hello world, no placeholders here.";
+        let result = find_unresolved_placeholders(text);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn test_find_unresolved_single_placeholder() {
+        let text = "Hello {{name}}, welcome!";
+        let result = find_unresolved_placeholders(text);
+        assert_eq!(result, vec!["name"]);
+    }
+
+    #[test]
+    fn test_find_unresolved_multiple_deduplicated() {
+        let text = "{{foo}} and {{bar}} and {{foo}} again";
+        let result = find_unresolved_placeholders(text);
+        assert_eq!(result, vec!["foo", "bar"]);
+    }
+
+    #[test]
+    fn test_find_unresolved_with_spaces() {
+        let text = "{{ spaced_name }} is trimmed";
+        let result = find_unresolved_placeholders(text);
+        assert_eq!(result, vec!["spaced_name"]);
+    }
+
+    #[test]
+    fn test_find_unresolved_empty_braces_ignored() {
+        let text = "empty {{}} is ignored";
+        let result = find_unresolved_placeholders(text);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn test_find_unresolved_unclosed_braces() {
+        let text = "unclosed {{ never closed";
+        let result = find_unresolved_placeholders(text);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn test_validate_rendered_ok() {
+        let text = "All resolved, no double-braces.";
+        assert!(validate_rendered(text).is_ok());
+    }
+
+    #[test]
+    fn test_validate_rendered_error() {
+        let text = "Still has {{unresolved}} placeholder";
+        let err = validate_rendered(text).unwrap_err();
+        assert!(matches!(err, Error::InvalidSubstitution(_)));
+        assert!(err.to_string().contains("unresolved"));
+    }
+
+    #[test]
+    fn test_render_template_rejects_unknown_placeholder() {
+        let mut engine = TemplateEngine::new().unwrap();
+        let temp_dir = tempfile::tempdir().unwrap();
+        let tmpl_path = temp_dir.path().join("custom.tera");
+        fs::write(&tmpl_path, "Hello {{project_name}}, meet {{unknown_var}}!").unwrap();
+        engine.register_template_file("custom", &tmpl_path).unwrap();
+
+        let ctx = TemplateContext::new("my-project".to_string(), "ubuntu:latest".to_string());
+        let result = engine.render_template("custom", &ctx);
+
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(err.to_string().contains("unknown_var"), "got: {err}");
+    }
+
+    #[test]
+    fn test_render_template_all_known_placeholders_pass() {
+        let mut engine = TemplateEngine::new().unwrap();
+        let temp_dir = tempfile::tempdir().unwrap();
+        let tmpl_path = temp_dir.path().join("good.tera");
+        fs::write(&tmpl_path, "Project: {{project_name}}, Image: {{docker_image}}").unwrap();
+        engine.register_template_file("good", &tmpl_path).unwrap();
+
+        let ctx = TemplateContext::new("my-project".to_string(), "ubuntu:latest".to_string());
+        let result = engine.render_template("good", &ctx);
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), "Project: my-project, Image: ubuntu:latest");
+    }
+
+    #[test]
+    fn test_render_template_partially_resolved() {
+        let mut engine = TemplateEngine::new().unwrap();
+        let temp_dir = tempfile::tempdir().unwrap();
+        let tmpl_path = temp_dir.path().join("partial.tera");
+        fs::write(
+            &tmpl_path,
+            "{{project_name}} uses {{docker_image}} with {{missing_a}} and {{missing_b}}",
+        ).unwrap();
+        engine.register_template_file("partial", &tmpl_path).unwrap();
+
+        let ctx = TemplateContext::new("app".to_string(), "ubuntu:latest".to_string());
+        let result = engine.render_template("partial", &ctx);
+
+        assert!(result.is_err());
+        let err = result.unwrap_err().to_string();
+        assert!(err.contains("missing_a"), "got: {err}");
+        assert!(err.contains("missing_b"), "got: {err}");
     }
 }
