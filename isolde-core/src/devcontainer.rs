@@ -120,7 +120,7 @@ pub fn find_core_features_dir() -> Result<PathBuf> {
 
     if let Ok(home) = std::env::var("HOME") {
         possible_paths.push(
-            PathBuf::from(home.clone())
+            PathBuf::from(&home)
                 .join(".local/share/isolde/core/features"),
         );
         possible_paths.push(PathBuf::from(home).join(".isolde/core/features"));
@@ -181,6 +181,8 @@ pub fn copy_core_features(dest: &Path) -> Result<()> {
 /// language-specific features, proxy, agent feature, plugin manager, mounts,
 /// and feature install order.
 pub fn render_devcontainer_json(config: &Config, host_auth: &HostAuthInfo) -> Result<String> {
+    let proxy = config.proxy();
+    let plugins = config.plugins_vec();
     let mut features = serde_json::Map::new();
 
     // common-utils: match host UID/GID for bind-mounted directories
@@ -256,7 +258,7 @@ pub fn render_devcontainer_json(config: &Config, host_auth: &HostAuthInfo) -> Re
     }
 
     // Proxy feature
-    if let Some(proxy) = config.proxy() {
+    if let Some(proxy) = &proxy {
         features.insert(
             "./features/proxy".to_string(),
             serde_json::json!({
@@ -288,7 +290,7 @@ pub fn render_devcontainer_json(config: &Config, host_auth: &HostAuthInfo) -> Re
         };
         agent_opts.insert(key.clone(), json_val);
     }
-    if let Some(proxy) = config.proxy() {
+    if let Some(proxy) = &proxy {
         if let Some(h) = proxy.http() {
             agent_opts.insert("http_proxy".to_string(), serde_json::Value::String(h.clone()));
         }
@@ -300,7 +302,6 @@ pub fn render_devcontainer_json(config: &Config, host_auth: &HostAuthInfo) -> Re
     features.insert(agent_feature_path, serde_json::Value::Object(agent_opts));
 
     // Plugin manager feature
-    let plugins = config.plugins_vec();
     if !plugins.is_empty() {
         let activate: Vec<&str> = plugins.iter().filter(|p| p.activate).map(|p| p.name.as_str()).collect();
         let deactivate: Vec<&str> = plugins.iter().filter(|p| !p.activate).map(|p| p.name.as_str()).collect();
@@ -316,7 +317,7 @@ pub fn render_devcontainer_json(config: &Config, host_auth: &HostAuthInfo) -> Re
 
     // Feature install order
     let mut override_order: Vec<String> = vec![];
-    if config.proxy().is_some() {
+    if proxy.is_some() {
         override_order.push("./features/proxy".to_string());
     }
     override_order.push(format!("./features/{}", config.agent_name()));

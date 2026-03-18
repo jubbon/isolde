@@ -95,7 +95,12 @@ pub fn run(opts: SyncOptions) -> Result<()> {
         isolde_core::volumes::ensure_volumes(&opts.cwd, &config)?;
     }
 
-    let host_auth = HostAuthInfo::detect();
+    // Only probe host auth files when full isolation needs them
+    let host_auth = if config.isolation() == IsolationLevel::Full {
+        HostAuthInfo::detect()
+    } else {
+        HostAuthInfo::none()
+    };
 
     // Warn if full isolation and no auth files found
     if config.isolation() == IsolationLevel::Full && !host_auth.credentials_exist {
