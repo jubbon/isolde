@@ -602,7 +602,7 @@ pub fn run(opts: InitOptions) -> Result<()> {
         if !opts.yes {
             print!("{}", "\nContinue anyway? [y/N] ".bold());
             use std::io::Write;
-            std::io::stdout().flush().unwrap();
+            let _ = std::io::stdout().flush();
 
             let mut input = String::new();
             std::io::stdin()
@@ -664,7 +664,7 @@ pub fn run(opts: InitOptions) -> Result<()> {
             "Create isolde.yaml with this configuration? [Y/n] ".bold()
         );
         use std::io::Write;
-        std::io::stdout().flush().unwrap();
+        let _ = std::io::stdout().flush();
 
         let mut input = String::new();
         std::io::stdin()
