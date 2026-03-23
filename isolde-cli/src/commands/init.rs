@@ -62,7 +62,7 @@ impl Default for InitOptions {
 
 /// Check if an agent has a working install.sh implementation
 fn is_agent_implemented(agent: &str) -> bool {
-    matches!(agent, "claude-code")
+    matches!(agent, "claude-code" | "codex")
 }
 
 /// Hardcoded default language versions (fallback when template-info.yaml is unavailable)
@@ -296,6 +296,10 @@ fn agent_options_yaml(agent: &str) -> String {
     match agent {
         "claude-code" => {
             "    provider: anthropic\n    # models: # Uncomment to pin specific model versions instead of using defaults\n    #   haiku: claude-3-5-haiku-20241022\n    #   sonnet: claude-3-5-sonnet-20241022\n    #   opus: claude-3-5-sonnet-20241022".to_string()
+        }
+        "codex" => {
+            // Codex uses OPENAI_API_KEY from the environment; no special options needed
+            "    {}".to_string()
         }
         _ => {
             "    {}".to_string()
@@ -759,7 +763,7 @@ mod tests {
     #[test]
     fn test_is_agent_implemented() {
         assert!(is_agent_implemented("claude-code"));
-        assert!(!is_agent_implemented("codex"));
+        assert!(is_agent_implemented("codex"));
         assert!(!is_agent_implemented("gemini"));
         assert!(!is_agent_implemented("aider"));
     }

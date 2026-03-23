@@ -29,6 +29,47 @@ pub struct GenerateReport {
     pub files_modified: Vec<PathBuf>,
 }
 
+/// Guard that tracks created files and directories during generation.
+///
+/// On `Drop`, if not committed, removes all tracked artifacts in reverse order.
+/// Call `commit()` after successful generation to prevent cleanup.
+struct GenerationGuard {
+    created_paths: Vec<PathBuf>,
+    committed: bool,
+}
+
+impl GenerationGuard {
+    fn new() -> Self {
+        Self {
+            created_paths: Vec::new(),
+            committed: false,
+        }
+    }
+
+    fn track<P: AsRef<Path>>(&mut self, path: P) {
+        self.created_paths.push(path.as_ref().to_path_buf());
+    }
+
+    fn commit(mut self) {
+        self.committed = true;
+    }
+}
+
+impl Drop for GenerationGuard {
+    fn drop(&mut self) {
+        if !self.committed {
+            // Clean up in reverse order so files are removed before their parent dirs
+            for path in self.created_paths.iter().rev() {
+                if path.is_file() {
+                    let _ = fs::remove_file(path);
+                } else if path.is_dir() {
+                    let _ = fs::remove_dir_all(path);
+                }
+            }
+        }
+    }
+}
+
 /// Generator for creating devcontainer artifacts from config
 pub struct Generator {
     /// Configuration loaded from isolde.yaml
@@ -76,14 +117,17 @@ impl Generator {
     pub fn generate(&self, output_dir: &Path) -> Result<GenerateReport> {
         let mut files_created = Vec::new();
         let files_modified = Vec::new();
+        let mut guard = GenerationGuard::new();
 
         // Create workspace directory
         let workspace_dir = output_dir.join(self.config.workspace_dir());
         fs::create_dir_all(&workspace_dir)?;
+        guard.track(&workspace_dir);
 
         // Create .devcontainer directory
         let devcontainer_dir = output_dir.join(".devcontainer");
         fs::create_dir_all(&devcontainer_dir)?;
+        guard.track(&devcontainer_dir);
 
         // Generate devcontainer.json (delegated to devcontainer module)
         let host_auth = devcontainer::HostAuthInfo::detect();
@@ -91,32 +135,41 @@ impl Generator {
             devcontainer::render_devcontainer_json(&self.config, &host_auth)?;
         let devcontainer_json_path = devcontainer_dir.join("devcontainer.json");
         fs::write(&devcontainer_json_path, devcontainer_json)?;
+        guard.track(&devcontainer_json_path);
         files_created.push(devcontainer_json_path);
 
         // Generate Dockerfile (delegated to devcontainer module)
         let dockerfile = devcontainer::render_dockerfile(&self.config)?;
         let dockerfile_path = devcontainer_dir.join("Dockerfile");
         fs::write(&dockerfile_path, dockerfile)?;
+        guard.track(&dockerfile_path);
         files_created.push(dockerfile_path);
 
         // Copy core features
         let features_dir = devcontainer_dir.join("features");
         let copied_features = self.copy_core_features(&features_dir)?;
+        guard.track(&features_dir);
         files_created.extend(copied_features);
 
         // Generate .claude/config.json (init-specific, not part of sync)
         let claude_config = self.render_claude_config()?;
         let claude_dir = workspace_dir.join(".claude");
         fs::create_dir_all(&claude_dir)?;
+        guard.track(&claude_dir);
         let claude_config_path = claude_dir.join("config.json");
         fs::write(&claude_config_path, claude_config)?;
+        guard.track(&claude_config_path);
         files_created.push(claude_config_path);
 
         // Generate README.md for project (init-specific)
         let readme = self.render_project_readme()?;
         let readme_path = workspace_dir.join("README.md");
         fs::write(&readme_path, readme)?;
+        guard.track(&readme_path);
         files_created.push(readme_path);
+
+        // All artifacts created successfully — prevent guard from cleaning up
+        guard.commit();
 
         Ok(GenerateReport {
             files_created,
@@ -442,5 +495,72 @@ runtime:
         // Second run - should show modify
         let report2 = generator.dry_run(&output_dir).unwrap();
         assert!(report2.would_modify.iter().any(|p| p.ends_with("devcontainer.json")));
+    }
+
+    #[test]
+    fn test_generation_guard_cleanup_on_drop() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let file_path = temp_dir.path().join("test_file.txt");
+        let dir_path = temp_dir.path().join("test_dir");
+
+        // Create real files to track
+        fs::write(&file_path, "content").unwrap();
+        fs::create_dir_all(&dir_path).unwrap();
+
+        assert!(file_path.exists());
+        assert!(dir_path.exists());
+
+        {
+            let mut guard = GenerationGuard::new();
+            guard.track(&file_path);
+            guard.track(&dir_path);
+            // Drop without commit — should clean up
+        }
+
+        assert!(!file_path.exists(), "file should be removed on guard drop");
+        assert!(!dir_path.exists(), "directory should be removed on guard drop");
+    }
+
+    #[test]
+    fn test_generation_guard_no_cleanup_after_commit() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let file_path = temp_dir.path().join("committed_file.txt");
+
+        fs::write(&file_path, "content").unwrap();
+        assert!(file_path.exists());
+
+        {
+            let mut guard = GenerationGuard::new();
+            guard.track(&file_path);
+            guard.commit(); // committed — should NOT clean up
+        }
+
+        assert!(file_path.exists(), "file should remain after committed guard drop");
+    }
+
+    #[test]
+    fn test_generate_full_workflow_with_guard() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let output_dir = temp_dir.path();
+
+        // Setup mock isolde root
+        let mock_root = temp_dir.path().join("isolde");
+        fs::create_dir_all(mock_root.join("core/features/claude-code")).unwrap();
+        fs::create_dir_all(mock_root.join("core/features/proxy")).unwrap();
+        fs::create_dir_all(mock_root.join("core/features/plugin-manager")).unwrap();
+        fs::write(mock_root.join("core/features/claude-code/install.sh"), "#!/bin/bash").unwrap();
+        fs::write(mock_root.join("core/features/proxy/install.sh"), "#!/bin/bash").unwrap();
+        fs::write(mock_root.join("core/features/plugin-manager/install.sh"), "#!/bin/bash").unwrap();
+
+        let config = create_test_config();
+        let mut generator = Generator::new(config).unwrap();
+        generator.isolde_root = mock_root;
+
+        let report = generator.generate(output_dir).unwrap();
+
+        // Verify files remain after successful generation
+        assert!(!report.files_created.is_empty());
+        assert!(output_dir.join(".devcontainer/devcontainer.json").exists());
+        assert!(output_dir.join(".devcontainer/Dockerfile").exists());
     }
 }

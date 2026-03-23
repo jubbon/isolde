@@ -472,10 +472,83 @@ mod tests {
     }
 
     #[test]
+    fn test_extract_image_name_successfully_built() {
+        // "Successfully built" line returns the last word on that line (the image ID)
+        let output = "Successfully built abc123def456";
+        let name = extract_image_name(output);
+        assert_eq!(name, Some("abc123def456".to_string()));
+    }
+
+    #[test]
     fn test_extract_image_name_none() {
         let output = "Some random output without image name";
         let name = extract_image_name(output);
         assert_eq!(name, None);
     }
 
+    #[test]
+    fn test_extract_image_name_empty_input() {
+        let name = extract_image_name("");
+        assert_eq!(name, None);
+    }
+
+    #[test]
+    fn test_extract_image_name_trailing_dot() {
+        // The function trims trailing dots
+        let output = "Built image: myproject-dev:latest.";
+        let name = extract_image_name(output);
+        assert_eq!(name, Some("myproject-dev:latest".to_string()));
+    }
+
+    #[test]
+    fn test_parse_docker_container_list_empty() {
+        let result = parse_docker_container_list("").unwrap();
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn test_parse_docker_container_list_whitespace_only() {
+        let result = parse_docker_container_list("   \n  ").unwrap();
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn test_parse_docker_container_list_single_container() {
+        let json = r#"[{"ID":"abc123","Names":"my-container","State":"running"}]"#;
+        let result = parse_docker_container_list(json).unwrap();
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].container_id, "abc123");
+        assert_eq!(result[0].container_name, "my-container");
+        assert_eq!(result[0].status, "running");
+        assert!(result[0].workspace_folder.is_empty());
+    }
+
+    #[test]
+    fn test_parse_docker_container_list_multiple_containers() {
+        let json = r#"[
+            {"ID":"abc123","Names":"container-one","State":"running"},
+            {"ID":"def456","Names":"container-two","State":"exited"}
+        ]"#;
+        let result = parse_docker_container_list(json).unwrap();
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0].container_id, "abc123");
+        assert_eq!(result[1].container_id, "def456");
+        assert_eq!(result[1].status, "exited");
+    }
+
+    #[test]
+    fn test_parse_docker_container_list_invalid_json() {
+        // Invalid JSON falls back to unwrap_or_default() returning empty vec
+        let result = parse_docker_container_list("not valid json").unwrap();
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn test_container_info_workspace_folder_empty_by_default() {
+        let json = r#"[{"ID":"xyz789","Names":"test-container","State":"running"}]"#;
+        let result = parse_docker_container_list(json).unwrap();
+        assert_eq!(result.len(), 1);
+        // workspace_folder is always empty from parse — filled in later by get_workspace_folder_from_docker
+        assert_eq!(result[0].workspace_folder, "");
+    }
 }

@@ -106,7 +106,7 @@ make shell
 | Agent | Status | Description |
 |-------|--------|-------------|
 | **Claude Code** | Supported | Anthropic CLI with multi-provider LLM support (Anthropic, Z.ai, custom) |
-| **Codex** | Planned | OpenAI Codex CLI |
+| **Codex** | Supported | OpenAI Codex CLI with proxy support |
 | **Gemini** | Planned | Google Gemini CLI |
 | **Aider** | Planned | AI pair programming tool |
 
