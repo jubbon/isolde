@@ -43,11 +43,14 @@ pub fn run(opts: PsOptions) -> Result<Vec<ContainerDisplay>> {
     println!("{}", "📋 Devcontainers".cyan());
     println!("{}", "─".repeat(50).dimmed());
 
-    let containers = container::ps()
-        .map_err(|e| Error::Other(format!("Failed to list containers: {}", e)))?;
+    let containers =
+        container::ps().map_err(|e| Error::Other(format!("Failed to list containers: {}", e)))?;
 
     if containers.is_empty() {
-        println!("{}", "No containers found (no running containers).".dimmed());
+        println!(
+            "{}",
+            "No containers found (no running containers).".dimmed()
+        );
         return Ok(vec![]);
     }
 
@@ -55,13 +58,17 @@ pub fn run(opts: PsOptions) -> Result<Vec<ContainerDisplay>> {
     let filtered: Vec<_> = if opts.all {
         containers.iter().collect()
     } else {
-        containers.iter()
+        containers
+            .iter()
             .filter(|c| c.status == "running")
             .collect()
     };
 
     if filtered.is_empty() {
-        println!("{}", "No containers found (no running containers).".dimmed());
+        println!(
+            "{}",
+            "No containers found (no running containers).".dimmed()
+        );
         if opts.all {
             println!("{}", "Use --all to see stopped containers.".dimmed());
         }
@@ -79,35 +86,38 @@ pub fn run(opts: PsOptions) -> Result<Vec<ContainerDisplay>> {
     println!("{}", "─".repeat(80).dimmed());
 
     // Display each container
-    let display_containers: Vec<ContainerDisplay> = filtered.iter().map(|c| {
-        let id = if c.container_id.len() > 12 {
-            format!("{}...", &c.container_id[..12])
-        } else {
-            c.container_id.clone()
-        };
+    let display_containers: Vec<ContainerDisplay> = filtered
+        .iter()
+        .map(|c| {
+            let id = if c.container_id.len() > 12 {
+                format!("{}...", &c.container_id[..12])
+            } else {
+                c.container_id.clone()
+            };
 
-        let status_colored = match c.status.as_str() {
-            "running" => c.status.green(),
-            "exited" => c.status.dimmed(),
-            "stopped" => c.status.dimmed(),
-            _ => c.status.normal(),
-        };
+            let status_colored = match c.status.as_str() {
+                "running" => c.status.green(),
+                "exited" => c.status.dimmed(),
+                "stopped" => c.status.dimmed(),
+                _ => c.status.normal(),
+            };
 
-        println!(
-            "{:<12}  {:<25}  {:<10}  {}",
-            id.cyan(),
-            c.container_name,
-            status_colored,
-            c.workspace_folder.dimmed()
-        );
+            println!(
+                "{:<12}  {:<25}  {:<10}  {}",
+                id.cyan(),
+                c.container_name,
+                status_colored,
+                c.workspace_folder.dimmed()
+            );
 
-        ContainerDisplay {
-            id,
-            name: c.container_name.clone(),
-            status: c.status.clone(),
-            workspace: c.workspace_folder.clone(),
-        }
-    }).collect();
+            ContainerDisplay {
+                id,
+                name: c.container_name.clone(),
+                status: c.status.clone(),
+                workspace: c.workspace_folder.clone(),
+            }
+        })
+        .collect();
 
     println!();
     println!(

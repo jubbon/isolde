@@ -52,7 +52,10 @@ pub fn run(opts: ExecOptions) -> Result<()> {
 
     if opts.verbose {
         println!("{}", format!("Workspace: {}", workspace.display()).dimmed());
-        println!("{}", format!("Command: {}", opts.command.join(" ")).dimmed());
+        println!(
+            "{}",
+            format!("Command: {}", opts.command.join(" ")).dimmed()
+        );
         println!();
     }
 
@@ -68,7 +71,10 @@ pub fn run(opts: ExecOptions) -> Result<()> {
 
     if !exit_status.success() {
         let code = exit_status.code().unwrap_or(-1);
-        println!("Error: Container command exited with code {}. Make sure the container is running.", code);
+        println!(
+            "Error: Container command exited with code {}. Make sure the container is running.",
+            code
+        );
         std::process::exit(code);
     }
 

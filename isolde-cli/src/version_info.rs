@@ -81,7 +81,10 @@ impl BuildInfo {
 
     /// Display as JSON
     pub fn display_json(&self) {
-        println!("{}", serde_json::to_string_pretty(self).unwrap_or_else(|_| "{}".to_string()));
+        println!(
+            "{}",
+            serde_json::to_string_pretty(self).unwrap_or_else(|_| "{}".to_string())
+        );
     }
 }
 

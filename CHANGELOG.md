@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-03-24
+
+### Added
+
+- Codex agent support with install.sh, version pinning, and proxy support
+- `--yes` flag for non-interactive `init` command
+- Template placeholder validation after rendering (detects unresolved `{{...}}`)
+- `GenerationGuard` for automatic rollback on generation failure
+- CONTRIBUTING.md and GitHub issue templates
+- CI/CD pipeline: Rust CI (lint, test, build) and release workflow with binary artifacts
+
+### Changed
+
+- Extracted shared rendering logic to `devcontainer.rs` module (sync/generator deduplication)
+- Rewrote documentation: README, backlog, architecture, testing docs
+
+### Fixed
+
+- `exec` command: handle `group_spawn()` result instead of silently discarding it
+- `run` command: safe container ID slicing to prevent panic on short IDs
+- `ps` command: Docker JSONL parsing for Docker 20.10+ compatibility
+- Stub agent warnings for unimplemented agents (gemini, aider)
+- `--lang-version` flag respected by all templates
+- E2E tests revived (9 active scenarios)
+
 ## [0.2.0] - 2026-03-05
 
 ### Added
@@ -75,6 +100,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code setup wizard prevention on container rebuild
 - User detection and UID/GID handling in devcontainer
 
-[Unreleased]: https://github.com/jubbon/isolde/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/jubbon/isolde/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/jubbon/isolde/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/jubbon/isolde/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/jubbon/isolde/releases/tag/v0.1.0

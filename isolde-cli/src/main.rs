@@ -13,7 +13,7 @@ use clap::Parser;
 use colored::Colorize;
 use std::path::PathBuf;
 
-use cli::{Cli, Commands, print_info, print_warning};
+use cli::{print_info, print_warning, Cli, Commands};
 
 /// Isolde CLI version (from VERSION file)
 const VERSION: &str = env!("ISOLDE_VERSION");
@@ -81,7 +81,14 @@ fn execute_command(command: Commands, verbose: bool) -> anyhow::Result<()> {
             warnings_as_errors,
             format,
             path,
-        } => execute_validate(quick, validate_verbose, warnings_as_errors, format, path, verbose),
+        } => execute_validate(
+            quick,
+            validate_verbose,
+            warnings_as_errors,
+            format,
+            path,
+            verbose,
+        ),
 
         Commands::Diff {
             file,
@@ -97,12 +104,18 @@ fn execute_command(command: Commands, verbose: bool) -> anyhow::Result<()> {
             quick,
             format: doctor_format,
             dry_run,
-        } => execute_doctor(fix, doctor_verbose, component, report, quick, doctor_format, dry_run, verbose),
+        } => execute_doctor(
+            fix,
+            doctor_verbose,
+            component,
+            report,
+            quick,
+            doctor_format,
+            dry_run,
+            verbose,
+        ),
 
-        Commands::Version {
-            verbosity,
-            format,
-        } => execute_version(verbosity, format),
+        Commands::Version { verbosity, format } => execute_version(verbosity, format),
 
         Commands::Build {
             workspace_folder,
@@ -125,9 +138,7 @@ fn execute_command(command: Commands, verbose: bool) -> anyhow::Result<()> {
             force,
         } => execute_stop(workspace_folder, force, verbose),
 
-        Commands::Ps {
-            all,
-        } => execute_ps(all, verbose),
+        Commands::Ps { all } => execute_ps(all, verbose),
 
         Commands::Logs {
             workspace_folder,
@@ -155,9 +166,18 @@ fn execute_init(
 ) -> anyhow::Result<()> {
     if list_templates {
         print_info("Available templates:");
-        println!("  {}  Python development environment with uv, pytest, and ruff", "python".cyan());
-        println!("  {}  Node.js development environment with pnpm and TypeScript", "nodejs".green());
-        println!("  {}  Rust development environment with cargo and rustfmt", "rust".red());
+        println!(
+            "  {}  Python development environment with uv, pytest, and ruff",
+            "python".cyan()
+        );
+        println!(
+            "  {}  Node.js development environment with pnpm and TypeScript",
+            "nodejs".green()
+        );
+        println!(
+            "  {}  Rust development environment with cargo and rustfmt",
+            "rust".red()
+        );
         println!();
         print_info("Use --template or --preset to select one");
         return Ok(());
@@ -165,9 +185,18 @@ fn execute_init(
 
     if list_presets {
         print_info("Available presets:");
-        println!("  {}  Python with ML libraries (numpy, pandas, scikit-learn)", "python-ml".cyan());
-        println!("  {}  Node.js API server with Express and TypeScript", "node-api".green());
-        println!("  {}  Rust CLI application with clap and tracing", "rust-cli".red());
+        println!(
+            "  {}  Python with ML libraries (numpy, pandas, scikit-learn)",
+            "python-ml".cyan()
+        );
+        println!(
+            "  {}  Node.js API server with Express and TypeScript",
+            "node-api".green()
+        );
+        println!(
+            "  {}  Rust CLI application with clap and tracing",
+            "rust-cli".red()
+        );
         println!();
         print_info("Use --preset to select one");
         return Ok(());
@@ -228,8 +257,8 @@ fn execute_validate(
     path: Vec<String>,
     verbose: bool,
 ) -> anyhow::Result<()> {
-    let format_enum = commands::ValidateFormat::from_str(&format)
-        .unwrap_or(commands::ValidateFormat::Text);
+    let format_enum =
+        commands::ValidateFormat::from_str(&format).unwrap_or(commands::ValidateFormat::Text);
 
     let opts = commands::ValidateOptions {
         quick,
@@ -275,8 +304,8 @@ fn execute_diff(
     context: usize,
     verbose: bool,
 ) -> anyhow::Result<()> {
-    let format_enum = commands::DiffFormat::from_str(&format)
-        .unwrap_or(commands::DiffFormat::Color);
+    let format_enum =
+        commands::DiffFormat::from_str(&format).unwrap_or(commands::DiffFormat::Color);
 
     let opts = commands::DiffOptions {
         file,
@@ -301,7 +330,10 @@ fn execute_doctor(
     verbose: bool,
 ) -> anyhow::Result<()> {
     if dry_run {
-        println!("{}", "Running in dry-run mode - no changes will be made".yellow());
+        println!(
+            "{}",
+            "Running in dry-run mode - no changes will be made".yellow()
+        );
     }
 
     let opts = commands::DoctorOptions {
@@ -316,7 +348,10 @@ fn execute_doctor(
     let result = commands::run_doctor(opts).map_err(|e| anyhow::anyhow!(e))?;
 
     if dry_run && fix {
-        println!("{}", "Would apply fixes for any issues found above.".yellow());
+        println!(
+            "{}",
+            "Would apply fixes for any issues found above.".yellow()
+        );
     }
 
     // Exit with error code if diagnostics found errors
@@ -335,14 +370,12 @@ fn execute_version(verbose: u8, format: String) -> anyhow::Result<()> {
         "json" => {
             build_info.display_json();
         }
-        _ => {
-            match verbose {
-                0 => build_info.display_basic(),
-                1 => build_info.display_verbose1(),
-                2 => build_info.display_verbose2(),
-                _ => build_info.display_verbose3(),
-            }
-        }
+        _ => match verbose {
+            0 => build_info.display_basic(),
+            1 => build_info.display_verbose1(),
+            2 => build_info.display_verbose2(),
+            _ => build_info.display_verbose3(),
+        },
     }
     Ok(())
 }
@@ -410,14 +443,8 @@ fn execute_stop(
 }
 
 /// Execute the ps command
-fn execute_ps(
-    all: bool,
-    verbose: bool,
-) -> anyhow::Result<()> {
-    let opts = commands::PsOptions {
-        all,
-        verbose,
-    };
+fn execute_ps(all: bool, verbose: bool) -> anyhow::Result<()> {
+    let opts = commands::PsOptions { all, verbose };
     let _containers = commands::run_ps(opts).map_err(|e| anyhow::anyhow!(e))?;
     Ok(())
 }
@@ -441,9 +468,17 @@ fn execute_logs(
 
 /// Print usage information
 fn print_usage() -> anyhow::Result<()> {
-    println!("{}", "Isolde - ISOLated Development Environment".cyan().bold());
+    println!(
+        "{}",
+        "Isolde - ISOLated Development Environment".cyan().bold()
+    );
     println!();
-    println!("Usage: {} {} {}", "isolde".green(), "[OPTIONS]".yellow(), "<COMMAND>".cyan());
+    println!(
+        "Usage: {} {} {}",
+        "isolde".green(),
+        "[OPTIONS]".yellow(),
+        "<COMMAND>".cyan()
+    );
     println!();
     println!("{}", "Available Commands:".bold());
     println!("  {}  Initialize a new project", "init".cyan());
@@ -453,13 +488,20 @@ fn print_usage() -> anyhow::Result<()> {
     println!("  {}  Run diagnostics", "doctor".cyan());
     println!("  {}  Show version information", "version".cyan());
     println!("  {}  Build devcontainer image", "build".green());
-    println!("  {}  Run devcontainer (start and enter shell)", "run".green());
+    println!(
+        "  {}  Run devcontainer (start and enter shell)",
+        "run".green()
+    );
     println!("  {}  Execute command in running container", "exec".green());
     println!("  {}  Stop running container", "stop".green());
     println!("  {}  List running containers", "ps".green());
     println!("  {}  View container logs", "logs".green());
     println!();
-    println!("Run {} {} for more information on a command.", "isolde".green(), "<COMMAND> --help".yellow());
+    println!(
+        "Run {} {} for more information on a command.",
+        "isolde".green(),
+        "<COMMAND> --help".yellow()
+    );
 
     Ok(())
 }

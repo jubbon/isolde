@@ -108,8 +108,7 @@ fn find_templates_dir() -> Option<PathBuf> {
     }
 
     if let Ok(home) = std::env::var("HOME") {
-        let p = PathBuf::from(&home)
-            .join(".local/share/isolde/templates");
+        let p = PathBuf::from(&home).join(".local/share/isolde/templates");
         if p.exists() {
             return Some(p);
         }
@@ -430,7 +429,8 @@ fn load_presets_yaml() -> Result<String> {
     }
 
     Err(Error::InvalidTemplate(
-        "presets.yaml not found. Please run this command from the Isolde repository root.".to_string(),
+        "presets.yaml not found. Please run this command from the Isolde repository root."
+            .to_string(),
     ))
 }
 
@@ -452,8 +452,9 @@ fn find_preset(yaml: &str, preset_name: &str) -> Result<PresetData> {
         .ok_or_else(|| Error::PresetNotFound(preset_name.to_string()))?;
 
     // Try to parse as Preset
-    let preset: Preset = serde_yaml::from_value(preset_value.clone())
-        .map_err(|e| Error::InvalidTemplate(format!("Failed to parse preset '{}': {}", preset_name, e)))?;
+    let preset: Preset = serde_yaml::from_value(preset_value.clone()).map_err(|e| {
+        Error::InvalidTemplate(format!("Failed to parse preset '{}': {}", preset_name, e))
+    })?;
 
     Ok(PresetData {
         template: preset.template.clone(),
@@ -562,8 +563,7 @@ pub fn run(opts: InitOptions) -> Result<()> {
 
     // Determine project name
     let project_name = opts.name.unwrap_or_else(|| {
-        opts
-            .cwd
+        opts.cwd
             .file_name()
             .and_then(|n| n.to_str())
             .unwrap_or("my-project")
@@ -596,7 +596,8 @@ pub fn run(opts: InitOptions) -> Result<()> {
             format!(
                 "Agent '{}' is experimental — its devcontainer feature has no install.sh yet.",
                 opts.agent
-            ).yellow()
+            )
+            .yellow()
         );
         eprintln!(
             "{}",
@@ -636,7 +637,13 @@ pub fn run(opts: InitOptions) -> Result<()> {
         generate_config_from_preset(&project_name, preset, opts.lang_version.as_deref())?
     } else if let Some(ref template) = opts.template {
         let effective_version = resolve_lang_version(template, opts.lang_version.as_deref());
-        generate_config_from_template(&project_name, template, &opts.agent, &opts.agent_version, &effective_version)
+        generate_config_from_template(
+            &project_name,
+            template,
+            &opts.agent,
+            &opts.agent_version,
+            &effective_version,
+        )
     } else {
         generate_default_config(&project_name, &opts.agent, &opts.agent_version)
     };
@@ -653,11 +660,7 @@ pub fn run(opts: InitOptions) -> Result<()> {
     println!("  Docker Image: {}", config.docker_image());
     println!("  Agent: {}", config.agent_name());
     if let Some(runtime) = config.runtime() {
-        println!(
-            "  Runtime: {} {}",
-            runtime.language(),
-            runtime.version()
-        );
+        println!("  Runtime: {} {}", runtime.language(), runtime.version());
     }
     println!("{}", "─".repeat(50));
 
@@ -683,8 +686,12 @@ pub fn run(opts: InitOptions) -> Result<()> {
     }
 
     // Write configuration file
-    fs::write(&config_path, config_content)
-        .map_err(|e| Error::FileError(std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to write isolde.yaml: {}", e))))?;
+    fs::write(&config_path, config_content).map_err(|e| {
+        Error::FileError(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            format!("Failed to write isolde.yaml: {}", e),
+        ))
+    })?;
 
     println!(
         "\n{} {}",
@@ -723,7 +730,8 @@ mod tests {
 
     #[test]
     fn test_generate_config_from_template() {
-        let config = generate_config_from_template("my-app", "python", "claude-code", "latest", "3.12");
+        let config =
+            generate_config_from_template("my-app", "python", "claude-code", "latest", "3.12");
         assert!(config.contains("name: my-app"));
         assert!(config.contains("agent:"));
         assert!(config.contains("name: claude-code"));
@@ -733,14 +741,16 @@ mod tests {
 
     #[test]
     fn test_generate_config_with_custom_lang_version() {
-        let config = generate_config_from_template("my-app", "python", "claude-code", "latest", "3.11");
+        let config =
+            generate_config_from_template("my-app", "python", "claude-code", "latest", "3.11");
         assert!(config.contains("version: \"3.11\""));
         assert!(config.contains("mcr.microsoft.com/devcontainers/python:3.11"));
     }
 
     #[test]
     fn test_generate_config_nodejs_lang_version() {
-        let config = generate_config_from_template("my-app", "nodejs", "claude-code", "latest", "20");
+        let config =
+            generate_config_from_template("my-app", "nodejs", "claude-code", "latest", "20");
         assert!(config.contains("version: \"20\""));
         assert!(config.contains("mcr.microsoft.com/devcontainers/javascript-node:20"));
     }
@@ -754,7 +764,8 @@ mod tests {
 
     #[test]
     fn test_generate_config_rust_always_latest_image() {
-        let config = generate_config_from_template("my-app", "rust", "claude-code", "latest", "stable");
+        let config =
+            generate_config_from_template("my-app", "rust", "claude-code", "latest", "stable");
         assert!(config.contains("version: \"stable\""));
         // Rust docker image always uses :latest regardless of lang_version
         assert!(config.contains("mcr.microsoft.com/devcontainers/rust:latest"));

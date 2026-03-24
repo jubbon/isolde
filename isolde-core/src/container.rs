@@ -64,14 +64,12 @@ pub fn build(workspace: &Path, no_cache: bool, image_name: Option<String>) -> Re
 
     if !workspace.join(".devcontainer").exists() {
         return Err(Error::Other(
-            ".devcontainer directory not found. Run 'isolde sync' first.".to_string()
+            ".devcontainer directory not found. Run 'isolde sync' first.".to_string(),
         ));
     }
 
     let mut cmd = Command::new("devcontainer");
-    cmd.arg("build")
-        .arg("--workspace-folder")
-        .arg(workspace);
+    cmd.arg("build").arg("--workspace-folder").arg(workspace);
 
     if no_cache {
         cmd.arg("--no-cache");
@@ -85,7 +83,8 @@ pub fn build(workspace: &Path, no_cache: bool, image_name: Option<String>) -> Re
     cmd.stdout(Stdio::piped());
     cmd.stderr(Stdio::piped());
 
-    let output = cmd.spawn()
+    let output = cmd
+        .spawn()
         .and_then(|mut child| child.wait_with_output())
         .map_err(|e| Error::Other(format!("Failed to run devcontainer build: {}", e)))?;
 
@@ -116,14 +115,12 @@ pub fn up(workspace: &Path, detach: bool) -> Result<ContainerInfo> {
 
     if !workspace.join(".devcontainer").exists() {
         return Err(Error::Other(
-            ".devcontainer directory not found. Run 'isolde sync' first.".to_string()
+            ".devcontainer directory not found. Run 'isolde sync' first.".to_string(),
         ));
     }
 
     let mut cmd = Command::new("devcontainer");
-    cmd.arg("up")
-        .arg("--workspace-folder")
-        .arg(workspace);
+    cmd.arg("up").arg("--workspace-folder").arg(workspace);
 
     if detach {
         // Skip the postAttachCommand (which typically starts the shell)
@@ -161,7 +158,9 @@ pub fn up(workspace: &Path, detach: bool) -> Result<ContainerInfo> {
             .map_err(|e| Error::Other(format!("Failed to start keepalive: {}", e)))?;
 
         if !keepalive_cmd.success() {
-            return Err(Error::Other("Failed to start keepalive process".to_string()));
+            return Err(Error::Other(
+                "Failed to start keepalive process".to_string(),
+            ));
         }
 
         // Small delay to ensure keepalive is running
@@ -191,9 +190,7 @@ pub fn exec(workspace: &Path, command: &[String], interactive: bool) -> Result<E
     }
 
     let mut cmd = Command::new("devcontainer");
-    cmd.arg("exec")
-        .arg("--workspace-folder")
-        .arg(workspace);
+    cmd.arg("exec").arg("--workspace-folder").arg(workspace);
 
     if interactive {
         cmd.arg("--tty");
@@ -205,9 +202,11 @@ pub fn exec(workspace: &Path, command: &[String], interactive: bool) -> Result<E
         cmd.stdin(Stdio::inherit());
         cmd.stdout(Stdio::inherit());
         cmd.stderr(Stdio::inherit());
-        let mut child = cmd.group_spawn()
+        let mut child = cmd
+            .group_spawn()
             .map_err(|e| Error::Other(format!("Failed to run devcontainer exec: {}", e)))?;
-        return child.wait()
+        return child
+            .wait()
             .map_err(|e| Error::Other(format!("Failed to wait for devcontainer exec: {}", e)));
     }
 
@@ -232,7 +231,10 @@ pub fn stop(workspace: &Path) -> Result<()> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(Error::Other(format!("Failed to stop container: {}", stderr)));
+        return Err(Error::Other(format!(
+            "Failed to stop container: {}",
+            stderr
+        )));
     }
 
     Ok(())
@@ -248,7 +250,7 @@ pub fn ps() -> Result<Vec<ContainerInfo>> {
         .arg("--format")
         .arg("json")
         .arg("--filter")
-        .arg("label=devcontainer.container_id")  // Filter for devcontainers
+        .arg("label=devcontainer.container_id") // Filter for devcontainers
         .output()
         .map_err(|e| Error::Other(format!("Failed to run docker ps: {}", e)))?;
 
@@ -271,9 +273,7 @@ pub fn logs(workspace: &Path, follow: bool, tail: usize) -> Result<String> {
     check_devcontainer_cli()?;
 
     let mut cmd = Command::new("devcontainer");
-    cmd.arg("logs")
-        .arg("--workspace-folder")
-        .arg(workspace);
+    cmd.arg("logs").arg("--workspace-folder").arg(workspace);
 
     if follow {
         cmd.arg("--follow");
@@ -290,11 +290,15 @@ pub fn logs(workspace: &Path, follow: bool, tail: usize) -> Result<String> {
             .map_err(|e| Error::Other(format!("Failed to follow logs: {}", e)))?;
         Ok("".to_string())
     } else {
-        let output = cmd.output()
+        let output = cmd
+            .output()
             .map_err(|e| Error::Other(format!("Failed to get logs: {}", e)))?;
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(Error::Other(format!("No container logs available (container may not be running): {}", stderr)));
+            return Err(Error::Other(format!(
+                "No container logs available (container may not be running): {}",
+                stderr
+            )));
         }
         Ok(String::from_utf8_lossy(&output.stdout).to_string())
     }
@@ -305,16 +309,16 @@ fn get_container_info(workspace: &Path) -> Result<ContainerInfo> {
     let containers = ps()?;
 
     let workspace_str = workspace.to_string_lossy().to_string();
-    let workspace_canonical = std::fs::canonicalize(workspace)
-        .unwrap_or_else(|_| workspace.to_path_buf());
+    let workspace_canonical =
+        std::fs::canonicalize(workspace).unwrap_or_else(|_| workspace.to_path_buf());
     let workspace_canonical_str = workspace_canonical.to_string_lossy().to_string();
 
     // First try to find by workspace_folder (for newer devcontainers CLI)
-    if let Some(container) = containers.iter()
-        .find(|c| !c.workspace_folder.is_empty() &&
-                      (c.workspace_folder == workspace_str ||
-                       c.workspace_folder == workspace_canonical_str))
-    {
+    if let Some(container) = containers.iter().find(|c| {
+        !c.workspace_folder.is_empty()
+            && (c.workspace_folder == workspace_str
+                || c.workspace_folder == workspace_canonical_str)
+    }) {
         return Ok(container.clone());
     }
 
@@ -340,7 +344,9 @@ fn get_container_info(workspace: &Path) -> Result<ContainerInfo> {
         });
     }
 
-    Err(Error::Other("No running container found for workspace".to_string()))
+    Err(Error::Other(
+        "No running container found for workspace".to_string(),
+    ))
 }
 
 /// Get workspace folder from docker inspect
@@ -375,7 +381,9 @@ fn get_workspace_folder_from_docker(container_id: &str) -> Result<String> {
 
     if let Some(result) = inspect_results.first() {
         // Find the mount that contains "workspace" in the destination
-        if let Some(mount) = result.Mounts.iter()
+        if let Some(mount) = result
+            .Mounts
+            .iter()
             .find(|m| m.Destination.contains("workspace") || m.Destination.contains("workspaces"))
         {
             if let Some(source) = &mount.Source {
@@ -391,7 +399,10 @@ fn get_workspace_folder_from_docker(container_id: &str) -> Result<String> {
 fn extract_image_name(output: &str) -> Option<String> {
     // Look for patterns like "Built image: xxx" or "Successfully built xxx"
     for line in output.lines() {
-        if line.contains("Built image:") || line.contains("Successfully built") || line.contains("=> => writing image") {
+        if line.contains("Built image:")
+            || line.contains("Successfully built")
+            || line.contains("=> => writing image")
+        {
             let parts: Vec<&str> = line.split_whitespace().collect();
             if let Some(name) = parts.last() {
                 let name = name.trim_end_matches('.');
@@ -437,15 +448,15 @@ fn parse_docker_container_list(json: &str) -> Result<Vec<ContainerInfo>> {
 
     // Docker 20.10+ with --format json outputs one JSON object per line (JSONL),
     // not a JSON array. Try array first, then fall back to line-by-line parsing.
-    let containers: Vec<DockerContainerJson> = serde_json::from_str(json)
-        .unwrap_or_else(|_| {
-            json.lines()
-                .filter(|line| !line.trim().is_empty())
-                .filter_map(|line| serde_json::from_str(line).ok())
-                .collect()
-        });
+    let containers: Vec<DockerContainerJson> = serde_json::from_str(json).unwrap_or_else(|_| {
+        json.lines()
+            .filter(|line| !line.trim().is_empty())
+            .filter_map(|line| serde_json::from_str(line).ok())
+            .collect()
+    });
 
-    Ok(containers.into_iter()
+    Ok(containers
+        .into_iter()
         .map(|c| ContainerInfo {
             container_id: c.id,
             container_name: c.names,

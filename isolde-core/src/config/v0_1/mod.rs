@@ -3,8 +3,8 @@
 //! This module contains the configuration structure for schema version 0.1.
 //! This is the initial schema version for isolde.yaml.
 
-use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// A value in agent options: either a plain string or a nested string map.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
@@ -505,10 +505,19 @@ agent:
         let config: Config = serde_yaml::from_str(yaml).unwrap();
         assert_eq!(config.agent.name, "claude-code");
         assert_eq!(config.agent.version, "stable");
-        assert_eq!(config.agent.options.get("provider"), Some(&AgentOptionValue::Str("anthropic".to_string())));
+        assert_eq!(
+            config.agent.options.get("provider"),
+            Some(&AgentOptionValue::Str("anthropic".to_string()))
+        );
         if let Some(AgentOptionValue::Map(m)) = config.agent.options.get("models") {
-            assert_eq!(m.get("haiku").map(String::as_str), Some("claude-3-5-haiku-20241022"));
-            assert_eq!(m.get("sonnet").map(String::as_str), Some("claude-3-5-sonnet-20241022"));
+            assert_eq!(
+                m.get("haiku").map(String::as_str),
+                Some("claude-3-5-haiku-20241022")
+            );
+            assert_eq!(
+                m.get("sonnet").map(String::as_str),
+                Some("claude-3-5-sonnet-20241022")
+            );
         } else {
             panic!("models should be AgentOptionValue::Map");
         }

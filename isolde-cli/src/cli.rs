@@ -464,14 +464,8 @@ mod tests {
 
     #[test]
     fn test_init_command() {
-        let cli = Cli::try_parse_from([
-            "isolde",
-            "init",
-            "my-project",
-            "--template",
-            "python",
-        ])
-        .unwrap();
+        let cli =
+            Cli::try_parse_from(["isolde", "init", "my-project", "--template", "python"]).unwrap();
         assert!(cli.command.is_some());
     }
 
