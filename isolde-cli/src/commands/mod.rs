@@ -2,26 +2,26 @@
 //!
 //! This module contains all command implementations for the Isolde CLI.
 
-pub mod init;
-pub mod sync;
-pub mod validate;
+pub mod build;
 pub mod diff;
 pub mod doctor;
-pub mod build;
-pub mod run;
 pub mod exec;
-pub mod stop;
-pub mod ps;
+pub mod init;
 pub mod logs;
+pub mod ps;
+pub mod run;
+pub mod stop;
+pub mod sync;
+pub mod validate;
 
-pub use init::{InitOptions, run as run_init};
-pub use sync::{SyncOptions, run as run_sync};
-pub use validate::{ValidateOptions, ValidateFormat, run as run_validate};
-pub use diff::{DiffOptions, DiffFormat, run as run_diff};
-pub use doctor::{DoctorOptions, run as run_doctor};
-pub use build::{BuildOptions, run as run_build};
-pub use run::{RunOptions, run as run_run};
-pub use exec::{ExecOptions, run as run_exec};
-pub use stop::{StopOptions, run as run_stop};
-pub use ps::{PsOptions, run as run_ps};
-pub use logs::{LogsOptions, run as run_logs};
+pub use build::{run as run_build, BuildOptions};
+pub use diff::{run as run_diff, DiffFormat, DiffOptions};
+pub use doctor::{run as run_doctor, DoctorOptions};
+pub use exec::{run as run_exec, ExecOptions};
+pub use init::{run as run_init, InitOptions};
+pub use logs::{run as run_logs, LogsOptions};
+pub use ps::{run as run_ps, PsOptions};
+pub use run::{run as run_run, RunOptions};
+pub use stop::{run as run_stop, StopOptions};
+pub use sync::{run as run_sync, SyncOptions};
+pub use validate::{run as run_validate, ValidateFormat, ValidateOptions};

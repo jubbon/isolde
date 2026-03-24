@@ -71,26 +71,11 @@ pub fn run(opts: BuildOptions) -> Result<()> {
     println!("{}", "─".repeat(50).dimmed());
 
     if result.success {
-        println!(
-            "\n{} {}",
-            "✨".green(),
-            "Build complete!".green().bold()
-        );
-        println!(
-            "{} {}",
-            "Image:".dimmed(),
-            result.image_name.cyan()
-        );
-        println!(
-            "{}",
-            "Run 'isolde run' to start the container.".dimmed()
-        );
+        println!("\n{} {}", "✨".green(), "Build complete!".green().bold());
+        println!("{} {}", "Image:".dimmed(), result.image_name.cyan());
+        println!("{}", "Run 'isolde run' to start the container.".dimmed());
     } else {
-        println!(
-            "\n{} {}",
-            "✗".red(),
-            "Build failed!".red().bold()
-        );
+        println!("\n{} {}", "✗".red(), "Build failed!".red().bold());
         if !result.output.is_empty() {
             println!("{}", "\nBuild output:".dimmed());
             println!("{}", result.output);

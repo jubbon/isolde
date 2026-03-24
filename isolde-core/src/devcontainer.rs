@@ -119,10 +119,7 @@ pub fn find_core_features_dir() -> Result<PathBuf> {
     }
 
     if let Ok(home) = std::env::var("HOME") {
-        possible_paths.push(
-            PathBuf::from(&home)
-                .join(".local/share/isolde/core/features"),
-        );
+        possible_paths.push(PathBuf::from(&home).join(".local/share/isolde/core/features"));
         possible_paths.push(PathBuf::from(home).join(".isolde/core/features"));
     }
 
@@ -292,10 +289,16 @@ pub fn render_devcontainer_json(config: &Config, host_auth: &HostAuthInfo) -> Re
     }
     if let Some(proxy) = &proxy {
         if let Some(h) = proxy.http() {
-            agent_opts.insert("http_proxy".to_string(), serde_json::Value::String(h.clone()));
+            agent_opts.insert(
+                "http_proxy".to_string(),
+                serde_json::Value::String(h.clone()),
+            );
         }
         if let Some(h) = proxy.https() {
-            agent_opts.insert("https_proxy".to_string(), serde_json::Value::String(h.clone()));
+            agent_opts.insert(
+                "https_proxy".to_string(),
+                serde_json::Value::String(h.clone()),
+            );
         }
     }
     let agent_feature_path = format!("./features/{}", config.agent_name());
@@ -303,8 +306,16 @@ pub fn render_devcontainer_json(config: &Config, host_auth: &HostAuthInfo) -> Re
 
     // Plugin manager feature
     if !plugins.is_empty() {
-        let activate: Vec<&str> = plugins.iter().filter(|p| p.activate).map(|p| p.name.as_str()).collect();
-        let deactivate: Vec<&str> = plugins.iter().filter(|p| !p.activate).map(|p| p.name.as_str()).collect();
+        let activate: Vec<&str> = plugins
+            .iter()
+            .filter(|p| p.activate)
+            .map(|p| p.name.as_str())
+            .collect();
+        let deactivate: Vec<&str> = plugins
+            .iter()
+            .filter(|p| !p.activate)
+            .map(|p| p.name.as_str())
+            .collect();
 
         features.insert(
             "./features/plugin-manager".to_string(),
@@ -514,7 +525,14 @@ pub fn expected_artifacts(_config: &Config) -> Vec<String> {
 
     // Core feature directories — list known features that would be copied.
     // We list them statically since this function is pure (no filesystem access).
-    for feature in &["claude-code", "codex", "gemini", "aider", "proxy", "plugin-manager"] {
+    for feature in &[
+        "claude-code",
+        "codex",
+        "gemini",
+        "aider",
+        "proxy",
+        "plugin-manager",
+    ] {
         paths.push(format!(".devcontainer/features/{}", feature));
     }
 
@@ -547,9 +565,15 @@ mod tests {
         copy_dir_recursive(&src, &dst).unwrap();
 
         assert!(dst.join("file1.txt").exists());
-        assert_eq!(fs::read_to_string(dst.join("file1.txt")).unwrap(), "content1");
+        assert_eq!(
+            fs::read_to_string(dst.join("file1.txt")).unwrap(),
+            "content1"
+        );
         assert!(dst.join("subdir/file2.txt").exists());
-        assert_eq!(fs::read_to_string(dst.join("subdir/file2.txt")).unwrap(), "content2");
+        assert_eq!(
+            fs::read_to_string(dst.join("subdir/file2.txt")).unwrap(),
+            "content2"
+        );
     }
 
     fn test_config(yaml: &str) -> Config {

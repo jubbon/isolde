@@ -9,7 +9,6 @@
 /// - Git branch (if available)
 /// - Git tag (if HEAD is at a tag)
 /// - Build profile (debug/release)
-
 use std::env;
 use std::fs;
 use std::path::Path;
@@ -62,7 +61,10 @@ fn main() {
 
     if let Some(sha) = &git_commit_sha {
         println!("cargo:rustc-env=ISOLDE_GIT_COMMIT_SHA={}", sha);
-        println!("cargo:rustc-env=ISOLDE_GIT_COMMIT_SHORT={}", git_commit_short);
+        println!(
+            "cargo:rustc-env=ISOLDE_GIT_COMMIT_SHORT={}",
+            git_commit_short
+        );
     } else {
         println!("cargo:rustc-env=ISOLDE_GIT_COMMIT_SHA=unknown");
         println!("cargo:rustc-env=ISOLDE_GIT_COMMIT_SHORT=unknown");
@@ -84,10 +86,7 @@ fn main() {
 
     // Get rust version
     let rust_version = env::var("RUSTC").unwrap_or_else(|_| "rustc".to_string());
-    let rust_version_output = Command::new(&rust_version)
-        .arg("--version")
-        .output()
-        .ok();
+    let rust_version_output = Command::new(&rust_version).arg("--version").output().ok();
     let rust_version_str = rust_version_output
         .as_ref()
         .and_then(|o| String::from_utf8(o.stdout.clone()).ok())

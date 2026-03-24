@@ -89,11 +89,7 @@ pub fn run(opts: RunOptions) -> Result<()> {
     println!("{}", "─".repeat(50).dimmed());
 
     if opts.detach {
-        println!(
-            "\n{} {}",
-            "✨".green(),
-            "Container started!".green().bold()
-        );
+        println!("\n{} {}", "✨".green(), "Container started!".green().bold());
         println!(
             "{} {}",
             "Container:".dimmed(),

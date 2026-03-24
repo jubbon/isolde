@@ -264,8 +264,7 @@ pub fn run(opts: DiffOptions) -> Result<DiffResult> {
 
 /// Generate diff for a single file
 fn generate_file_diff(path: &Path, opts: &DiffOptions) -> Result<FileDiff> {
-    let current_content = fs::read_to_string(path)
-        .unwrap_or_else(|_| String::new());
+    let current_content = fs::read_to_string(path).unwrap_or_else(|_| String::new());
 
     // Generate expected content
     let config = Config::from_file(&opts.cwd.join("isolde.yaml"))?;
@@ -278,7 +277,10 @@ fn generate_file_diff(path: &Path, opts: &DiffOptions) -> Result<FileDiff> {
         DiffStatus::Created
     } else if expected_content.is_empty() {
         DiffStatus::Deleted
-    } else if lines.iter().any(|l| matches!(l.line_type, DiffLineType::Added | DiffLineType::Removed)) {
+    } else if lines
+        .iter()
+        .any(|l| matches!(l.line_type, DiffLineType::Added | DiffLineType::Removed))
+    {
         DiffStatus::Modified
     } else {
         DiffStatus::Unchanged
@@ -293,9 +295,7 @@ fn generate_file_diff(path: &Path, opts: &DiffOptions) -> Result<FileDiff> {
 
 /// Generate expected content for a file
 fn generate_expected_content(config: &Config, path: &Path) -> Result<String> {
-    let file_name = path.file_name()
-        .and_then(|n| n.to_str())
-        .unwrap_or("");
+    let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
 
     match file_name {
         "devcontainer.json" => {
@@ -380,7 +380,10 @@ fn compute_diff(old: &str, new: &str, context: usize) -> Vec<DiffLine> {
 }
 
 /// Find files that exist but are not in the template (orphans)
-fn find_orphaned_files(cwd: &Path, dry_run: &isolde_core::generator::DryRunReport) -> Result<Vec<PathBuf>> {
+fn find_orphaned_files(
+    cwd: &Path,
+    dry_run: &isolde_core::generator::DryRunReport,
+) -> Result<Vec<PathBuf>> {
     let mut orphans = Vec::new();
     let devcontainer_dir = cwd.join(".devcontainer");
 
@@ -388,7 +391,9 @@ fn find_orphaned_files(cwd: &Path, dry_run: &isolde_core::generator::DryRunRepor
         return Ok(orphans);
     }
 
-    let expected_files: HashSet<PathBuf> = dry_run.would_create.iter()
+    let expected_files: HashSet<PathBuf> = dry_run
+        .would_create
+        .iter()
         .chain(dry_run.would_modify.iter())
         .cloned()
         .collect();
@@ -466,7 +471,11 @@ fn print_text_diff(result: &DiffResult, opts: &DiffOptions) {
         println!(
             "  {} {}",
             "-".red(),
-            format!("{} files would be deleted (orphaned)", result.would_delete.len()).red()
+            format!(
+                "{} files would be deleted (orphaned)",
+                result.would_delete.len()
+            )
+            .red()
         );
         for path in &result.would_delete {
             let relative = path.strip_prefix(&opts.cwd).unwrap_or(path);
@@ -531,7 +540,11 @@ fn print_file_diff(diff: &FileDiff, context_lines: usize) {
 
     if !diff.lines.is_empty() {
         for line in &diff.lines {
-            println!("{}{}", diff_line_prefix(line.line_type), line_content_color(&line.content, line.line_type));
+            println!(
+                "{}{}",
+                diff_line_prefix(line.line_type),
+                line_content_color(&line.content, line.line_type)
+            );
         }
     }
 }
@@ -564,7 +577,10 @@ fn print_json_diff(result: &DiffResult) {
             .collect::<Vec<_>>()
     });
 
-    println!("{}", serde_json::to_string_pretty(&json).unwrap_or_default());
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&json).unwrap_or_default()
+    );
 }
 
 fn generate_devcontainer_gitignore() -> String {
@@ -573,7 +589,8 @@ settings.json
 .omc/
 .vscode/
 .idea/
-"#.to_string()
+"#
+    .to_string()
 }
 
 fn generate_project_gitignore() -> String {
@@ -581,7 +598,8 @@ fn generate_project_gitignore() -> String {
 .vscode/
 .idea/
 .DS_Store
-"#.to_string()
+"#
+    .to_string()
 }
 
 fn generate_readme(config: &Config) -> Result<String> {

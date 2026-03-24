@@ -56,22 +56,22 @@ impl TemplateEngine {
         let mut templates = HashMap::new();
 
         // Read all .tera and .template files
-        for entry in fs::read_dir(dir)
-            .map_err(|e| Error::IoError(format!("Failed to read templates directory {dir:?}: {e}")))?
-        {
+        for entry in fs::read_dir(dir).map_err(|e| {
+            Error::IoError(format!("Failed to read templates directory {dir:?}: {e}"))
+        })? {
             let entry = entry?;
             let path = entry.path();
 
             if path.is_file() {
                 let ext = path.extension().and_then(|s| s.to_str());
                 if ext == Some("tera") || ext == Some("template") {
-                    let name = path
-                        .file_stem()
-                        .and_then(|s| s.to_str())
-                        .ok_or_else(|| Error::InvalidTemplate(format!("Invalid template name: {:?}", path)))?;
+                    let name = path.file_stem().and_then(|s| s.to_str()).ok_or_else(|| {
+                        Error::InvalidTemplate(format!("Invalid template name: {:?}", path))
+                    })?;
 
-                    let content = fs::read_to_string(&path)
-                        .map_err(|e| Error::IoError(format!("Failed to read template {:?}: {e}", path)))?;
+                    let content = fs::read_to_string(&path).map_err(|e| {
+                        Error::IoError(format!("Failed to read template {:?}: {e}", path))
+                    })?;
 
                     templates.insert(name.to_string(), content);
                 }
@@ -111,7 +111,10 @@ impl TemplateEngine {
     /// Returns an error if the template is not found
     pub fn render_template(&self, name: &str, context: &TemplateContext) -> Result<String> {
         let template = self.templates.get(name).ok_or_else(|| {
-            Error::InvalidTemplate(format!("Template '{name}' not found. Available: {:?}", self.templates.keys().collect::<Vec<_>>()))
+            Error::InvalidTemplate(format!(
+                "Template '{name}' not found. Available: {:?}",
+                self.templates.keys().collect::<Vec<_>>()
+            ))
         })?;
 
         let rendered = render_template_simple(template, context);
@@ -236,7 +239,6 @@ fn build_agent_options_json(config: &Config) -> String {
     serde_json::to_string_pretty(&Value::Object(map)).unwrap_or_else(|_| "{}".to_string())
 }
 
-
 /// Find unresolved `{{...}}` placeholders in rendered output.
 ///
 /// Scans the text for `{{name}}` patterns and returns a deduplicated
@@ -292,7 +294,10 @@ fn render_template_simple(template: &str, context: &TemplateContext) -> String {
     result = result.replace("{{agent_name}}", &context.agent_name);
     result = result.replace("{{agent_feature_path}}", &context.agent_feature_path);
     result = result.replace("{{agent_options_json}}", &context.agent_options_json);
-    result = result.replace("{{feature_install_order_json}}", &context.feature_install_order_json);
+    result = result.replace(
+        "{{feature_install_order_json}}",
+        &context.feature_install_order_json,
+    );
 
     // Optional values with defaults
     let lang_version = context.lang_version.as_deref().unwrap_or("");
@@ -311,7 +316,11 @@ fn render_template_simple(template: &str, context: &TemplateContext) -> String {
     result = result.replace("{{proxy_no_proxy}}", proxy_no_proxy);
     result = result.replace(
         "{{proxy_enabled}}",
-        if context.proxy_enabled { "true" } else { "false" },
+        if context.proxy_enabled {
+            "true"
+        } else {
+            "false"
+        },
     );
 
     // Plugin manager block (conditional - only for claude-code agent)
@@ -402,7 +411,9 @@ impl TemplateContext {
             agent_feature_path: "./features/claude-code".to_string(),
             agent_options_json: "{\"version\": \"latest\"}".to_string(),
             include_plugin_manager: true,
-            feature_install_order_json: "[\"./features/proxy\",\"./features/claude-code\",\"./features/plugin-manager\"]".to_string(),
+            feature_install_order_json:
+                "[\"./features/proxy\",\"./features/claude-code\",\"./features/plugin-manager\"]"
+                    .to_string(),
             proxy_http: None,
             proxy_https: None,
             proxy_no_proxy: None,
@@ -480,7 +491,10 @@ agent:
         let context = TemplateEngine::build_context(&config);
 
         assert_eq!(context.project_name, "test-project");
-        assert_eq!(context.docker_image, "mcr.microsoft.com/devcontainers/base:ubuntu");
+        assert_eq!(
+            context.docker_image,
+            "mcr.microsoft.com/devcontainers/base:ubuntu"
+        );
         assert_eq!(context.agent_name, "claude-code");
         assert_eq!(context.agent_feature_path, "./features/claude-code");
         assert!(context.include_plugin_manager);
@@ -497,16 +511,17 @@ agent:
         assert_eq!(context.agent_name, "codex");
         assert_eq!(context.agent_feature_path, "./features/codex");
         assert!(!context.include_plugin_manager);
-        assert!(context.feature_install_order_json.contains("./features/codex"));
-        assert!(!context.feature_install_order_json.contains("plugin-manager"));
+        assert!(context
+            .feature_install_order_json
+            .contains("./features/codex"));
+        assert!(!context
+            .feature_install_order_json
+            .contains("plugin-manager"));
     }
 
     #[test]
     fn test_template_context_new() {
-        let ctx = TemplateContext::new(
-            "my-project".to_string(),
-            "ubuntu:latest".to_string(),
-        );
+        let ctx = TemplateContext::new("my-project".to_string(), "ubuntu:latest".to_string());
 
         assert_eq!(ctx.project_name, "my-project");
         assert_eq!(ctx.docker_image, "ubuntu:latest");
@@ -519,25 +534,22 @@ agent:
 
     #[test]
     fn test_template_context_with_proxy() {
-        let mut ctx = TemplateContext::new(
-            "my-project".to_string(),
-            "ubuntu:latest".to_string(),
-        );
+        let mut ctx = TemplateContext::new("my-project".to_string(), "ubuntu:latest".to_string());
         ctx.proxy_http = Some("http://proxy.example.com:8080".to_string());
         ctx.proxy_https = Some("http://proxy.example.com:8080".to_string());
         ctx.proxy_no_proxy = Some("localhost,127.0.0.1".to_string());
         ctx.proxy_enabled = true;
 
         assert!(ctx.proxy_enabled);
-        assert_eq!(ctx.proxy_http, Some("http://proxy.example.com:8080".to_string()));
+        assert_eq!(
+            ctx.proxy_http,
+            Some("http://proxy.example.com:8080".to_string())
+        );
     }
 
     #[test]
     fn test_template_context_with_plugins() {
-        let mut ctx = TemplateContext::new(
-            "my-project".to_string(),
-            "ubuntu:latest".to_string(),
-        );
+        let mut ctx = TemplateContext::new("my-project".to_string(), "ubuntu:latest".to_string());
         ctx.claude_activate_plugins = vec!["plugin-a".to_string(), "plugin-b".to_string()];
         ctx.claude_deactivate_plugins = vec!["plugin-c".to_string()];
 
@@ -548,10 +560,7 @@ agent:
     #[test]
     fn test_render_template_simple() {
         let template = "Image: {{docker_image}}, Name: {{project_name}}";
-        let ctx = TemplateContext::new(
-            "my-project".to_string(),
-            "ubuntu:latest".to_string(),
-        );
+        let ctx = TemplateContext::new("my-project".to_string(), "ubuntu:latest".to_string());
 
         let result = render_template_simple(template, &ctx);
         assert_eq!(result, "Image: ubuntu:latest, Name: my-project");
@@ -560,10 +569,7 @@ agent:
     #[test]
     fn test_render_template_with_lang_version() {
         let template = "{{project_name}}-v{{lang_version}}";
-        let mut ctx = TemplateContext::new(
-            "my-project".to_string(),
-            "ubuntu:latest".to_string(),
-        );
+        let mut ctx = TemplateContext::new("my-project".to_string(), "ubuntu:latest".to_string());
         ctx.lang_version = Some("3.12".to_string());
 
         let result = render_template_simple(template, &ctx);
@@ -573,10 +579,7 @@ agent:
     #[test]
     fn test_render_agent_feature_path() {
         let template = "feature: {{agent_feature_path}}";
-        let ctx = TemplateContext::new(
-            "my-project".to_string(),
-            "ubuntu:latest".to_string(),
-        );
+        let ctx = TemplateContext::new("my-project".to_string(), "ubuntu:latest".to_string());
 
         let result = render_template_simple(template, &ctx);
         assert_eq!(result, "feature: ./features/claude-code");
@@ -585,10 +588,7 @@ agent:
     #[test]
     fn test_render_plugin_manager_block_included() {
         let template = "{{agent_feature_path}}: {}{{plugin_manager_block}}";
-        let mut ctx = TemplateContext::new(
-            "my-project".to_string(),
-            "ubuntu:latest".to_string(),
-        );
+        let mut ctx = TemplateContext::new("my-project".to_string(), "ubuntu:latest".to_string());
         ctx.include_plugin_manager = true;
 
         let result = render_template_simple(template, &ctx);
@@ -599,10 +599,7 @@ agent:
     #[test]
     fn test_render_plugin_manager_block_excluded() {
         let template = "{{agent_feature_path}}: {}{{plugin_manager_block}}";
-        let mut ctx = TemplateContext::new(
-            "my-project".to_string(),
-            "ubuntu:latest".to_string(),
-        );
+        let mut ctx = TemplateContext::new("my-project".to_string(), "ubuntu:latest".to_string());
         ctx.include_plugin_manager = false;
         ctx.agent_feature_path = "./features/codex".to_string();
 
@@ -706,8 +703,14 @@ agent:
         let val: serde_json::Value = serde_json::from_str(&json).unwrap();
         // models must be a string (comma-separated) because devcontainer-feature.json type is "string"
         let models_str = val.get("models").unwrap().as_str().unwrap();
-        assert!(models_str.contains("haiku:claude-3-5-haiku-20241022"), "got: {models_str}");
-        assert!(models_str.contains("sonnet:claude-3-5-sonnet-20241022"), "got: {models_str}");
+        assert!(
+            models_str.contains("haiku:claude-3-5-haiku-20241022"),
+            "got: {models_str}"
+        );
+        assert!(
+            models_str.contains("sonnet:claude-3-5-sonnet-20241022"),
+            "got: {models_str}"
+        );
     }
 
     // --- Placeholder validation tests ---
@@ -789,7 +792,11 @@ agent:
         let mut engine = TemplateEngine::new().unwrap();
         let temp_dir = tempfile::tempdir().unwrap();
         let tmpl_path = temp_dir.path().join("good.tera");
-        fs::write(&tmpl_path, "Project: {{project_name}}, Image: {{docker_image}}").unwrap();
+        fs::write(
+            &tmpl_path,
+            "Project: {{project_name}}, Image: {{docker_image}}",
+        )
+        .unwrap();
         engine.register_template_file("good", &tmpl_path).unwrap();
 
         let ctx = TemplateContext::new("my-project".to_string(), "ubuntu:latest".to_string());
@@ -807,8 +814,11 @@ agent:
         fs::write(
             &tmpl_path,
             "{{project_name}} uses {{docker_image}} with {{missing_a}} and {{missing_b}}",
-        ).unwrap();
-        engine.register_template_file("partial", &tmpl_path).unwrap();
+        )
+        .unwrap();
+        engine
+            .register_template_file("partial", &tmpl_path)
+            .unwrap();
 
         let ctx = TemplateContext::new("app".to_string(), "ubuntu:latest".to_string());
         let result = engine.render_template("partial", &ctx);

@@ -151,9 +151,18 @@ pub fn run(opts: DoctorOptions) -> Result<DoctorReport> {
     // Expand "all" to every known component
     let expanded: Vec<&str> = if checks_to_run == vec!["all"] {
         vec![
-            "isolde-cli", "docker", "git", "isolde-yaml",
-            "devcontainer", "core-features", "claude", "workspace",
-            "network", "templates", "features", "config",
+            "isolde-cli",
+            "docker",
+            "git",
+            "isolde-yaml",
+            "devcontainer",
+            "core-features",
+            "claude",
+            "workspace",
+            "network",
+            "templates",
+            "features",
+            "config",
         ]
     } else {
         checks_to_run
@@ -187,7 +196,11 @@ pub fn run(opts: DoctorOptions) -> Result<DoctorReport> {
 
         // Attempt auto-fix if requested and fixable
         let result = if opts.fix && result.fixable && result.status != DiagnosticStatus::Healthy {
-            println!("{} {}...", "🔧".yellow(), format!("Attempting to fix {}", result.component).cyan());
+            println!(
+                "{} {}...",
+                "🔧".yellow(),
+                format!("Attempting to fix {}", result.component).cyan()
+            );
             let fixed = attempt_fix(&result, &opts.cwd);
             if fixed {
                 DiagnosticResult {
@@ -219,8 +232,7 @@ pub fn run(opts: DoctorOptions) -> Result<DoctorReport> {
 
     // Print summary
     if opts.output_json {
-        let json = serde_json::to_string_pretty(&report)
-            .unwrap_or_else(|_| "{}".to_string());
+        let json = serde_json::to_string_pretty(&report).unwrap_or_else(|_| "{}".to_string());
         println!("{}", json);
     } else {
         print_doctor_report(&report, opts.verbose);
@@ -241,10 +253,7 @@ fn check_isolde_cli(cwd: &Path, verbose: bool) -> DiagnosticResult {
     let mut suggestions = Vec::new();
 
     // Check if isolde command is available (we're running it, so it must be)
-    let in_path = Command::new("isolde")
-        .arg("--version")
-        .output()
-        .is_ok();
+    let in_path = Command::new("isolde").arg("--version").output().is_ok();
 
     if !in_path {
         suggestions.push("Install Isolde CLI using: cargo install isolde-cli".to_string());
@@ -253,7 +262,11 @@ fn check_isolde_cli(cwd: &Path, verbose: bool) -> DiagnosticResult {
 
     DiagnosticResult {
         component: "isolde-cli".to_string(),
-        status: if in_path { DiagnosticStatus::Healthy } else { DiagnosticStatus::Warning },
+        status: if in_path {
+            DiagnosticStatus::Healthy
+        } else {
+            DiagnosticStatus::Warning
+        },
         message: format!("Isolde CLI v{}", version),
         suggestions,
         fixable: false,
@@ -262,9 +275,7 @@ fn check_isolde_cli(cwd: &Path, verbose: bool) -> DiagnosticResult {
 
 /// Check Docker installation
 fn check_docker(cwd: &Path, verbose: bool) -> DiagnosticResult {
-    let result = Command::new("docker")
-        .arg("--version")
-        .output();
+    let result = Command::new("docker").arg("--version").output();
 
     let (status, message, mut suggestions) = match result {
         Ok(output) => {
@@ -296,7 +307,8 @@ fn check_docker(cwd: &Path, verbose: bool) -> DiagnosticResult {
             DiagnosticStatus::Error,
             "Docker not found".to_string(),
             vec![
-                "Install Docker Desktop from https://www.docker.com/products/docker-desktop/".to_string(),
+                "Install Docker Desktop from https://www.docker.com/products/docker-desktop/"
+                    .to_string(),
                 "Or install Docker Engine for your platform".to_string(),
             ],
         ),
@@ -315,9 +327,7 @@ fn check_docker(cwd: &Path, verbose: bool) -> DiagnosticResult {
 
 /// Check Git installation
 fn check_git(cwd: &Path, verbose: bool) -> DiagnosticResult {
-    let result = Command::new("git")
-        .arg("--version")
-        .output();
+    let result = Command::new("git").arg("--version").output();
 
     let (status, message, suggestions) = match result {
         Ok(output) => {
@@ -356,9 +366,7 @@ fn check_isolde_yaml(cwd: &Path, verbose: bool) -> DiagnosticResult {
             component: "isolde-yaml".to_string(),
             status: DiagnosticStatus::Warning,
             message: "isolde.yaml not found".to_string(),
-            suggestions: vec![
-                "Run 'isolde init' to create a configuration file".to_string(),
-            ],
+            suggestions: vec!["Run 'isolde init' to create a configuration file".to_string()],
             fixable: false,
         };
     }
@@ -408,7 +416,7 @@ fn check_devcontainer(cwd: &Path, verbose: bool) -> DiagnosticResult {
             status: DiagnosticStatus::Warning,
             message: "Devcontainer directory not found".to_string(),
             suggestions: vec![
-                "Run 'isolde sync' to generate devcontainer configuration".to_string(),
+                "Run 'isolde sync' to generate devcontainer configuration".to_string()
             ],
             fixable: true,
         };
@@ -476,9 +484,7 @@ fn check_core_features(cwd: &Path, verbose: bool) -> DiagnosticResult {
             component: "core-features".to_string(),
             status: DiagnosticStatus::Warning,
             message: "Core features directory not found".to_string(),
-            suggestions: vec![
-                "Run 'isolde sync' to copy core features".to_string(),
-            ],
+            suggestions: vec!["Run 'isolde sync' to copy core features".to_string()],
             fixable: true,
         };
     }
@@ -524,9 +530,7 @@ fn check_core_features(cwd: &Path, verbose: bool) -> DiagnosticResult {
 
 /// Check Claude installation
 fn check_claude(cwd: &Path, verbose: bool) -> DiagnosticResult {
-    let result = Command::new("claude")
-        .arg("--version")
-        .output();
+    let result = Command::new("claude").arg("--version").output();
 
     let (status, message, suggestions) = match result {
         Ok(output) if output.status.success() => {
@@ -583,7 +587,10 @@ fn check_workspace(cwd: &Path, verbose: bool) -> DiagnosticResult {
         let (status, message, suggestions) = if !workspace_dir.exists() {
             (
                 DiagnosticStatus::Warning,
-                format!("Workspace directory '{}' does not exist", cfg.workspace_dir()),
+                format!(
+                    "Workspace directory '{}' does not exist",
+                    cfg.workspace_dir()
+                ),
                 vec![
                     format!("Create the directory: mkdir -p {}", cfg.workspace_dir()),
                     "Run 'isolde sync' to set up the workspace".to_string(),
@@ -595,7 +602,10 @@ fn check_workspace(cwd: &Path, verbose: bool) -> DiagnosticResult {
             if !git_dir.exists() {
                 (
                     DiagnosticStatus::Warning,
-                    format!("Workspace '{}' exists but not a git repository", cfg.workspace_dir()),
+                    format!(
+                        "Workspace '{}' exists but not a git repository",
+                        cfg.workspace_dir()
+                    ),
                     vec![
                         "Initialize git: git init".to_string(),
                         "Or run 'isolde sync' to initialize repositories".to_string(),
@@ -622,9 +632,7 @@ fn check_workspace(cwd: &Path, verbose: bool) -> DiagnosticResult {
             component: "workspace".to_string(),
             status: DiagnosticStatus::Missing,
             message: "Cannot check workspace without isolde.yaml".to_string(),
-            suggestions: vec![
-                "Run 'isolde init' to create configuration".to_string(),
-            ],
+            suggestions: vec!["Run 'isolde init' to create configuration".to_string()],
             fixable: false,
         }
     }
@@ -678,7 +686,9 @@ fn print_doctor_report(report: &DoctorReport, verbose: bool) {
             diagnostic.message
         );
 
-        if !diagnostic.suggestions.is_empty() && (verbose || diagnostic.status != DiagnosticStatus::Healthy) {
+        if !diagnostic.suggestions.is_empty()
+            && (verbose || diagnostic.status != DiagnosticStatus::Healthy)
+        {
             for suggestion in &diagnostic.suggestions {
                 println!("    {}", suggestion.dimmed());
             }
@@ -791,8 +801,12 @@ fn write_report(report: &DoctorReport, path: &Path) -> Result<()> {
     let json = serde_json::to_string_pretty(report)
         .map_err(|e| Error::Other(format!("Failed to serialize report: {}", e)))?;
 
-    fs::write(path, json)
-        .map_err(|e| Error::FileError(std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to write report: {}", e))))?;
+    fs::write(path, json).map_err(|e| {
+        Error::FileError(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            format!("Failed to write report: {}", e),
+        ))
+    })?;
 
     println!();
     println!(

@@ -105,9 +105,9 @@ impl Generator {
             match dir.parent() {
                 Some(parent) => dir = parent,
                 None => {
-                    return Err(Error::PathNotFound(
-                        current_dir.join("Could not find Isolde root (templates/ and core/ directories)"),
-                    ));
+                    return Err(Error::PathNotFound(current_dir.join(
+                        "Could not find Isolde root (templates/ and core/ directories)",
+                    )));
                 }
             }
         }
@@ -131,8 +131,7 @@ impl Generator {
 
         // Generate devcontainer.json (delegated to devcontainer module)
         let host_auth = devcontainer::HostAuthInfo::detect();
-        let devcontainer_json =
-            devcontainer::render_devcontainer_json(&self.config, &host_auth)?;
+        let devcontainer_json = devcontainer::render_devcontainer_json(&self.config, &host_auth)?;
         let devcontainer_json_path = devcontainer_dir.join("devcontainer.json");
         fs::write(&devcontainer_json_path, devcontainer_json)?;
         guard.track(&devcontainer_json_path);
@@ -421,7 +420,11 @@ runtime:
         // Setup mock isolde root
         let mock_root = temp_dir.path().join("isolde");
         fs::create_dir_all(mock_root.join("core/features/feature1")).unwrap();
-        fs::write(mock_root.join("core/features/feature1/install.sh"), "#!/bin/bash").unwrap();
+        fs::write(
+            mock_root.join("core/features/feature1/install.sh"),
+            "#!/bin/bash",
+        )
+        .unwrap();
 
         let config = create_test_config();
         let mut generator = Generator::new(config).unwrap();
@@ -444,9 +447,21 @@ runtime:
         fs::create_dir_all(mock_root.join("core/features/claude-code")).unwrap();
         fs::create_dir_all(mock_root.join("core/features/proxy")).unwrap();
         fs::create_dir_all(mock_root.join("core/features/plugin-manager")).unwrap();
-        fs::write(mock_root.join("core/features/claude-code/install.sh"), "#!/bin/bash\necho claude").unwrap();
-        fs::write(mock_root.join("core/features/proxy/install.sh"), "#!/bin/bash\necho proxy").unwrap();
-        fs::write(mock_root.join("core/features/plugin-manager/install.sh"), "#!/bin/bash\necho plugin").unwrap();
+        fs::write(
+            mock_root.join("core/features/claude-code/install.sh"),
+            "#!/bin/bash\necho claude",
+        )
+        .unwrap();
+        fs::write(
+            mock_root.join("core/features/proxy/install.sh"),
+            "#!/bin/bash\necho proxy",
+        )
+        .unwrap();
+        fs::write(
+            mock_root.join("core/features/plugin-manager/install.sh"),
+            "#!/bin/bash\necho plugin",
+        )
+        .unwrap();
 
         let config = create_test_config();
         let mut generator = Generator::new(config).unwrap();
@@ -494,7 +509,10 @@ runtime:
 
         // Second run - should show modify
         let report2 = generator.dry_run(&output_dir).unwrap();
-        assert!(report2.would_modify.iter().any(|p| p.ends_with("devcontainer.json")));
+        assert!(report2
+            .would_modify
+            .iter()
+            .any(|p| p.ends_with("devcontainer.json")));
     }
 
     #[test]
@@ -518,7 +536,10 @@ runtime:
         }
 
         assert!(!file_path.exists(), "file should be removed on guard drop");
-        assert!(!dir_path.exists(), "directory should be removed on guard drop");
+        assert!(
+            !dir_path.exists(),
+            "directory should be removed on guard drop"
+        );
     }
 
     #[test]
@@ -535,7 +556,10 @@ runtime:
             guard.commit(); // committed — should NOT clean up
         }
 
-        assert!(file_path.exists(), "file should remain after committed guard drop");
+        assert!(
+            file_path.exists(),
+            "file should remain after committed guard drop"
+        );
     }
 
     #[test]
@@ -548,9 +572,21 @@ runtime:
         fs::create_dir_all(mock_root.join("core/features/claude-code")).unwrap();
         fs::create_dir_all(mock_root.join("core/features/proxy")).unwrap();
         fs::create_dir_all(mock_root.join("core/features/plugin-manager")).unwrap();
-        fs::write(mock_root.join("core/features/claude-code/install.sh"), "#!/bin/bash").unwrap();
-        fs::write(mock_root.join("core/features/proxy/install.sh"), "#!/bin/bash").unwrap();
-        fs::write(mock_root.join("core/features/plugin-manager/install.sh"), "#!/bin/bash").unwrap();
+        fs::write(
+            mock_root.join("core/features/claude-code/install.sh"),
+            "#!/bin/bash",
+        )
+        .unwrap();
+        fs::write(
+            mock_root.join("core/features/proxy/install.sh"),
+            "#!/bin/bash",
+        )
+        .unwrap();
+        fs::write(
+            mock_root.join("core/features/plugin-manager/install.sh"),
+            "#!/bin/bash",
+        )
+        .unwrap();
 
         let config = create_test_config();
         let mut generator = Generator::new(config).unwrap();

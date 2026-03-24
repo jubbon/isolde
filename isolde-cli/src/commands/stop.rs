@@ -71,11 +71,7 @@ pub fn run(opts: StopOptions) -> Result<()> {
     }
 
     println!("{}", "─".repeat(50).dimmed());
-    println!(
-        "\n{} {}",
-        "✨".green(),
-        "Container stopped!".green().bold()
-    );
+    println!("\n{} {}", "✨".green(), "Container stopped!".green().bold());
 
     Ok(())
 }

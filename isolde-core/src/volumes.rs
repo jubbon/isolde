@@ -25,15 +25,8 @@ pub fn ensure_volumes(project_dir: &Path, config: &Config) -> Result<()> {
     // Directories needed per level
     let dirs: &[&str] = match level {
         IsolationLevel::None => unreachable!(),
-        IsolationLevel::Session => &[
-            "claude-sessions",
-            "claude-statsig",
-        ],
-        IsolationLevel::Workspace => &[
-            "claude-sessions",
-            "claude-statsig",
-            "claude-plugins",
-        ],
+        IsolationLevel::Session => &["claude-sessions", "claude-statsig"],
+        IsolationLevel::Workspace => &["claude-sessions", "claude-statsig", "claude-plugins"],
         IsolationLevel::Full => &[
             "claude-sessions",
             "claude-statsig",

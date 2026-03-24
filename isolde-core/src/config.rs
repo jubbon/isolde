@@ -3,8 +3,8 @@
 //! This module provides types for parsing and validating `isolde.yaml` configuration files.
 //! The configuration supports schema versioning to allow for evolution of the config format.
 
-pub mod version;
 pub mod v0_1;
+pub mod version;
 
 pub use v0_1::AgentOptionValue;
 pub use v0_1::IsolationLevel;
@@ -12,8 +12,8 @@ pub use v0_1::IsolationLevel;
 use std::collections::HashMap;
 use std::path::Path;
 
-use serde::{Deserialize, Serialize};
 use crate::{Error, Result};
+use serde::{Deserialize, Serialize};
 
 use version::SchemaVersion;
 
@@ -67,9 +67,9 @@ impl Config {
         let version_str = value
             .get("version")
             .and_then(|v| v.as_str())
-            .ok_or_else(|| Error::InvalidTemplate(
-                "Missing required field 'version'".to_string(),
-            ))?;
+            .ok_or_else(|| {
+                Error::InvalidTemplate("Missing required field 'version'".to_string())
+            })?;
 
         let schema_version = SchemaVersion::parse(version_str)?;
 
@@ -166,7 +166,8 @@ impl Config {
         match &self.inner {
             ConfigInner::V0_1(_) => {
                 // Return empty HashMap for v0.1 (marketplaces handled differently)
-                static EMPTY: std::sync::OnceLock<HashMap<String, MarketplaceConfigView>> = std::sync::OnceLock::new();
+                static EMPTY: std::sync::OnceLock<HashMap<String, MarketplaceConfigView>> =
+                    std::sync::OnceLock::new();
                 EMPTY.get_or_init(HashMap::new)
             }
         }
@@ -488,7 +489,10 @@ git:
         assert_eq!(config.name, "my-app");
         assert_eq!(config.version, SchemaVersion::V0_1);
         assert_eq!(config.workspace_dir(), "./project");
-        assert_eq!(config.docker_image(), "mcr.microsoft.com/devcontainers/base:ubuntu");
+        assert_eq!(
+            config.docker_image(),
+            "mcr.microsoft.com/devcontainers/base:ubuntu"
+        );
         assert_eq!(config.agent_name(), "claude-code");
     }
 
@@ -523,7 +527,10 @@ agent:
 "#;
         let result = Config::from_str(yaml);
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Missing required field 'version'"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Missing required field 'version'"));
     }
 
     #[test]
@@ -540,7 +547,10 @@ agent:
 "#;
         let result = Config::from_str(yaml);
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Unsupported schema version"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Unsupported schema version"));
     }
 
     #[test]
@@ -578,11 +588,17 @@ agent:
 
         // Test all accessor methods
         assert_eq!(config.workspace_dir(), "./project");
-        assert_eq!(config.docker_image(), "mcr.microsoft.com/devcontainers/base:ubuntu");
+        assert_eq!(
+            config.docker_image(),
+            "mcr.microsoft.com/devcontainers/base:ubuntu"
+        );
         assert_eq!(config.docker_build_args(), &[] as &[String]);
         assert_eq!(config.agent_name(), "claude-code");
         assert_eq!(config.agent_version(), "latest");
-        assert_eq!(config.agent_options().get("provider"), Some(&AgentOptionValue::Str("anthropic".to_string())));
+        assert_eq!(
+            config.agent_options().get("provider"),
+            Some(&AgentOptionValue::Str("anthropic".to_string()))
+        );
 
         // Test runtime
         let runtime = config.runtime().unwrap();
@@ -592,8 +608,14 @@ agent:
 
         // Test proxy
         let proxy = config.proxy().unwrap();
-        assert_eq!(proxy.http(), Some(&"http://proxy.corp.com:8080".to_string()));
-        assert_eq!(proxy.https(), Some(&"http://proxy.corp.com:8080".to_string()));
+        assert_eq!(
+            proxy.http(),
+            Some(&"http://proxy.corp.com:8080".to_string())
+        );
+        assert_eq!(
+            proxy.https(),
+            Some(&"http://proxy.corp.com:8080".to_string())
+        );
 
         // Test git
         use crate::config::v0_1::GitGeneratedHandling;

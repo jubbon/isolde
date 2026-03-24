@@ -250,7 +250,9 @@ pub fn run(opts: ValidateOptions) -> Result<ValidationReport> {
     }
     print_checks(&checks, opts.format);
 
-    let config_valid = checks.iter().any(|c| c.name == "config-valid" && c.status == CheckStatus::Passed);
+    let config_valid = checks
+        .iter()
+        .any(|c| c.name == "config-valid" && c.status == CheckStatus::Passed);
     let report = ValidationReport {
         config_valid,
         build_success,
@@ -324,7 +326,10 @@ fn print_checks(checks: &[CheckResult], format: ValidateFormat) {
                     }).collect::<Vec<_>>()
                 }]
             });
-            println!("{}", serde_json::to_string_pretty(&sarif).unwrap_or_default());
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&sarif).unwrap_or_default()
+            );
         }
     }
 }
@@ -339,10 +344,7 @@ fn check_file_exists(path: &Path, name: &str, description: &str, verbose: bool) 
 
     let mut details = Vec::new();
     if verbose || status == CheckStatus::Failed {
-        details.push(format!(
-            "Path: {}",
-            path.display().to_string().cyan()
-        ));
+        details.push(format!("Path: {}", path.display().to_string().cyan()));
     }
     if status == CheckStatus::Failed {
         details.push("File not found".to_string());
@@ -384,9 +386,7 @@ fn check_config_validity(config: &Config, verbose: bool) -> CheckResult {
 
 /// Check if Docker is installed
 fn check_docker_installed(verbose: bool) -> CheckResult {
-    let result = Command::new("docker")
-        .arg("--version")
-        .output();
+    let result = Command::new("docker").arg("--version").output();
 
     let (status, details) = match result {
         Ok(output) => {
@@ -419,7 +419,10 @@ fn check_docker_running(verbose: bool) -> CheckResult {
     let (status, details) = match result {
         Ok(output) if output.status.success() => {
             let version = String::from_utf8_lossy(&output.stdout);
-            (CheckStatus::Passed, vec![format!("Docker version: {}", version.trim())])
+            (
+                CheckStatus::Passed,
+                vec![format!("Docker version: {}", version.trim())],
+            )
         }
         Ok(output) => {
             let stderr = String::from_utf8_lossy(&output.stderr);
@@ -457,9 +460,7 @@ fn check_devcontainer_valid(cwd: &Path, verbose: bool) -> CheckResult {
             name: "devcontainer-dir".to_string(),
             description: "Devcontainer directory".to_string(),
             status: CheckStatus::Warning,
-            details: vec![
-                "Run 'isolde sync' to create devcontainer configuration".to_string(),
-            ],
+            details: vec!["Run 'isolde sync' to create devcontainer configuration".to_string()],
         };
     }
 
@@ -600,7 +601,10 @@ fn check_docker_build(cwd: &Path, verbose: bool) -> CheckResult {
     }
 
     if verbose {
-        println!("    {} Building Docker image (this may take a while)...", "⏳".dimmed());
+        println!(
+            "    {} Building Docker image (this may take a while)...",
+            "⏳".dimmed()
+        );
     }
 
     let result = Command::new("docker")
@@ -637,7 +641,10 @@ fn check_docker_build(cwd: &Path, verbose: bool) -> CheckResult {
                 status: CheckStatus::Failed,
                 details: vec![
                     "Docker build failed".to_string(),
-                    format!("Error: {}", stderr.lines().next().unwrap_or("unknown error")),
+                    format!(
+                        "Error: {}",
+                        stderr.lines().next().unwrap_or("unknown error")
+                    ),
                 ],
             }
         }
@@ -655,9 +662,7 @@ fn check_docker_build(cwd: &Path, verbose: bool) -> CheckResult {
 
 /// Check Claude installation
 fn check_claude_installed(verbose: bool) -> CheckResult {
-    let result = Command::new("claude")
-        .arg("--version")
-        .output();
+    let result = Command::new("claude").arg("--version").output();
 
     let (status, details) = match result {
         Ok(output) if output.status.success() => {
@@ -738,7 +743,10 @@ mod tests {
         assert_eq!(ValidateFormat::from_str("text"), Some(ValidateFormat::Text));
         assert_eq!(ValidateFormat::from_str("TEXT"), Some(ValidateFormat::Text));
         assert_eq!(ValidateFormat::from_str("json"), Some(ValidateFormat::Json));
-        assert_eq!(ValidateFormat::from_str("sarif"), Some(ValidateFormat::Sarif));
+        assert_eq!(
+            ValidateFormat::from_str("sarif"),
+            Some(ValidateFormat::Sarif)
+        );
         assert_eq!(ValidateFormat::from_str("invalid"), None);
     }
 

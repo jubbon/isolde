@@ -149,19 +149,21 @@ pub fn run(opts: SyncOptions) -> Result<()> {
         match devcontainer::copy_core_features(&features_dir) {
             Ok(()) => {}
             Err(_) => {
-                println!("{}", "⚠ Core features not found - skipping feature copy".yellow());
-                println!("{}", "  Features should be manually installed or bundled with the binary.".dimmed());
+                println!(
+                    "{}",
+                    "⚠ Core features not found - skipping feature copy".yellow()
+                );
+                println!(
+                    "{}",
+                    "  Features should be manually installed or bundled with the binary.".dimmed()
+                );
             }
         }
     }
     println!("{}", "✔".green());
 
     println!("{}", "─".repeat(50).dimmed());
-    println!(
-        "\n{} {}",
-        "✨".green(),
-        "Sync complete!".green().bold()
-    );
+    println!("\n{} {}", "✨".green(), "Sync complete!".green().bold());
     println!(
         "{}",
         "Run 'docker build -t <image-name> .devcontainer' to build the devcontainer.".dimmed()
@@ -173,7 +175,10 @@ pub fn run(opts: SyncOptions) -> Result<()> {
 /// Write file to disk, handling force option
 fn write_file(path: &Path, content: &str, force: bool) -> Result<()> {
     if path.exists() && !force {
-        println!("  Skipped {} (already exists)", path.display().to_string().yellow());
+        println!(
+            "  Skipped {} (already exists)",
+            path.display().to_string().yellow()
+        );
         return Ok(());
     }
 

@@ -104,9 +104,8 @@ impl ContainerState {
             })?;
         }
 
-        let json = serde_json::to_string_pretty(self).map_err(|e| {
-            Error::Other(format!("Failed to serialize state: {}", e))
-        })?;
+        let json = serde_json::to_string_pretty(self)
+            .map_err(|e| Error::Other(format!("Failed to serialize state: {}", e)))?;
 
         fs::write(&state_file, json).map_err(|e| {
             Error::FileError(std::io::Error::new(
@@ -133,9 +132,8 @@ impl ContainerState {
             ))
         })?;
 
-        serde_json::from_str(&content).map_err(|e| {
-            Error::Other(format!("Failed to parse state file: {}", e))
-        })
+        serde_json::from_str(&content)
+            .map_err(|e| Error::Other(format!("Failed to parse state file: {}", e)))
     }
 
     /// Remove state file

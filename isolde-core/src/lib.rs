@@ -5,14 +5,14 @@
 #![warn(missing_docs)]
 #![warn(clippy::all)]
 
-pub mod error;
 pub mod config;
-pub mod devcontainer;
-pub mod template;
-pub mod generator;
 pub mod container;
-pub mod state;
+pub mod devcontainer;
+pub mod error;
+pub mod generator;
 pub mod mounts;
+pub mod state;
+pub mod template;
 pub mod volumes;
 
 // Re-export common types
@@ -74,7 +74,8 @@ mod tests {
     /// None isolation should have no volumes and no volume-referencing mounts.
     #[test]
     fn test_none_isolation_no_volumes_no_mounts() {
-        let yaml = "version: \"0.1\"\nname: test-app\ndocker:\n  image: ubuntu:latest\nisolation: none";
+        let yaml =
+            "version: \"0.1\"\nname: test-app\ndocker:\n  image: ubuntu:latest\nisolation: none";
         let config = Config::from_str(yaml).unwrap();
         assert_eq!(config.isolation(), IsolationLevel::None);
 

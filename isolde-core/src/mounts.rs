@@ -23,12 +23,10 @@ pub fn generate_mounts(
     let name = &config.name;
 
     // Mounts shared by all levels: project workspace + project-local .claude
-    let project_mount = format!(
-        "source=./project,target=/workspaces/{name},type=bind,consistency=cached"
-    );
-    let project_claude_mount = format!(
-        "source=./.claude,target=/workspaces/{name}/.claude,type=bind,consistency=cached"
-    );
+    let project_mount =
+        format!("source=./project,target=/workspaces/{name},type=bind,consistency=cached");
+    let project_claude_mount =
+        format!("source=./.claude,target=/workspaces/{name}/.claude,type=bind,consistency=cached");
     let machine_id_mount =
         "source=${localEnv:HOME}/.config/devcontainer/machine-id,target=/etc/machine-id,type=bind,consistency=cached"
             .to_string();
@@ -175,7 +173,9 @@ docker:
         let config = test_config("full");
         let mounts = generate_mounts(&config, false, false, false);
         assert_eq!(mounts.len(), 5);
-        assert!(!mounts.iter().any(|m| m.contains("source=${localEnv:HOME}/.claude,")));
+        assert!(!mounts
+            .iter()
+            .any(|m| m.contains("source=${localEnv:HOME}/.claude,")));
         assert!(mounts.iter().any(|m| m.contains("claude-home")));
     }
 
@@ -193,8 +193,12 @@ docker:
         let mounts = generate_mounts(&config, true, true, true);
         assert_eq!(mounts.len(), 8);
         assert!(mounts.iter().any(|m| m.contains(".credentials.json")));
-        assert!(mounts.iter().any(|m| m.contains("target=/home/${localEnv:USER}/.claude/providers,")));
-        assert!(mounts.iter().any(|m| m.contains("target=/home/${localEnv:USER}/.claude/provider,")));
+        assert!(mounts
+            .iter()
+            .any(|m| m.contains("target=/home/${localEnv:USER}/.claude/providers,")));
+        assert!(mounts
+            .iter()
+            .any(|m| m.contains("target=/home/${localEnv:USER}/.claude/provider,")));
     }
 
     #[test]
@@ -202,7 +206,9 @@ docker:
         let config = test_config("full");
         let mounts = generate_mounts(&config, false, false, true);
         assert_eq!(mounts.len(), 6);
-        assert!(mounts.iter().any(|m| m.contains("target=/home/${localEnv:USER}/.claude/provider,")));
+        assert!(mounts
+            .iter()
+            .any(|m| m.contains("target=/home/${localEnv:USER}/.claude/provider,")));
     }
 
     #[test]
