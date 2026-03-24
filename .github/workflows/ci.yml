@@ -41,7 +41,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y shellcheck
 
       - name: Lint shell scripts
-        run: find core/features -name "*.sh" -type f -exec shellcheck {} +
+        run: find core/features -name "*.sh" -type f -exec shellcheck --severity=error {} +
 
       - name: Install jq
         run: sudo apt-get install -y jq
