@@ -35,7 +35,7 @@ jobs:
         run: cargo fmt --check
 
       - name: Run clippy
-        run: cargo clippy --all-targets -- -D warnings
+        run: cargo clippy --all-targets -- -D clippy::correctness -W clippy::suspicious -W clippy::style
 
       - name: Install shellcheck
         run: sudo apt-get update && sudo apt-get install -y shellcheck

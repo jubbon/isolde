@@ -25,13 +25,13 @@ fn main() {
     };
 
     // Read version from VERSION file
-    let version = fs::read_to_string(&version_path)
+    let version = fs::read_to_string(version_path)
         .expect("Failed to read VERSION file")
         .trim()
         .to_string();
 
     // Validate version format (basic semver check)
-    if !version.parse::<semver::Version>().is_ok() {
+    if version.parse::<semver::Version>().is_err() {
         panic!(
             "Invalid version format in VERSION file: '{}'. Expected semver format (e.g., 1.0.0)",
             version
@@ -86,7 +86,7 @@ fn main() {
 
     // Get rust version
     let rust_version = env::var("RUSTC").unwrap_or_else(|_| "rustc".to_string());
-    let rust_version_output = Command::new(&rust_version).arg("--version").output().ok();
+    let rust_version_output = Command::new(rust_version).arg("--version").output().ok();
     let rust_version_str = rust_version_output
         .as_ref()
         .and_then(|o| String::from_utf8(o.stdout.clone()).ok())
