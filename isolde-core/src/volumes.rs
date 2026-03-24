@@ -55,12 +55,8 @@ pub fn ensure_volumes(project_dir: &Path, config: &Config) -> Result<()> {
     // Placeholder files needed per level
     let files: &[&str] = match level {
         IsolationLevel::None => unreachable!(),
-        IsolationLevel::Session | IsolationLevel::Workspace => &[
-            "omc-config.json",
-        ],
-        IsolationLevel::Full => &[
-            "omc-config.json",
-        ],
+        IsolationLevel::Session | IsolationLevel::Workspace => &["omc-config.json"],
+        IsolationLevel::Full => &["omc-config.json"],
     };
 
     for file in files {
@@ -169,10 +165,8 @@ isolation: {isolation}
         let config = test_config("session");
         ensure_volumes(tmp.path(), &config).unwrap();
 
-        let content = fs::read_to_string(
-            tmp.path().join(".isolde/volumes/omc-config.json"),
-        )
-        .unwrap();
+        let content =
+            fs::read_to_string(tmp.path().join(".isolde/volumes/omc-config.json")).unwrap();
         assert_eq!(content, "{}");
     }
 }
