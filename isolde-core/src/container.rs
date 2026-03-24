@@ -205,7 +205,10 @@ pub fn exec(workspace: &Path, command: &[String], interactive: bool) -> Result<E
         cmd.stdin(Stdio::inherit());
         cmd.stdout(Stdio::inherit());
         cmd.stderr(Stdio::inherit());
-        cmd.group_spawn();
+        let mut child = cmd.group_spawn()
+            .map_err(|e| Error::Other(format!("Failed to run devcontainer exec: {}", e)))?;
+        return child.wait()
+            .map_err(|e| Error::Other(format!("Failed to wait for devcontainer exec: {}", e)));
     }
 
     cmd.status()
@@ -432,8 +435,15 @@ fn parse_docker_container_list(json: &str) -> Result<Vec<ContainerInfo>> {
         state: String,
     }
 
+    // Docker 20.10+ with --format json outputs one JSON object per line (JSONL),
+    // not a JSON array. Try array first, then fall back to line-by-line parsing.
     let containers: Vec<DockerContainerJson> = serde_json::from_str(json)
-        .unwrap_or_default();
+        .unwrap_or_else(|_| {
+            json.lines()
+                .filter(|line| !line.trim().is_empty())
+                .filter_map(|line| serde_json::from_str(line).ok())
+                .collect()
+        });
 
     Ok(containers.into_iter()
         .map(|c| ContainerInfo {
@@ -537,8 +547,26 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_docker_container_list_jsonl_format() {
+        // Docker 20.10+ outputs one JSON object per line (JSONL), not a JSON array
+        let jsonl = "{\"ID\":\"abc123\",\"Names\":\"container-one\",\"State\":\"running\"}\n{\"ID\":\"def456\",\"Names\":\"container-two\",\"State\":\"exited\"}";
+        let result = parse_docker_container_list(jsonl).unwrap();
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0].container_id, "abc123");
+        assert_eq!(result[1].container_id, "def456");
+    }
+
+    #[test]
+    fn test_parse_docker_container_list_jsonl_with_trailing_newline() {
+        let jsonl = "{\"ID\":\"abc123\",\"Names\":\"my-container\",\"State\":\"running\"}\n";
+        let result = parse_docker_container_list(jsonl).unwrap();
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].container_id, "abc123");
+    }
+
+    #[test]
     fn test_parse_docker_container_list_invalid_json() {
-        // Invalid JSON falls back to unwrap_or_default() returning empty vec
+        // Invalid JSON falls back to empty vec
         let result = parse_docker_container_list("not valid json").unwrap();
         assert!(result.is_empty());
     }

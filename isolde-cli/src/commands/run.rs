@@ -102,7 +102,11 @@ pub fn run(opts: RunOptions) -> Result<()> {
         println!(
             "{} {}",
             "ID:".dimmed(),
-            container_info.container_id[..12].cyan()
+            if container_info.container_id.len() > 12 {
+                format!("{}...", &container_info.container_id[..12]).cyan()
+            } else {
+                container_info.container_id.cyan()
+            }
         );
         println!(
             "{}",
