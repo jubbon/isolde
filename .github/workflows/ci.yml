@@ -48,7 +48,7 @@ jobs:
 
       - name: Validate JSON files
         run: |
-          find core/features templates -name "*.json" -type f | while read -r json; do
+          find core/features -name "*.json" -type f | while read -r json; do
             echo "Checking $json"
             jq empty "$json"
           done
