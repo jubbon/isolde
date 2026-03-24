@@ -8,6 +8,7 @@ use std::path::{Path, PathBuf};
 
 use colored::Colorize;
 use isolde_core::config::Config;
+use isolde_core::devcontainer;
 use isolde_core::generator::Generator;
 use isolde_core::{Error, Result};
 
@@ -268,9 +269,7 @@ fn generate_file_diff(path: &Path, opts: &DiffOptions) -> Result<FileDiff> {
 
     // Generate expected content
     let config = Config::from_file(&opts.cwd.join("isolde.yaml"))?;
-    let generator = Generator::new(config)?;
-
-    let expected_content = generate_expected_content(&generator, path, opts.cwd.clone())?;
+    let expected_content = generate_expected_content(&config, path)?;
 
     // Use similar crate for diff if available, otherwise simple line comparison
     let lines = compute_diff(&current_content, &expected_content, opts.context);
@@ -293,25 +292,18 @@ fn generate_file_diff(path: &Path, opts: &DiffOptions) -> Result<FileDiff> {
 }
 
 /// Generate expected content for a file
-fn generate_expected_content(generator: &Generator, path: &Path, cwd: PathBuf) -> Result<String> {
+fn generate_expected_content(config: &Config, path: &Path) -> Result<String> {
     let file_name = path.file_name()
         .and_then(|n| n.to_str())
         .unwrap_or("");
 
     match file_name {
         "devcontainer.json" => {
-            // Generate expected devcontainer.json
-            let config = Config::from_file(&cwd.join("isolde.yaml"))?;
-            generate_devcontainer_json(&config)
+            let host_auth = devcontainer::HostAuthInfo::detect();
+            devcontainer::render_devcontainer_json(config, &host_auth)
         }
-        "Dockerfile" => {
-            let config = Config::from_file(&cwd.join("isolde.yaml"))?;
-            generate_dockerfile(&config)
-        }
-        "CLAUDE.md" => {
-            let config = Config::from_file(&cwd.join("isolde.yaml"))?;
-            generate_claude_md(&config)
-        }
+        "Dockerfile" => devcontainer::render_dockerfile(config),
+        "CLAUDE.md" => devcontainer::render_claude_md(config),
         ".gitignore" => {
             if path.to_str().unwrap_or("").contains("devcontainer") {
                 Ok(generate_devcontainer_gitignore())
@@ -319,10 +311,7 @@ fn generate_expected_content(generator: &Generator, path: &Path, cwd: PathBuf) -
                 Ok(generate_project_gitignore())
             }
         }
-        "README.md" => {
-            let config = Config::from_file(&cwd.join("isolde.yaml"))?;
-            generate_readme(&config)
-        }
+        "README.md" => generate_readme(config),
         _ => Ok(String::new()),
     }
 }
@@ -576,69 +565,6 @@ fn print_json_diff(result: &DiffResult) {
     });
 
     println!("{}", serde_json::to_string_pretty(&json).unwrap_or_default());
-}
-
-// Content generation helpers (simplified versions from sync command)
-
-fn generate_devcontainer_json(config: &Config) -> Result<String> {
-    let features = serde_json::json!({
-        "ghcr.io/devcontainers/features/common-utils:2": {
-            "installZsh": false,
-            "installOhMyZsh": false,
-            "upgradePackages": false
-        }
-    });
-
-    let devcontainer = serde_json::json!({
-        "name": format!("{} - Isolde Environment", config.name),
-        "build": {
-            "dockerfile": "Dockerfile",
-            "context": ".."
-        },
-        "features": features
-    });
-
-    serde_json::to_string_pretty(&devcontainer)
-        .map_err(|e| Error::Other(format!("Failed to serialize devcontainer.json: {}", e)))
-}
-
-fn generate_dockerfile(config: &Config) -> Result<String> {
-    Ok(format!(
-        r#"ARG BASE_IMAGE={}
-FROM ${{BASE_IMAGE}}
-
-ARG USERNAME=user
-ARG USER_UID=1000
-ARG USER_GID=1000
-
-ENV DEBIAN_FRONTEND=noninteractive
-
-RUN apt-get update && apt-get install -y \
-    curl \
-    git \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /workspaces
-
-USER ${{USERNAME}}
-"#,
-        config.docker_image()
-    ))
-}
-
-fn generate_claude_md(config: &Config) -> Result<String> {
-    Ok(format!(
-        r#"# Claude Code Configuration for {}
-
-## Project Overview
-
-**{}** - Schema Version {}
-
-Docker Image: {}
-Claude Provider: {}
-"#,
-        config.name, config.name, config.version, config.docker_image(), config.agent_name()
-    ))
 }
 
 fn generate_devcontainer_gitignore() -> String {

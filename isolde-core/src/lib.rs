@@ -7,6 +7,7 @@
 
 pub mod error;
 pub mod config;
+pub mod devcontainer;
 pub mod template;
 pub mod generator;
 pub mod container;

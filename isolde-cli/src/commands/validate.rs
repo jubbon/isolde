@@ -608,10 +608,10 @@ fn check_docker_build(cwd: &Path, verbose: bool) -> CheckResult {
             "build",
             "-q",
             "-f",
-            dockerfile.to_str().unwrap(),
+            dockerfile.to_str().unwrap_or("Dockerfile"),
             "-t",
             "isolde-validate-test",
-            &devcontainer_dir.to_str().unwrap(),
+            devcontainer_dir.to_str().unwrap_or("."),
         ])
         .output();
 

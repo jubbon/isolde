@@ -52,6 +52,7 @@ fn execute_command(command: Commands, verbose: bool) -> anyhow::Result<()> {
             target_dir,
             list_templates,
             list_presets,
+            yes,
         } => execute_init(
             name,
             template,
@@ -64,6 +65,7 @@ fn execute_command(command: Commands, verbose: bool) -> anyhow::Result<()> {
             target_dir,
             list_templates,
             list_presets,
+            yes,
             verbose,
         ),
 
@@ -148,6 +150,7 @@ fn execute_init(
     target_dir: Option<String>,
     list_templates: bool,
     list_presets: bool,
+    yes: bool,
     verbose: bool,
 ) -> anyhow::Result<()> {
     if list_templates {
@@ -178,7 +181,7 @@ fn execute_init(
     let opts = commands::InitOptions {
         template,
         preset,
-        yes: false,
+        yes,
         cwd,
         name: name.clone(),
         lang_version,

@@ -88,6 +88,10 @@ pub enum Commands {
         /// List available presets and exit
         #[arg(long, conflicts_with = "template")]
         list_presets: bool,
+
+        /// Skip confirmation prompt (non-interactive mode)
+        #[arg(short = 'y', long)]
+        yes: bool,
     },
 
     /// Synchronize project with the latest template changes
@@ -516,6 +520,7 @@ mod tests {
                 target_dir: None,
                 list_templates: false,
                 list_presets: false,
+                yes: false,
             },
             Commands::Sync {
                 dry_run: false,

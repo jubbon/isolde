@@ -2,13 +2,23 @@
   "id": "codex",
   "version": "0.1.0",
   "name": "Codex CLI",
-  "description": "OpenAI Codex CLI coding agent (coming soon)",
+  "description": "OpenAI Codex CLI coding agent",
   "documentationURL": "https://github.com/jubbon/isolde",
   "options": {
     "version": {
       "type": "string",
       "default": "latest",
       "description": "Version of Codex CLI to install"
+    },
+    "http_proxy": {
+      "type": "string",
+      "default": "",
+      "description": "HTTP proxy URL"
+    },
+    "https_proxy": {
+      "type": "string",
+      "default": "",
+      "description": "HTTPS proxy URL"
     }
   }
 }

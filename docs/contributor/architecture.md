@@ -154,7 +154,7 @@ templates/python/
 | Feature | Purpose |
 |---------|---------|
 | `claude-code/` | Claude Code CLI installation with multi-provider support |
-| `codex/` | OpenAI Codex CLI (stub, coming soon) |
+| `codex/` | OpenAI Codex CLI with npm-based installation and proxy support |
 | `gemini/` | Google Gemini CLI (stub, coming soon) |
 | `aider/` | Aider AI pair programming (stub, coming soon) |
 | `proxy/` | HTTP proxy configuration for enterprise networks |

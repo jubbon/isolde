@@ -1,11 +1,13 @@
 //! # Devcontainer generator from YAML config
 //!
-//! This module provides the `Generator` struct for creating devcontainer artifacts
-//! from an `isolde.yaml` configuration file.
+//! Orchestrates creating devcontainer artifacts from an `isolde.yaml` configuration.
+//! Rendering logic is delegated to the [`devcontainer`](crate::devcontainer) module;
+//! this module handles file creation, dry-run reports, and init-specific artifacts
+//! (`.claude/config.json`, project `README.md`).
 
 use crate::config::Config;
+use crate::devcontainer;
 use crate::error::{Error, Result};
-use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -27,6 +29,47 @@ pub struct GenerateReport {
     pub files_modified: Vec<PathBuf>,
 }
 
+/// Guard that tracks created files and directories during generation.
+///
+/// On `Drop`, if not committed, removes all tracked artifacts in reverse order.
+/// Call `commit()` after successful generation to prevent cleanup.
+struct GenerationGuard {
+    created_paths: Vec<PathBuf>,
+    committed: bool,
+}
+
+impl GenerationGuard {
+    fn new() -> Self {
+        Self {
+            created_paths: Vec::new(),
+            committed: false,
+        }
+    }
+
+    fn track<P: AsRef<Path>>(&mut self, path: P) {
+        self.created_paths.push(path.as_ref().to_path_buf());
+    }
+
+    fn commit(mut self) {
+        self.committed = true;
+    }
+}
+
+impl Drop for GenerationGuard {
+    fn drop(&mut self) {
+        if !self.committed {
+            // Clean up in reverse order so files are removed before their parent dirs
+            for path in self.created_paths.iter().rev() {
+                if path.is_file() {
+                    let _ = fs::remove_file(path);
+                } else if path.is_dir() {
+                    let _ = fs::remove_dir_all(path);
+                }
+            }
+        }
+    }
+}
+
 /// Generator for creating devcontainer artifacts from config
 pub struct Generator {
     /// Configuration loaded from isolde.yaml
@@ -37,36 +80,20 @@ pub struct Generator {
 
 impl Generator {
     /// Create a new generator from a config
-    ///
-    /// # Arguments
-    ///
-    /// * `config` - The configuration loaded from isolde.yaml
-    ///
-    /// # Returns
-    ///
-    /// Returns a `Result` containing the `Generator` or an `Error`
     pub fn new(config: Config) -> Result<Self> {
-        // Find the Isolde installation root
-        // We look for the templates/ and core/ directories
         let isolde_root = Self::find_isolde_root()?;
-
         Ok(Self {
             config,
             isolde_root,
         })
     }
 
-    /// Find the Isolde installation root
-    ///
-    /// This looks for the `templates/` and `core/` directories
-    /// by searching upward from the current directory
+    /// Find the Isolde installation root by searching upward for `templates/` and `core/`
     fn find_isolde_root() -> Result<PathBuf> {
         let current_dir = std::env::current_dir()
             .map_err(|e| Error::Other(format!("Failed to get current directory: {e}")))?;
 
         let mut dir = current_dir.as_path();
-
-        // Search upward for isolde root markers
         loop {
             let templates_dir = dir.join("templates");
             let core_dir = dir.join("core");
@@ -87,56 +114,62 @@ impl Generator {
     }
 
     /// Generate devcontainer artifacts
-    ///
-    /// # Arguments
-    ///
-    /// * `output_dir` - The root directory where the project will be created
-    ///
-    /// # Returns
-    ///
-    /// Returns a `Result` containing a `GenerateReport` or an `Error`
     pub fn generate(&self, output_dir: &Path) -> Result<GenerateReport> {
         let mut files_created = Vec::new();
         let files_modified = Vec::new();
+        let mut guard = GenerationGuard::new();
 
         // Create workspace directory
         let workspace_dir = output_dir.join(self.config.workspace_dir());
         fs::create_dir_all(&workspace_dir)?;
+        guard.track(&workspace_dir);
 
         // Create .devcontainer directory
         let devcontainer_dir = output_dir.join(".devcontainer");
         fs::create_dir_all(&devcontainer_dir)?;
+        guard.track(&devcontainer_dir);
 
-        // Generate devcontainer.json from template
-        let devcontainer_json = self.render_devcontainer_json()?;
+        // Generate devcontainer.json (delegated to devcontainer module)
+        let host_auth = devcontainer::HostAuthInfo::detect();
+        let devcontainer_json =
+            devcontainer::render_devcontainer_json(&self.config, &host_auth)?;
         let devcontainer_json_path = devcontainer_dir.join("devcontainer.json");
         fs::write(&devcontainer_json_path, devcontainer_json)?;
+        guard.track(&devcontainer_json_path);
         files_created.push(devcontainer_json_path);
 
-        // Generate Dockerfile
-        let dockerfile = self.render_dockerfile()?;
+        // Generate Dockerfile (delegated to devcontainer module)
+        let dockerfile = devcontainer::render_dockerfile(&self.config)?;
         let dockerfile_path = devcontainer_dir.join("Dockerfile");
         fs::write(&dockerfile_path, dockerfile)?;
+        guard.track(&dockerfile_path);
         files_created.push(dockerfile_path);
 
         // Copy core features
         let features_dir = devcontainer_dir.join("features");
         let copied_features = self.copy_core_features(&features_dir)?;
+        guard.track(&features_dir);
         files_created.extend(copied_features);
 
-        // Generate .claude/config.json
+        // Generate .claude/config.json (init-specific, not part of sync)
         let claude_config = self.render_claude_config()?;
         let claude_dir = workspace_dir.join(".claude");
         fs::create_dir_all(&claude_dir)?;
+        guard.track(&claude_dir);
         let claude_config_path = claude_dir.join("config.json");
         fs::write(&claude_config_path, claude_config)?;
+        guard.track(&claude_config_path);
         files_created.push(claude_config_path);
 
-        // Generate README.md for project
+        // Generate README.md for project (init-specific)
         let readme = self.render_project_readme()?;
         let readme_path = workspace_dir.join("README.md");
         fs::write(&readme_path, readme)?;
+        guard.track(&readme_path);
         files_created.push(readme_path);
+
+        // All artifacts created successfully — prevent guard from cleaning up
+        guard.commit();
 
         Ok(GenerateReport {
             files_created,
@@ -145,14 +178,6 @@ impl Generator {
     }
 
     /// Perform a dry run to see what would be generated
-    ///
-    /// # Arguments
-    ///
-    /// * `output_dir` - The root directory where the project would be created
-    ///
-    /// # Returns
-    ///
-    /// Returns a `Result` containing a `DryRunReport` or an `Error`
     pub fn dry_run(&self, output_dir: &Path) -> Result<DryRunReport> {
         let mut would_create = Vec::new();
         let mut would_modify = Vec::new();
@@ -162,7 +187,7 @@ impl Generator {
         let features_dir = devcontainer_dir.join("features");
         let claude_dir = workspace_dir.join(".claude");
 
-        // Check which files would be created vs modified
+        // Check devcontainer.json
         let devcontainer_json_path = devcontainer_dir.join("devcontainer.json");
         if devcontainer_json_path.exists() {
             would_modify.push(devcontainer_json_path);
@@ -170,6 +195,7 @@ impl Generator {
             would_create.push(devcontainer_json_path);
         }
 
+        // Check Dockerfile
         let dockerfile_path = devcontainer_dir.join("Dockerfile");
         if dockerfile_path.exists() {
             would_modify.push(dockerfile_path);
@@ -217,299 +243,10 @@ impl Generator {
         })
     }
 
-    /// Render devcontainer.json using template substitution
-    fn render_devcontainer_json(&self) -> Result<String> {
-        let mut content = self.get_base_devcontainer_template()?;
-
-        // Build substitution map
-        let substitutions = self.build_substitution_map();
-
-        // Apply each substitution
-        for (key, value) in &substitutions {
-            let placeholder = format!("{{{{{}}}}}", key);
-            content = content.replace(&placeholder, value);
-        }
-
-        Ok(content)
-    }
-
-    /// Get the base devcontainer.json template
-    fn get_base_devcontainer_template(&self) -> Result<String> {
-        // For now, use the generic template
-        let template_path = self
-            .isolde_root
-            .join("templates/generic/.devcontainer/devcontainer.json");
-
-        if template_path.exists() {
-            fs::read_to_string(&template_path).map_err(|e| {
-                Error::FileError(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("Failed to read template: {}", e),
-                ))
-            })
-        } else {
-            // Fallback to embedded template
-            Ok(self.get_embedded_devcontainer_template())
-        }
-    }
-
-    /// Get embedded devcontainer.json template
-    fn get_embedded_devcontainer_template(&self) -> String {
-        // Use a simpler template without complex escape sequences
-        let json = r#"{
-  "name": "{{PROJECT_NAME}} - Isolde Environment",
-  "build": {
-    "dockerfile": "Dockerfile",
-    "context": "..",
-    "args": {
-      "USERNAME": "${localEnv:USER}"
-    }
-  },
-  "features": {
-    "ghcr.io/devcontainers/features/common-utils:2": {
-      "installZsh": false,
-      "installOhMyZsh": false,
-      "upgradePackages": false
-    },
-    "{{FEATURES_PROXY}}": {
-      "http_proxy": "{{HTTP_PROXY}}",
-      "https_proxy": "{{HTTPS_PROXY}}",
-      "no_proxy": "{{NO_PROXY}}",
-      "enabled": {{PROXY_ENABLED}}
-    },
-    "{{FEATURES_CLAUDE_CODE}}": {
-      "version": "{{CLAUDE_VERSION}}",
-      "provider": "{{CLAUDE_PROVIDER}}",
-      "models": {{CLAUDE_MODELS}},
-      "http_proxy": "{{HTTP_PROXY}}",
-      "https_proxy": "{{HTTPS_PROXY}}"
-    },
-    "{{FEATURES_PLUGIN_MANAGER}}": {
-      "activate_plugins": {{CLAUDE_ACTIVATE_PLUGINS}},
-      "deactivate_plugins": {{CLAUDE_DEACTIVATE_PLUGINS}}
-    }
-  },
-  "overrideFeatureInstallOrder": [
-    "./features/proxy",
-    "./features/claude-code",
-    "./features/plugin-manager"
-  ],
-  "customizations": {
-    "vscode": {
-      "extensions": [
-        "anthropic.claude-code"
-      ],
-      "settings": {
-        "terminal.integrated.defaultProfile.linux": "bash"
-      }
-    }
-  },
-  "mounts": [
-    "source=./.claude,target=/workspaces/{{PROJECT_NAME}}/.claude,type=bind,consistency=cached",
-    "source=${localEnv:HOME}/.claude,target=/home/${localEnv:USER}/.claude,type=bind,consistency=cached",
-    "source=${localEnv:HOME}/.claude.json,target=/home/${localEnv:USER}/.claude.json,type=bind,consistency=cached",
-    "source=${localEnv:HOME}/.config/devcontainer/machine-id,target=/etc/machine-id,type=bind,consistency=cached"
-  ],
-  "remoteUser": "${localEnv:USER}",
-  "workspaceFolder": "/workspaces/{{PROJECT_NAME}}"
-}
-"#;
-        json.to_string()
-    }
-
-    /// Build the substitution map for templates
-    fn build_substitution_map(&self) -> HashMap<String, String> {
-        let mut map = HashMap::new();
-
-        // Project info
-        map.insert("PROJECT_NAME".to_string(), self.config.name.clone());
-
-        // Agent configuration
-        map.insert("CLAUDE_VERSION".to_string(), self.config.agent_version().to_string());
-        let provider = self.config.agent_option_str("provider").unwrap_or("");
-        map.insert("CLAUDE_PROVIDER".to_string(), provider.to_string());
-
-        // Agent models as JSON object
-        use crate::config::AgentOptionValue;
-        let models_json = match self.config.agent_options().get("models") {
-            Some(AgentOptionValue::Map(m)) => {
-                let obj: serde_json::Map<String, serde_json::Value> = m
-                    .iter()
-                    .map(|(k, v)| (k.clone(), serde_json::Value::String(v.clone())))
-                    .collect();
-                serde_json::to_string(&serde_json::Value::Object(obj)).unwrap_or_else(|_| "{}".to_string())
-            }
-            _ => "{}".to_string(),
-        };
-        map.insert("CLAUDE_MODELS".to_string(), models_json);
-
-        // Proxy configuration
-        let proxy_enabled = if self.config.proxy().is_some() {
-            "true"
-        } else {
-            "false"
-        };
-        map.insert("PROXY_ENABLED".to_string(), proxy_enabled.to_string());
-
-        if let Some(proxy) = self.config.proxy() {
-            map.insert(
-                "HTTP_PROXY".to_string(),
-                proxy.http().cloned().unwrap_or_default(),
-            );
-            map.insert(
-                "HTTPS_PROXY".to_string(),
-                proxy.https().cloned().unwrap_or_default(),
-            );
-            map.insert(
-                "NO_PROXY".to_string(),
-                proxy.no_proxy().cloned().unwrap_or_else(|| format!("localhost,127.0.0.1{}", ".local")),
-            );
-        } else {
-            map.insert("HTTP_PROXY".to_string(), String::new());
-            map.insert("HTTPS_PROXY".to_string(), String::new());
-            // Split .local to avoid prefix literal interpretation in Rust
-            map.insert("NO_PROXY".to_string(), format!("localhost,127.0.0.1{}", ".local"));
-        }
-
-        // Feature paths
-        map.insert(
-            "FEATURES_CLAUDE_CODE".to_string(),
-            format!("./features/{}", self.config.agent_name()),
-        );
-        map.insert("FEATURES_PROXY".to_string(), "./features/proxy".to_string());
-        map.insert(
-            "FEATURES_PLUGIN_MANAGER".to_string(),
-            "./features/plugin-manager".to_string(),
-        );
-
-        // Plugin activation lists
-        let plugins = self.config.plugins_vec();
-        let activate_plugins: Vec<&String> = plugins
-            .iter()
-            .filter(|p| p.activate)
-            .map(|p| &p.name)
-            .collect();
-        let activate_json = serde_json::to_string(&activate_plugins).unwrap_or_else(|_| "[]".to_string());
-        map.insert("CLAUDE_ACTIVATE_PLUGINS".to_string(), activate_json);
-
-        let deactivate_plugins: Vec<&String> = plugins
-            .iter()
-            .filter(|p| !p.activate)
-            .map(|p| &p.name)
-            .collect();
-        let deactivate_json =
-            serde_json::to_string(&deactivate_plugins).unwrap_or_else(|_| "[]".to_string());
-        map.insert("CLAUDE_DEACTIVATE_PLUGINS".to_string(), deactivate_json);
-
-        // Runtime language version (if available)
-        if let Some(runtime) = self.config.runtime() {
-            if let Some(version_key) = Self::language_to_version_key(runtime.language()) {
-                map.insert(version_key, runtime.version().to_string());
-            }
-        }
-
-        map
-    }
-
-    /// Map a language name to its version variable name
-    pub fn language_to_version_key(language: &str) -> Option<String> {
-        let key = match language {
-            "python" => "PYTHON_VERSION",
-            "node" | "nodejs" | "javascript" => "NODE_VERSION",
-            "rust" => "RUST_VERSION",
-            "go" | "golang" => "GO_VERSION",
-            _ => return None,
-        };
-        Some(key.to_string())
-    }
-
-    /// Render Dockerfile content
-    fn render_dockerfile(&self) -> Result<String> {
-        // Use the configured base image
-        let base_image = self.config.docker_image();
-        let mut content = format!("ARG BASE_IMAGE={}\nFROM ${{BASE_IMAGE}}\n\n", base_image);
-
-        // Add user arguments
-        content.push_str("ARG USERNAME=user\n");
-        content.push_str("ARG USER_UID=1000\n");
-        content.push_str("ARG USER_GID=1000\n");
-
-        // Add language version if runtime is configured
-        if let Some(runtime) = self.config.runtime() {
-            match runtime.language() {
-                "python" => {
-                    content.push_str(&format!("ARG PYTHON_VERSION={}\n\n", runtime.version()));
-                }
-                "node" | "nodejs" => {
-                    content.push_str(&format!("ARG NODE_VERSION={}\n\n", runtime.version()));
-                }
-                "rust" => {
-                    content.push_str(&format!("ARG RUST_VERSION={}\n\n", runtime.version()));
-                }
-                "go" | "golang" => {
-                    content.push_str(&format!("ARG GO_VERSION={}\n\n", runtime.version()));
-                }
-                _ => {}
-            }
-        }
-
-        // Add build args from config
-        for arg in self.config.docker_build_args() {
-            content.push_str(&format!("ARG {}\n", arg));
-        }
-        if !self.config.docker_build_args().is_empty() {
-            content.push('\n');
-        }
-
-        // Set DEBIAN_FRONTEND for non-interactive apt
-        content.push_str("ENV DEBIAN_FRONTEND=noninteractive\n\n");
-
-        // Install common system dependencies
-        content.push_str(
-            r#"# Install system dependencies (best-effort - base image may already have them)
-RUN apt-get update -o Acquire::AllowInsecureRepositories=true 2>/dev/null || apt-get update 2>/dev/null || true && \
-    apt-get install -y --no-install-recommends \
-    curl \
-    git \
-    wget \
-    vim \
-    jq \
-    build-essential \
-    ca-certificates \
-    sudo \
-    2>/dev/null || apt-get install -y --allow-unauthenticated --no-install-recommends \
-    curl git wget vim jq build-essential ca-certificates sudo 2>/dev/null || true && \
-    rm -rf /var/lib/apt/lists/* 2>/dev/null || true
-
-WORKDIR /workspaces
-
-# Create user with sudo access (handle existing users/groups in base image)
-RUN set -e; \
-    if ! id -u "${USERNAME}" >/dev/null 2>&1; then \
-        groupadd -f -g ${USER_GID} ${USERNAME} 2>/dev/null || groupadd -f ${USERNAME} 2>/dev/null || true; \
-        if ! id -u ${USER_UID} >/dev/null 2>&1; then \
-            useradd -u ${USER_UID} -g ${USER_GID} -s /bin/bash -m ${USERNAME} 2>/dev/null || \
-            useradd -s /bin/bash -m ${USERNAME} 2>/dev/null || true; \
-        else \
-            useradd -s /bin/bash -m ${USERNAME} 2>/dev/null || true; \
-        fi; \
-        chown -R ${USERNAME}:${USERNAME} /workspaces 2>/dev/null || true; \
-    fi; \
-    id -u "${USERNAME}" >/dev/null 2>&1 && \
-        echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers || \
-        echo "Warning: user ${USERNAME} not created, container may run as existing user"
-
-USER ${USERNAME}
-"#,
-        );
-
-        Ok(content)
-    }
-
-    /// Copy core features from the Isolde installation
+    /// Copy core features from the Isolde installation.
+    /// Uses [`devcontainer::copy_dir_recursive`] for the actual recursive copy.
     fn copy_core_features(&self, features_dir: &Path) -> Result<Vec<PathBuf>> {
         let mut copied_files = Vec::new();
-
         let core_features_dir = self.isolde_root.join("core/features");
 
         if !core_features_dir.exists() {
@@ -527,42 +264,19 @@ USER ${USERNAME}
                 let feature_name = path.file_name().unwrap_or_default();
                 let dest = features_dir.join(feature_name);
 
-                // Remove existing if present
                 if dest.exists() {
                     fs::remove_dir_all(&dest)?;
                 }
 
-                // Copy recursively
-                self.copy_dir_recursive(&path, &dest)?;
-                copied_files.push(dest.clone());
+                devcontainer::copy_dir_recursive(&path, &dest)?;
+                copied_files.push(dest);
             }
         }
 
         Ok(copied_files)
     }
 
-    /// Copy a directory recursively
-    pub(crate) fn copy_dir_recursive(&self, src: &Path, dst: &Path) -> Result<()> {
-        fs::create_dir_all(dst)?;
-
-        let entries = fs::read_dir(src)
-            .map_err(|e| Error::FileError(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
-
-        for entry in entries.flatten() {
-            let path = entry.path();
-            let dest_path = dst.join(path.file_name().unwrap_or_default());
-
-            if path.is_dir() {
-                self.copy_dir_recursive(&path, &dest_path)?;
-            } else {
-                fs::copy(&path, &dest_path)?;
-            }
-        }
-
-        Ok(())
-    }
-
-    /// Render Claude Code configuration
+    /// Render Claude Code configuration (init-specific: `.claude/config.json`)
     fn render_claude_config(&self) -> Result<String> {
         use crate::config::AgentOptionValue;
         let provider = self.config.agent_option_str("provider").unwrap_or("");
@@ -570,7 +284,6 @@ USER ${USERNAME}
             "provider": provider,
         });
 
-        // Add models mapping if present
         if let Some(AgentOptionValue::Map(m)) = self.config.agent_options().get("models") {
             let models_obj: serde_json::Map<String, serde_json::Value> = m
                 .iter()
@@ -585,7 +298,7 @@ USER ${USERNAME}
             .map_err(|e| Error::Other(format!("Failed to serialize Claude config: {}", e)))
     }
 
-    /// Render project README content
+    /// Render project README content (init-specific)
     fn render_project_readme(&self) -> Result<String> {
         Ok(format!(
             r#"# {}
@@ -658,27 +371,26 @@ runtime:
     }
 
     #[test]
-    fn test_build_substitution_map() {
+    fn test_render_devcontainer_json() {
         let config = create_test_config();
         let generator = Generator::new(config).unwrap();
-        let map = generator.build_substitution_map();
-
-        assert_eq!(map.get("PROJECT_NAME"), Some(&"test-app".to_string()));
-        assert_eq!(map.get("CLAUDE_VERSION"), Some(&"latest".to_string()));
-        assert_eq!(map.get("CLAUDE_PROVIDER"), Some(&"anthropic".to_string()));
-        assert_eq!(map.get("PYTHON_VERSION"), Some(&"3.12".to_string()));
-        assert_eq!(map.get("PROXY_ENABLED"), Some(&"false".to_string()));
+        let host_auth = devcontainer::HostAuthInfo::detect();
+        let result = devcontainer::render_devcontainer_json(&generator.config, &host_auth);
+        assert!(result.is_ok());
+        let rendered = result.unwrap();
+        assert!(rendered.contains("test-app"));
+        assert!(rendered.contains("claude-code"));
+        assert!(rendered.contains("common-utils"));
     }
 
     #[test]
     fn test_render_dockerfile() {
         let config = create_test_config();
         let generator = Generator::new(config).unwrap();
-        let dockerfile = generator.render_dockerfile().unwrap();
-
+        let dockerfile = devcontainer::render_dockerfile(&generator.config).unwrap();
         assert!(dockerfile.contains("ARG BASE_IMAGE=mcr.microsoft.com/devcontainers/base:ubuntu"));
-        assert!(dockerfile.contains("ARG PYTHON_VERSION=3.12"));
-        assert!(dockerfile.contains("USER ${USERNAME}"));
+        assert!(dockerfile.contains("FROM ${BASE_IMAGE}"));
+        assert!(dockerfile.contains("ARG USERNAME=user"));
     }
 
     #[test]
@@ -702,134 +414,6 @@ runtime:
     }
 
     #[test]
-    fn test_substitution_with_proxy() {
-        let mut config = create_test_config();
-        // For v0.1 config with proxy, we need to parse from YAML
-        let config_with_proxy = Config::from_str(
-            r#"
-version: "0.1"
-name: test-app
-workspace:
-  dir: ./project
-docker:
-  image: ubuntu:latest
-agent:
-  name: claude-code
-  version: latest
-  options:
-    provider: anthropic
-proxy:
-  http: http://proxy.example.com:8080
-  https: http://proxy.example.com:8080
-  no_proxy: localhost,127.0.0.1
-"#,
-        )
-        .unwrap();
-
-        let generator = Generator::new(config_with_proxy).unwrap();
-        let map = generator.build_substitution_map();
-
-        assert_eq!(
-            map.get("HTTP_PROXY"),
-            Some(&"http://proxy.example.com:8080".to_string())
-        );
-        assert_eq!(
-            map.get("HTTPS_PROXY"),
-            Some(&"http://proxy.example.com:8080".to_string())
-        );
-        assert_eq!(map.get("PROXY_ENABLED"), Some(&"true".to_string()));
-    }
-
-    #[test]
-    fn test_plugin_activation_lists() {
-        let config = Config::from_str(
-            r#"
-version: "0.1"
-name: test-app
-workspace:
-  dir: ./project
-docker:
-  image: ubuntu:latest
-agent:
-  name: claude-code
-  version: latest
-  options:
-    provider: anthropic
-marketplaces:
-  omc:
-    url: https://example.com
-plugins:
-  - marketplace: omc
-    name: plugin1
-    activate: true
-  - marketplace: omc
-    name: plugin2
-    activate: false
-"#,
-        )
-        .unwrap();
-
-        let generator = Generator::new(config).unwrap();
-        let map = generator.build_substitution_map();
-
-        assert!(map.get("CLAUDE_ACTIVATE_PLUGINS").unwrap().contains("plugin1"));
-        assert!(!map.get("CLAUDE_ACTIVATE_PLUGINS").unwrap().contains("plugin2"));
-        assert!(map.get("CLAUDE_DEACTIVATE_PLUGINS").unwrap().contains("plugin2"));
-        assert!(!map.get("CLAUDE_DEACTIVATE_PLUGINS").unwrap().contains("plugin1"));
-    }
-
-    #[test]
-    fn test_language_to_version_key_mappings() {
-        use crate::generator::Generator;
-
-        assert_eq!(Generator::language_to_version_key("python"), Some("PYTHON_VERSION".to_string()));
-        assert_eq!(Generator::language_to_version_key("node"), Some("NODE_VERSION".to_string()));
-        assert_eq!(Generator::language_to_version_key("nodejs"), Some("NODE_VERSION".to_string()));
-        assert_eq!(Generator::language_to_version_key("javascript"), Some("NODE_VERSION".to_string()));
-        assert_eq!(Generator::language_to_version_key("rust"), Some("RUST_VERSION".to_string()));
-        assert_eq!(Generator::language_to_version_key("go"), Some("GO_VERSION".to_string()));
-        assert_eq!(Generator::language_to_version_key("golang"), Some("GO_VERSION".to_string()));
-        assert_eq!(Generator::language_to_version_key("unknown"), None);
-    }
-
-    #[test]
-    fn test_render_devcontainer_json_substitutions() {
-        let config = create_test_config();
-        let generator = Generator::new(config).unwrap();
-
-        let result = generator.render_devcontainer_json();
-        assert!(result.is_ok());
-
-        let rendered = result.unwrap();
-        assert!(rendered.contains("test-app"));
-        assert!(!rendered.contains("{{PROJECT_NAME}}"));
-        assert!(rendered.contains("\"haiku\":"));
-        assert!(rendered.contains("\"sonnet\":"));
-    }
-
-    #[test]
-    fn test_copy_dir_recursive() {
-        let temp_dir = tempfile::tempdir().unwrap();
-        let src = temp_dir.path().join("src");
-        let dst = temp_dir.path().join("dst");
-
-        // Create source structure
-        fs::create_dir_all(&src).unwrap();
-        fs::write(src.join("file1.txt"), "content1").unwrap();
-        fs::create_dir_all(src.join("subdir")).unwrap();
-        fs::write(src.join("subdir/file2.txt"), "content2").unwrap();
-
-        let config = create_test_config();
-        let generator = Generator::new(config).unwrap();
-
-        generator.copy_dir_recursive(&src, &dst).unwrap();
-
-        assert!(dst.exists());
-        assert!(dst.join("file1.txt").exists());
-        assert!(dst.join("subdir/file2.txt").exists());
-    }
-
-    #[test]
     fn test_copy_core_features_with_temp_dir() {
         let temp_dir = tempfile::tempdir().unwrap();
         let features_dir = temp_dir.path().join("features");
@@ -847,6 +431,7 @@ plugins:
 
         assert!(!copied.is_empty());
         assert!(features_dir.join("feature1").exists());
+        assert!(features_dir.join("feature1/install.sh").exists());
     }
 
     #[test]
@@ -869,7 +454,6 @@ plugins:
 
         let report = generator.generate(output_dir).unwrap();
 
-        // Verify files created
         assert!(!report.files_created.is_empty());
 
         let devcontainer_dir = output_dir.join(".devcontainer");
@@ -911,5 +495,72 @@ plugins:
         // Second run - should show modify
         let report2 = generator.dry_run(&output_dir).unwrap();
         assert!(report2.would_modify.iter().any(|p| p.ends_with("devcontainer.json")));
+    }
+
+    #[test]
+    fn test_generation_guard_cleanup_on_drop() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let file_path = temp_dir.path().join("test_file.txt");
+        let dir_path = temp_dir.path().join("test_dir");
+
+        // Create real files to track
+        fs::write(&file_path, "content").unwrap();
+        fs::create_dir_all(&dir_path).unwrap();
+
+        assert!(file_path.exists());
+        assert!(dir_path.exists());
+
+        {
+            let mut guard = GenerationGuard::new();
+            guard.track(&file_path);
+            guard.track(&dir_path);
+            // Drop without commit — should clean up
+        }
+
+        assert!(!file_path.exists(), "file should be removed on guard drop");
+        assert!(!dir_path.exists(), "directory should be removed on guard drop");
+    }
+
+    #[test]
+    fn test_generation_guard_no_cleanup_after_commit() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let file_path = temp_dir.path().join("committed_file.txt");
+
+        fs::write(&file_path, "content").unwrap();
+        assert!(file_path.exists());
+
+        {
+            let mut guard = GenerationGuard::new();
+            guard.track(&file_path);
+            guard.commit(); // committed — should NOT clean up
+        }
+
+        assert!(file_path.exists(), "file should remain after committed guard drop");
+    }
+
+    #[test]
+    fn test_generate_full_workflow_with_guard() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let output_dir = temp_dir.path();
+
+        // Setup mock isolde root
+        let mock_root = temp_dir.path().join("isolde");
+        fs::create_dir_all(mock_root.join("core/features/claude-code")).unwrap();
+        fs::create_dir_all(mock_root.join("core/features/proxy")).unwrap();
+        fs::create_dir_all(mock_root.join("core/features/plugin-manager")).unwrap();
+        fs::write(mock_root.join("core/features/claude-code/install.sh"), "#!/bin/bash").unwrap();
+        fs::write(mock_root.join("core/features/proxy/install.sh"), "#!/bin/bash").unwrap();
+        fs::write(mock_root.join("core/features/plugin-manager/install.sh"), "#!/bin/bash").unwrap();
+
+        let config = create_test_config();
+        let mut generator = Generator::new(config).unwrap();
+        generator.isolde_root = mock_root;
+
+        let report = generator.generate(output_dir).unwrap();
+
+        // Verify files remain after successful generation
+        assert!(!report.files_created.is_empty());
+        assert!(output_dir.join(".devcontainer/devcontainer.json").exists());
+        assert!(output_dir.join(".devcontainer/Dockerfile").exists());
     }
 }

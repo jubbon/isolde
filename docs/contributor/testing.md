@@ -18,7 +18,7 @@ This project uses a multi-layered testing approach:
 
 | Layer | Tool | Purpose |
 |-------|------|---------|
-| **Rust Tests** | cargo test | Unit and integration tests |
+| **Rust Tests** | cargo test | Unit and integration tests (185 tests) |
 | **Makefile Tests** | Bash make | Fast integration tests (build, config, runtime) |
 | **E2E Tests** | Rust + Docker | End-to-end CLI testing |
 | **CI/CD** | GitHub Actions | Automated testing on push/PR |
@@ -96,12 +96,18 @@ make test-config       # Config test only
 
 ### E2E Tests
 
-Located in `tests/` directory using Rust and Docker.
+Located in `isolde-cli/tests/e2e_tests.rs` using `assert_cmd` and `predicates` crates.
+
+**Coverage (9 tests):**
+- CLI version and help output
+- Project initialization with `--template` and `--yes` flags
+- Template and preset listing
+- Validation, sync, diff, and doctor error handling
 
 **Advantages:**
 - Tests full CLI workflow
-- Real project creation
-- Integration with Docker
+- Real project creation in temp directories
+- No Docker dependency for basic CLI tests
 
 **Run:**
 ```bash
