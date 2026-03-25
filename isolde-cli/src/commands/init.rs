@@ -9,6 +9,8 @@ use colored::Colorize;
 use isolde_core::config::{Config, TemplateInfo};
 use isolde_core::{Error, Result};
 
+use super::is_agent_implemented;
+
 /// Options for the init command
 #[derive(Debug, Clone)]
 pub struct InitOptions {
@@ -58,11 +60,6 @@ impl Default for InitOptions {
             https_proxy: None,
         }
     }
-}
-
-/// Check if an agent has a working install.sh implementation
-fn is_agent_implemented(agent: &str) -> bool {
-    matches!(agent, "claude-code" | "codex")
 }
 
 /// Hardcoded default language versions (fallback when template-info.yaml is unavailable)

@@ -25,3 +25,8 @@ pub use run::{run as run_run, RunOptions};
 pub use stop::{run as run_stop, StopOptions};
 pub use sync::{run as run_sync, SyncOptions};
 pub use validate::{run as run_validate, ValidateFormat, ValidateOptions};
+
+/// Check if an agent has a working install.sh implementation
+pub fn is_agent_implemented(agent: &str) -> bool {
+    matches!(agent, "claude-code" | "codex")
+}

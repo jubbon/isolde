@@ -243,6 +243,40 @@ pub enum IsolationLevel {
     Full,
 }
 
+/// Validate project name: alphanumeric, `-`, `_`, max 64 chars.
+fn validate_project_name(name: &str) -> crate::Result<()> {
+    if name.len() > 64 {
+        return Err(crate::Error::InvalidTemplate(format!(
+            "Project name '{}' exceeds 64 characters",
+            name
+        )));
+    }
+    if !name
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+    {
+        return Err(crate::Error::InvalidTemplate(format!(
+            "Project name '{}' contains invalid characters. Only alphanumeric, '-', and '_' are allowed.",
+            name
+        )));
+    }
+    Ok(())
+}
+
+/// Validate docker image: alphanumeric, `.` `/` `:` `-` `_` `@`.
+fn validate_docker_image(image: &str) -> crate::Result<()> {
+    if !image
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '/' | ':' | '_' | '@'))
+    {
+        return Err(crate::Error::InvalidTemplate(format!(
+            "Docker image '{}' contains invalid characters",
+            image
+        )));
+    }
+    Ok(())
+}
+
 impl Config {
     /// Validate the v0.1 configuration
     pub fn validate(&self) -> crate::Result<()> {
@@ -254,12 +288,13 @@ impl Config {
             )));
         }
 
-        // Validate name
+        // Validate project name
         if self.name.is_empty() {
             return Err(crate::Error::InvalidTemplate(
                 "Project name cannot be empty".to_string(),
             ));
         }
+        validate_project_name(&self.name)?;
 
         // Validate workspace directory
         if self.workspace.dir.is_empty() {
@@ -274,6 +309,7 @@ impl Config {
                 "Docker image cannot be empty".to_string(),
             ));
         }
+        validate_docker_image(&self.docker.image)?;
 
         // Validate agent config
         self.agent.validate()?;

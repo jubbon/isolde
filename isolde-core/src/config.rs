@@ -174,25 +174,7 @@ impl Config {
     }
 
     /// Get plugins
-    pub fn plugins(&self) -> &[PluginConfigView] {
-        // Cache for converted plugins to avoid allocations on every call
-        // In a real implementation, this might be stored as part of Config
-        static EMPTY: [PluginConfigView; 0] = [];
-        match &self.inner {
-            ConfigInner::V0_1(c) => {
-                if c.plugins.is_empty() {
-                    &EMPTY
-                } else {
-                    // Convert plugins once - this is a bit inefficient but works
-                    // For production, consider storing converted views
-                    &[]
-                }
-            }
-        }
-    }
-
-    /// Get plugins as a Vec (helper for iteration)
-    pub fn plugins_vec(&self) -> Vec<PluginConfigView> {
+    pub fn plugins(&self) -> Vec<PluginConfigView> {
         match &self.inner {
             ConfigInner::V0_1(c) => c
                 .plugins
@@ -626,9 +608,9 @@ agent:
     }
 
     #[test]
-    fn test_config_plugins_vec() {
+    fn test_config_plugins() {
         let config = Config::from_str(VALID_ISOLDE_YAML_V0_1).unwrap();
-        let plugins = config.plugins_vec();
+        let plugins = config.plugins();
         assert_eq!(plugins.len(), 1);
         assert_eq!(plugins[0].name, "oh-my-claudecode");
         assert_eq!(plugins[0].activate, true);

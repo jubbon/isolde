@@ -179,7 +179,7 @@ pub fn copy_core_features(dest: &Path) -> Result<()> {
 /// and feature install order.
 pub fn render_devcontainer_json(config: &Config, host_auth: &HostAuthInfo) -> Result<String> {
     let proxy = config.proxy();
-    let plugins = config.plugins_vec();
+    let plugins = config.plugins();
     let mut features = serde_json::Map::new();
 
     // common-utils: match host UID/GID for bind-mounted directories
@@ -449,7 +449,7 @@ This is an Isolde-managed isolated development environment.
         }
     }
 
-    let plugins = config.plugins_vec();
+    let plugins = config.plugins();
     if !plugins.is_empty() {
         content.push_str("\n## Claude Plugins\n");
         for plugin in &plugins {

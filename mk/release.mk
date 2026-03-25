@@ -4,7 +4,7 @@
 
 .PHONY: release release/check release/tag
 
-VERSION := $(shell cat VERSION 2>/dev/null || echo "unknown")
+VERSION := $(shell sed -n '/^\[workspace.package\]/,/^\[/p' Cargo.toml | grep '^version' | sed 's/.*"\(.*\)"/\1/')
 
 ## Check release prerequisites
 release/check:
