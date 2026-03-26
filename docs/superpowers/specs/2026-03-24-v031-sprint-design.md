@@ -76,34 +76,44 @@ SemVer patch — only bug fixes, no new features or breaking changes.
 - **Bug:** (a) Generated YAML includes `marketplace: omc` per plugin but no `marketplaces:` section, failing validation. (b) When plugins list is empty, generated YAML has a bare `plugins:` block with no value, producing odd YAML.
 - **Fix:** (a) When plugins non-empty, prepend `marketplaces:\n  omc:\n    url: <url>` before the `plugins:` block. (b) When plugins empty, emit `plugins: []` instead of an empty block.
 
-### 9. `HashMap` → `BTreeMap` for stable JSON output (15 min)
+### 9a. Input validation: `workspace.dir` path traversal (10 min)
+- **File:** `isolde-core/src/config/v0_1/mod.rs` (in `validate()`)
+- **Bug:** `workspace.dir` is only checked for emptiness. Values like `../../.ssh` cause `fs::create_dir_all` to write outside the project directory (sync.rs, generator.rs).
+- **Fix:** Add `validate_workspace_dir()` — must be relative (no leading `/`), no `..`, alphanumeric + `.-_/` only. Call after the emptiness check in `validate()`.
+
+### 9b. Input validation: `agent.name` character allowlist (5 min)
+- **File:** `isolde-core/src/config/v0_1/mod.rs` (in `AgentConfig::validate()`)
+- **Bug:** `agent.name` has no character validation. Value `../proxy` could reference wrong feature directory in devcontainer.json.
+- **Fix:** Add allowlist to `AgentConfig::validate()` — alphanumeric + `-` + `_` only.
+
+### 10. `HashMap` → `BTreeMap` for stable JSON output (15 min)
 - **Bug:** `agent_options()` returns `&HashMap<String, AgentOptionValue>`, iteration order is non-deterministic
 - **Fix:** Change the `options` field in `AgentConfig` struct (`isolde-core/src/config/v0_1/mod.rs`) from `HashMap` to `BTreeMap`. Update `agent_options()` return type in `isolde-core/src/config.rs`. Call sites in `devcontainer.rs` and `template.rs` require no change.
 
 ## Day 3 (March 27) — 1.5h: Quality + release
 
-### 10. `expected_artifacts()` — dynamic list from config (15 min)
+### 11. `expected_artifacts()` — dynamic list from config (15 min)
 - **File:** `isolde-core/src/devcontainer.rs:508-522`
 - **Bug:** Hardcoded feature list ignores actual agent config, causes false positives in `isolde diff`
 - **Fix:** Use config to determine which features should be present (agent feature + proxy + plugin-manager if applicable)
 
-### 11. Typo "Isolle" + fix `--force` error message (10 min)
+### 12. Typo "Isolle" + fix `--force` error message (10 min)
 - **Files:** `isolde-cli/src/commands/diff.rs:597`, `isolde-cli/src/commands/init.rs:541`
 - **Bug:** Typo "Isolle" instead of "Isolde"; error message suggests `--force` flag that doesn't exist
 - **Fix:** Fix typo. Change init error message to: "isolde.yaml already exists. Delete it and re-run `isolde init` to regenerate."
 
-### 12. `validate` ignores `cwd` (15 min)
+### 13. `validate` ignores `cwd` (15 min)
 - **File:** `isolde-cli/src/commands/validate.rs:119`
 - **Bug:** Always uses `std::env::current_dir()`, inconsistent with other commands
 - **Fix:** Add `cwd: PathBuf` to `ValidateOptions`, use it instead of `current_dir()`
 
-### 13. Dead code cleanup (15 min)
+### 14. Dead code cleanup (15 min)
 - **Files:**
   - `isolde-core/src/config.rs:296-394` — remove unused legacy types (verify not in public API first; mark `#[deprecated]` if exposed)
   - `isolde-cli/src/cli.rs:441` — remove unused `print_error` function
 - **Note:** `.tera` template files and `DiffLineType::Header` are actively used — do NOT delete them.
 
-### 14. Release v0.3.1 (15 min)
+### 15. Release v0.3.1 (15 min)
 - Update `Cargo.toml` version to `0.3.1`
 - Add `## [0.3.1]` entry to `CHANGELOG.md`
 - Merge dev → main (direct merge, pet project)

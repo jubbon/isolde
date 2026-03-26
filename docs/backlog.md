@@ -39,6 +39,10 @@ This file tracks planned features, improvements, and technical debt for the Isol
 - [ ] **Agent permissions preset** - Pre-configure agent permissions and behavior in `isolde.yaml` (e.g., Claude Code `settings.json` with allowed tools/commands), so new projects don't need manual permission setup
 - [ ] **Auto-sync on config change** - Watch `isolde.yaml` modification time and prompt to re-sync devcontainer when config has changed
 
+- [ ] **"Do not edit" banner in generated files** - Add a comment/header to all files produced by `isolde sync` (devcontainer.json, Dockerfile, etc.) warning that they are auto-generated and should not be edited directly — edit `isolde.yaml` and re-run `isolde sync` instead
+
+- [ ] **TUI configuration wizard** (`isolde config`) - Interactive terminal UI wizard for editing `isolde.yaml`: add/change coding agent, configure proxy, manage plugins, set isolation level, modify docker image, etc. Allows users to customize their project configuration without manually editing YAML. Consider using [ratatui](https://github.com/ratatui/ratatui) for the TUI framework.
+
 ### Medium Priority
 - [ ] **Network modes** - Configure container network access: internet, host services (e.g., Ollama on host), isolated mode
 - [ ] **Shared cache volumes** - Shared package caches (`~/.isolde/caches/npm`, `pip`, `cargo`) mounted across projects to speed up builds
