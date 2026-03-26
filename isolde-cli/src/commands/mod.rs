@@ -30,3 +30,7 @@ pub use validate::{run as run_validate, ValidateFormat, ValidateOptions};
 pub fn is_agent_implemented(agent: &str) -> bool {
     matches!(agent, "claude-code" | "codex")
 }
+
+/// Hint message for container-not-running errors
+pub const CONTAINER_NOT_RUNNING_HINT: &str =
+    "Make sure the container is running. Start with 'isolde run'.";
