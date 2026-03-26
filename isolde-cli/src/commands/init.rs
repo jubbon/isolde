@@ -320,6 +320,24 @@ fn generate_config_from_preset(
 
     // Generate config based on preset (presets always use claude-code agent)
     let agent_options_section = agent_options_yaml("claude-code");
+
+    // Build marketplaces + plugins sections based on whether plugins exist
+    let (marketplaces_section, plugins_section) = if preset.claude_plugins.is_empty() {
+        (String::new(), "plugins: []\n".to_string())
+    } else {
+        let marketplaces = "marketplaces:\n  omc:\n    url: https://github.com/oh-my-claudecode/marketplace\n\n".to_string();
+        let plugins = format!(
+            "plugins:\n{}\n",
+            preset
+                .claude_plugins
+                .iter()
+                .map(|p| format!("  - marketplace: omc\n    name: {}\n    activate: true", p))
+                .collect::<Vec<_>>()
+                .join("\n")
+        );
+        (marketplaces, plugins)
+    };
+
     let config = format!(
         r#"# Isolde Configuration for {name}
 # Generated from preset: {preset}
@@ -347,9 +365,7 @@ runtime:
   tools: {tools}
 
 # Plugin configurations
-plugins:
-{plugins}
-
+{marketplaces}{plugins}
 # Git configuration
 git:
   generated: ignored
@@ -360,12 +376,8 @@ git:
         lang = preset.template,
         version = version,
         tools = serde_yaml::to_string(&preset.features).unwrap_or_else(|_| "[]".to_string()),
-        plugins = preset
-            .claude_plugins
-            .iter()
-            .map(|p| format!("  - marketplace: omc\n    name: {}\n    activate: true", p))
-            .collect::<Vec<_>>()
-            .join("\n")
+        marketplaces = marketplaces_section,
+        plugins = plugins_section,
     );
 
     Ok(config)
