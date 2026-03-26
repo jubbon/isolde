@@ -9,7 +9,7 @@ pub mod version;
 pub use v0_1::AgentOptionValue;
 pub use v0_1::IsolationLevel;
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::path::Path;
 
 use crate::{Error, Result};
@@ -133,7 +133,7 @@ impl Config {
     }
 
     /// Get agent options (free-form key-value pairs)
-    pub fn agent_options(&self) -> &HashMap<String, AgentOptionValue> {
+    pub fn agent_options(&self) -> &BTreeMap<String, AgentOptionValue> {
         match &self.inner {
             ConfigInner::V0_1(c) => &c.agent.options,
         }
