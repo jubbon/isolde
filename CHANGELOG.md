@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-03-27
+
+### Fixed
+
+- `expected_artifacts()` now uses config to determine features instead of hardcoded list
+- Typo "Isolle" → "Isolde" in generated project README
+- `init` error message no longer suggests non-existent `--force` flag
+- `validate` command now respects working directory from options instead of hardcoding `current_dir()`
+
+### Removed
+
+- Unused legacy config types (duplicate of `v0_1` module types)
+- Unused `print_error` helper from CLI
+
 ## [0.3.0] - 2026-03-24
 
 ### Added
