@@ -272,6 +272,7 @@ fn execute_validate(
         commands::ValidateFormat::from_str(&format).unwrap_or(commands::ValidateFormat::Text);
 
     let opts = commands::ValidateOptions {
+        cwd: std::env::current_dir()?,
         quick,
         verbose: validate_verbose,
         warnings_as_errors,
