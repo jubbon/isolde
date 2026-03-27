@@ -224,10 +224,9 @@ pub fn run(opts: DiffOptions) -> Result<DiffResult> {
                     .unwrap_or(false);
 
                 if !has_template_ref {
-                    println!("Error: No template reference found in isolde.yaml.");
-                    println!("The 'template' field is required for diff comparison.");
-                    println!("Please re-initialize with 'isolde init --template <name>'.");
-                    std::process::exit(1);
+                    return Err(Error::InvalidTemplate(
+                        "No template reference found in isolde.yaml. The 'template' field is required for diff comparison. Please re-initialize with 'isolde init --template <name>'.".to_string(),
+                    ));
                 }
 
                 // Template exists but generator not available in this context
@@ -606,7 +605,7 @@ fn generate_readme(config: &Config) -> Result<String> {
     Ok(format!(
         r#"# {}
 
-This project was created using the Isolle devcontainer template system.
+This project was created using the Isolde devcontainer template system.
 
 ## Getting Started
 

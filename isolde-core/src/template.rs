@@ -145,7 +145,7 @@ impl TemplateEngine {
             serde_json::to_string(&install_order).unwrap_or_else(|_| "[]".to_string());
 
         // Plugin activation lists (only relevant for claude-code)
-        let plugins = config.plugins_vec();
+        let plugins = config.plugins();
         let active_plugins: Vec<String> = plugins
             .iter()
             .filter(|p| p.activate)

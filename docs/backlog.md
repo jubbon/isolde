@@ -24,14 +24,28 @@ This file tracks planned features, improvements, and technical debt for the Isol
 - [x] **E2E tests revived** - 9 active E2E tests covering CLI version, help, init, templates, presets, validate, sync, diff, doctor
 - [x] **Container module tests** - Unit tests for `container.rs` parsing functions
 - [x] **Remove unwrap() from production code** - Replaced with proper error handling
+- [x] **CI/CD pipeline** - GitHub Actions: Rust CI (fmt, clippy, test, build) + release workflow with binary artifacts
+- [x] **v0.3.0 release** - Documentation fixes, functional bug fixes, code quality improvements, Codex support
 
 ## In Progress
 
-- [ ] **v0.3.0 sprint** - Documentation fixes, functional bug fixes, code quality improvements (Mar 13 - Mar 24, 2026)
+- [ ] **v0.3.1 sprint** - Bug fixes and code quality from audit (Mar 25 - Mar 27, 2026)
 
 ## Planned Features
 
+### High Priority
+- [ ] **OpenCode agent support** - Open-source alternative to Claude Code
+- [ ] **Multi-agent per container** - Multiple agents in one devcontainer (e.g., one for design, another for implementation)
+- [ ] **Agent permissions preset** - Pre-configure agent permissions and behavior in `isolde.yaml` (e.g., Claude Code `settings.json` with allowed tools/commands), so new projects don't need manual permission setup
+- [ ] **Auto-sync on config change** - Watch `isolde.yaml` modification time and prompt to re-sync devcontainer when config has changed
+
+- [ ] **"Do not edit" banner in generated files** - Add a comment/header to all files produced by `isolde sync` (devcontainer.json, Dockerfile, etc.) warning that they are auto-generated and should not be edited directly — edit `isolde.yaml` and re-run `isolde sync` instead
+
+- [ ] **TUI configuration wizard** (`isolde config`) - Interactive terminal UI wizard for editing `isolde.yaml`: add/change coding agent, configure proxy, manage plugins, set isolation level, modify docker image, etc. Allows users to customize their project configuration without manually editing YAML. Consider using [ratatui](https://github.com/ratatui/ratatui) for the TUI framework.
+
 ### Medium Priority
+- [ ] **Network modes** - Configure container network access: internet, host services (e.g., Ollama on host), isolated mode
+- [ ] **Shared cache volumes** - Shared package caches (`~/.isolde/caches/npm`, `pip`, `cargo`) mounted across projects to speed up builds
 - [ ] **Self-update command** - `isolde --self-update` to update the CLI binary from the latest release
 - [ ] **Remove proxy duplication** - Share proxy settings between features without duplication
 - [ ] **Better error messages** - Improve error reporting when feature resolution fails
@@ -51,4 +65,4 @@ This file tracks planned features, improvements, and technical debt for the Isol
 - [ ] **GPU support templates** - Preconfigured for CUDA/ROCm
 - [ ] **Service integration** - Built-in database, Redis, etc.
 - [ ] **CI/CD templates** - GitHub Actions, GitLab CI configs
-- [ ] **Pre-built binaries** - Distribute release binaries via GitHub Releases
+- [x] ~~**Pre-built binaries**~~ - Done: release workflow publishes Linux x86_64 binary to GitHub Releases

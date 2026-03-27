@@ -9,7 +9,7 @@ pub mod version;
 pub use v0_1::AgentOptionValue;
 pub use v0_1::IsolationLevel;
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::path::Path;
 
 use crate::{Error, Result};
@@ -133,7 +133,7 @@ impl Config {
     }
 
     /// Get agent options (free-form key-value pairs)
-    pub fn agent_options(&self) -> &HashMap<String, AgentOptionValue> {
+    pub fn agent_options(&self) -> &BTreeMap<String, AgentOptionValue> {
         match &self.inner {
             ConfigInner::V0_1(c) => &c.agent.options,
         }
@@ -174,25 +174,7 @@ impl Config {
     }
 
     /// Get plugins
-    pub fn plugins(&self) -> &[PluginConfigView] {
-        // Cache for converted plugins to avoid allocations on every call
-        // In a real implementation, this might be stored as part of Config
-        static EMPTY: [PluginConfigView; 0] = [];
-        match &self.inner {
-            ConfigInner::V0_1(c) => {
-                if c.plugins.is_empty() {
-                    &EMPTY
-                } else {
-                    // Convert plugins once - this is a bit inefficient but works
-                    // For production, consider storing converted views
-                    &[]
-                }
-            }
-        }
-    }
-
-    /// Get plugins as a Vec (helper for iteration)
-    pub fn plugins_vec(&self) -> Vec<PluginConfigView> {
+    pub fn plugins(&self) -> Vec<PluginConfigView> {
         match &self.inner {
             ConfigInner::V0_1(c) => c
                 .plugins
@@ -294,107 +276,7 @@ pub struct GitConfigView {
     pub generated: v0_1::GitGeneratedHandling,
 }
 
-// ========== Legacy types kept for backward compatibility ==========
-
-/// Workspace configuration (legacy)
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct WorkspaceConfig {
-    /// Directory for the workspace (relative to project root)
-    pub dir: String,
-}
-
-/// Docker configuration (legacy)
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct DockerConfig {
-    /// Base Docker image
-    pub image: String,
-    /// Build arguments for Docker
-    #[serde(default)]
-    pub build_args: Vec<String>,
-}
-
-/// Runtime configuration (language, package manager, tools) - legacy
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct RuntimeConfig {
-    /// Programming language
-    pub language: String,
-    /// Language version
-    pub version: String,
-    /// Package manager
-    pub package_manager: String,
-    /// Additional tools to install
-    #[serde(default)]
-    pub tools: Vec<String>,
-}
-
-/// Proxy configuration for corporate networks - legacy
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ProxyConfig {
-    /// HTTP proxy URL
-    pub http: Option<String>,
-    /// HTTPS proxy URL
-    pub https: Option<String>,
-    /// No proxy hosts
-    pub no_proxy: Option<String>,
-}
-
-/// Marketplace configuration - legacy
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MarketplaceConfig {
-    /// Marketplace URL
-    pub url: String,
-}
-
-/// Plugin configuration - legacy
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct PluginConfig {
-    /// Marketplace to fetch plugin from
-    pub marketplace: String,
-    /// Plugin name
-    pub name: String,
-    /// Whether to activate the plugin
-    #[serde(default = "default_plugin_activate")]
-    pub activate: bool,
-}
-
-/// Git configuration - legacy
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct GitConfig {
-    /// How to handle generated files in git
-    #[serde(default = "default_git_generated")]
-    pub generated: GitGeneratedHandling,
-}
-
-impl Default for GitConfig {
-    fn default() -> Self {
-        Self {
-            generated: default_git_generated(),
-        }
-    }
-}
-
-fn default_plugin_activate() -> bool {
-    true
-}
-
-fn default_git_generated() -> GitGeneratedHandling {
-    GitGeneratedHandling::Ignored
-}
-
-/// How to handle generated files in git
-#[derive(Debug, Clone, Deserialize, Serialize, Default, PartialEq, Eq)]
-#[serde(rename_all = "lowercase")]
-pub enum GitGeneratedHandling {
-    /// Add generated files to .gitignore
-    #[default]
-    Ignored,
-    /// Commit generated files
-    Committed,
-    /// Add to gitattributes with linguist-generated
-    LinguistGenerated,
-}
-
-// ========== Template metadata (unchanged) ==========
+// ========== Template metadata ==========
 
 /// Template metadata from template-info.yaml
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -626,9 +508,9 @@ agent:
     }
 
     #[test]
-    fn test_config_plugins_vec() {
+    fn test_config_plugins() {
         let config = Config::from_str(VALID_ISOLDE_YAML_V0_1).unwrap();
-        let plugins = config.plugins_vec();
+        let plugins = config.plugins();
         assert_eq!(plugins.len(), 1);
         assert_eq!(plugins[0].name, "oh-my-claudecode");
         assert_eq!(plugins[0].activate, true);

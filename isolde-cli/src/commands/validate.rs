@@ -8,12 +8,15 @@ use std::process::Command;
 
 use colored::Colorize;
 use isolde_core::config::Config;
-use isolde_core::{Error, Result};
+use isolde_core::Result;
 use serde::Serialize;
 
 /// Options for the validate command
 #[derive(Debug, Clone)]
 pub struct ValidateOptions {
+    /// Working directory (project root)
+    pub cwd: PathBuf,
+
     /// Quick validation (skip expensive checks)
     pub quick: bool,
 
@@ -53,6 +56,7 @@ impl ValidateFormat {
 impl Default for ValidateOptions {
     fn default() -> Self {
         Self {
+            cwd: std::env::current_dir().unwrap_or_default(),
             quick: false,
             verbose: false,
             warnings_as_errors: false,
@@ -116,8 +120,7 @@ impl ValidationReport {
 
 /// Run the validate command
 pub fn run(opts: ValidateOptions) -> Result<ValidationReport> {
-    let cwd = std::env::current_dir()
-        .map_err(|e| Error::Other(format!("Failed to get current directory: {}", e)))?;
+    let cwd = &opts.cwd;
 
     if opts.format == ValidateFormat::Text {
         println!("{}", "🔍 Validating Isolde configuration...".cyan());

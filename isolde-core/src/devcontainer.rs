@@ -179,7 +179,7 @@ pub fn copy_core_features(dest: &Path) -> Result<()> {
 /// and feature install order.
 pub fn render_devcontainer_json(config: &Config, host_auth: &HostAuthInfo) -> Result<String> {
     let proxy = config.proxy();
-    let plugins = config.plugins_vec();
+    let plugins = config.plugins();
     let mut features = serde_json::Map::new();
 
     // common-utils: match host UID/GID for bind-mounted directories
@@ -449,7 +449,7 @@ This is an Isolde-managed isolated development environment.
         }
     }
 
-    let plugins = config.plugins_vec();
+    let plugins = config.plugins();
     if !plugins.is_empty() {
         content.push_str("\n## Claude Plugins\n");
         for plugin in &plugins {
@@ -516,24 +516,24 @@ This project is configured to work with a corporate proxy.
 /// Paths are relative to the project root.
 /// The caller is responsible for checking which paths already exist on disk
 /// to classify them as "would create" vs. "would modify".
-pub fn expected_artifacts(_config: &Config) -> Vec<String> {
+pub fn expected_artifacts(config: &Config) -> Vec<String> {
     let mut paths = vec![
         ".devcontainer/devcontainer.json".to_string(),
         ".devcontainer/Dockerfile".to_string(),
         ".claude/CLAUDE.md".to_string(),
     ];
 
-    // Core feature directories — list known features that would be copied.
-    // We list them statically since this function is pure (no filesystem access).
-    for feature in &[
-        "claude-code",
-        "codex",
-        "gemini",
-        "aider",
-        "proxy",
-        "plugin-manager",
-    ] {
-        paths.push(format!(".devcontainer/features/{}", feature));
+    // Agent feature (e.g. claude-code, codex)
+    paths.push(format!(".devcontainer/features/{}", config.agent_name()));
+
+    // Proxy feature — only when proxy is configured
+    if config.proxy().is_some() {
+        paths.push(".devcontainer/features/proxy".to_string());
+    }
+
+    // Plugin-manager feature — only for claude-code with plugins
+    if config.agent_name() == "claude-code" && !config.plugins().is_empty() {
+        paths.push(".devcontainer/features/plugin-manager".to_string());
     }
 
     paths
@@ -658,5 +658,11 @@ runtime:
         assert!(artifacts.contains(&".devcontainer/devcontainer.json".to_string()));
         assert!(artifacts.contains(&".devcontainer/Dockerfile".to_string()));
         assert!(artifacts.contains(&".claude/CLAUDE.md".to_string()));
+        // minimal_config uses claude-code agent
+        assert!(artifacts.contains(&".devcontainer/features/claude-code".to_string()));
+        // no proxy configured → no proxy feature
+        assert!(!artifacts.contains(&".devcontainer/features/proxy".to_string()));
+        // no plugins → no plugin-manager
+        assert!(!artifacts.contains(&".devcontainer/features/plugin-manager".to_string()));
     }
 }

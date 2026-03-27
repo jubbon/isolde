@@ -60,22 +60,16 @@ pub fn run(opts: ExecOptions) -> Result<()> {
     }
 
     // Execute command (interactive by default)
-    let exit_status = match container::exec(&workspace, &opts.command, true) {
-        Ok(status) => status,
-        Err(e) => {
-            println!("Error: Failed to execute command in container: {}", e);
-            println!("Make sure the container is running. Start with 'isolde run'.");
-            std::process::exit(1);
-        }
-    };
+    let exit_status = container::exec(&workspace, &opts.command, true).map_err(|e| {
+        Error::Other(format!(
+            "Failed to execute command in container: {}. {}",
+            e, super::CONTAINER_NOT_RUNNING_HINT
+        ))
+    })?;
 
     if !exit_status.success() {
         let code = exit_status.code().unwrap_or(-1);
-        println!(
-            "Error: Container command exited with code {}. Make sure the container is running.",
-            code
-        );
-        std::process::exit(code);
+        return Err(Error::ExitCode(code));
     }
 
     Ok(())

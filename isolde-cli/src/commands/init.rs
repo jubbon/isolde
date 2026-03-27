@@ -9,6 +9,8 @@ use colored::Colorize;
 use isolde_core::config::{Config, TemplateInfo};
 use isolde_core::{Error, Result};
 
+use super::is_agent_implemented;
+
 /// Options for the init command
 #[derive(Debug, Clone)]
 pub struct InitOptions {
@@ -58,11 +60,6 @@ impl Default for InitOptions {
             https_proxy: None,
         }
     }
-}
-
-/// Check if an agent has a working install.sh implementation
-fn is_agent_implemented(agent: &str) -> bool {
-    matches!(agent, "claude-code" | "codex")
 }
 
 /// Hardcoded default language versions (fallback when template-info.yaml is unavailable)
@@ -323,6 +320,24 @@ fn generate_config_from_preset(
 
     // Generate config based on preset (presets always use claude-code agent)
     let agent_options_section = agent_options_yaml("claude-code");
+
+    // Build marketplaces + plugins sections based on whether plugins exist
+    let (marketplaces_section, plugins_section) = if preset.claude_plugins.is_empty() {
+        (String::new(), "plugins: []\n".to_string())
+    } else {
+        let marketplaces = "marketplaces:\n  omc:\n    url: https://github.com/oh-my-claudecode/marketplace\n\n".to_string();
+        let plugins = format!(
+            "plugins:\n{}\n",
+            preset
+                .claude_plugins
+                .iter()
+                .map(|p| format!("  - marketplace: omc\n    name: {}\n    activate: true", p))
+                .collect::<Vec<_>>()
+                .join("\n")
+        );
+        (marketplaces, plugins)
+    };
+
     let config = format!(
         r#"# Isolde Configuration for {name}
 # Generated from preset: {preset}
@@ -350,9 +365,7 @@ runtime:
   tools: {tools}
 
 # Plugin configurations
-plugins:
-{plugins}
-
+{marketplaces}{plugins}
 # Git configuration
 git:
   generated: ignored
@@ -363,12 +376,8 @@ git:
         lang = preset.template,
         version = version,
         tools = serde_yaml::to_string(&preset.features).unwrap_or_else(|_| "[]".to_string()),
-        plugins = preset
-            .claude_plugins
-            .iter()
-            .map(|p| format!("  - marketplace: omc\n    name: {}\n    activate: true", p))
-            .collect::<Vec<_>>()
-            .join("\n")
+        marketplaces = marketplaces_section,
+        plugins = plugins_section,
     );
 
     Ok(config)
@@ -538,7 +547,7 @@ pub fn run(opts: InitOptions) -> Result<()> {
     // Check if isolde.yaml already exists
     if config_path.exists() {
         return Err(Error::Other(format!(
-            "isolde.yaml already exists at {}. Use --force to overwrite.",
+            "isolde.yaml already exists at {}. Delete it and re-run `isolde init` to regenerate.",
             config_path.display()
         )));
     }

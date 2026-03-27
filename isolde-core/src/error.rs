@@ -63,6 +63,10 @@ pub enum Error {
     /// Marketplace error
     #[error("Marketplace error: {0}")]
     MarketplaceError(String),
+
+    /// Process should exit with a specific code
+    #[error("Exit with code {0}")]
+    ExitCode(i32),
 }
 
 #[cfg(test)]
@@ -123,6 +127,11 @@ mod tests {
         assert_eq!(
             Error::MarketplaceError("market error".to_string()).to_string(),
             "Marketplace error: market error"
+        );
+
+        assert_eq!(
+            Error::ExitCode(42).to_string(),
+            "Exit with code 42"
         );
     }
 }

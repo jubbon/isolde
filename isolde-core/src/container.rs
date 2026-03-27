@@ -134,8 +134,22 @@ pub fn up(workspace: &Path, detach: bool) -> Result<ContainerInfo> {
         cmd.stdin(Stdio::inherit());
         cmd.stdout(Stdio::inherit());
         cmd.stderr(Stdio::inherit());
-        cmd.group_spawn()
+        let mut group = cmd
+            .group_spawn()
             .map_err(|e| Error::Other(format!("Failed to spawn devcontainer up: {}", e)))?;
+        // Wait for the shell session to finish before returning
+        group
+            .wait()
+            .map_err(|e| Error::Other(format!("Failed to wait for devcontainer up: {}", e)))?;
+
+        // In non-detach mode, the user already had the shell — return minimal info
+        // without querying container state (container may have stopped)
+        return Ok(ContainerInfo {
+            container_id: String::new(),
+            container_name: String::new(),
+            status: "exited".to_string(),
+            workspace_folder: workspace.to_string_lossy().to_string(),
+        });
     } else {
         // For detach mode, wait for container to start
         cmd.spawn()
@@ -168,11 +182,6 @@ pub fn up(workspace: &Path, detach: bool) -> Result<ContainerInfo> {
 
         return Ok(container_info);
     }
-
-    // Get container info by parsing devcontainer output
-    let container_info = get_container_info(workspace)?;
-
-    Ok(container_info)
 }
 
 /// Execute command in running container

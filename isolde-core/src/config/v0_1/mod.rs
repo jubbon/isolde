@@ -4,14 +4,14 @@
 //! This is the initial schema version for isolde.yaml.
 
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 /// A value in agent options: either a plain string or a nested string map.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(untagged)]
 pub enum AgentOptionValue {
     Str(String),
-    Map(HashMap<String, String>),
+    Map(BTreeMap<String, String>),
 }
 
 /// Main configuration for an Isolde project (isolde.yaml) - Schema v0.1
@@ -114,7 +114,7 @@ pub struct AgentConfig {
 
     /// Agent-specific options (free-form key-value pairs)
     #[serde(default)]
-    pub options: HashMap<String, AgentOptionValue>,
+    pub options: BTreeMap<String, AgentOptionValue>,
 }
 
 fn default_agent_name() -> String {
@@ -133,6 +133,7 @@ impl AgentConfig {
                 "Agent name cannot be empty".to_string(),
             ));
         }
+        validate_chars(&self.name, "Agent name", is_identifier_char, "Only alphanumeric, '-', and '_' are allowed.")?;
         Ok(())
     }
 }
@@ -243,6 +244,66 @@ pub enum IsolationLevel {
     Full,
 }
 
+/// Validate that `value` contains only the characters accepted by `allowed`.
+fn validate_chars(value: &str, label: &str, allowed: fn(char) -> bool, hint: &str) -> crate::Result<()> {
+    if !value.chars().all(allowed) {
+        return Err(crate::Error::InvalidTemplate(format!(
+            "{} '{}' contains invalid characters. {}",
+            label, value, hint
+        )));
+    }
+    Ok(())
+}
+
+/// Characters allowed in identifiers (project name, agent name): alphanumeric + `-` + `_`.
+fn is_identifier_char(c: char) -> bool {
+    c.is_ascii_alphanumeric() || c == '-' || c == '_'
+}
+
+/// Validate project name: alphanumeric, `-`, `_`, max 64 chars.
+fn validate_project_name(name: &str) -> crate::Result<()> {
+    if name.len() > 64 {
+        return Err(crate::Error::InvalidTemplate(format!(
+            "Project name '{}' exceeds 64 characters",
+            name
+        )));
+    }
+    validate_chars(name, "Project name", is_identifier_char, "Only alphanumeric, '-', and '_' are allowed.")
+}
+
+/// Validate workspace directory: must be relative, no `..`, safe characters only.
+fn validate_workspace_dir(dir: &str) -> crate::Result<()> {
+    if dir.starts_with('/') {
+        return Err(crate::Error::InvalidTemplate(format!(
+            "Workspace directory '{}' must be a relative path (no leading '/')",
+            dir
+        )));
+    }
+    if dir.contains("..") {
+        return Err(crate::Error::InvalidTemplate(format!(
+            "Workspace directory '{}' must not contain '..' (path traversal)",
+            dir
+        )));
+    }
+    validate_chars(
+        dir,
+        "Workspace directory",
+        |c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_' | '/'),
+        "Only alphanumeric, '.', '-', '_', '/' are allowed.",
+    )?;
+    Ok(())
+}
+
+/// Validate docker image: alphanumeric, `.` `/` `:` `-` `_` `@`.
+fn validate_docker_image(image: &str) -> crate::Result<()> {
+    validate_chars(
+        image,
+        "Docker image",
+        |c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '/' | ':' | '_' | '@'),
+        "Only alphanumeric, '.', '-', '/', ':', '_', '@' are allowed.",
+    )
+}
+
 impl Config {
     /// Validate the v0.1 configuration
     pub fn validate(&self) -> crate::Result<()> {
@@ -254,12 +315,13 @@ impl Config {
             )));
         }
 
-        // Validate name
+        // Validate project name
         if self.name.is_empty() {
             return Err(crate::Error::InvalidTemplate(
                 "Project name cannot be empty".to_string(),
             ));
         }
+        validate_project_name(&self.name)?;
 
         // Validate workspace directory
         if self.workspace.dir.is_empty() {
@@ -267,6 +329,7 @@ impl Config {
                 "Workspace directory cannot be empty".to_string(),
             ));
         }
+        validate_workspace_dir(&self.workspace.dir)?;
 
         // Validate Docker image
         if self.docker.image.is_empty() {
@@ -274,6 +337,7 @@ impl Config {
                 "Docker image cannot be empty".to_string(),
             ));
         }
+        validate_docker_image(&self.docker.image)?;
 
         // Validate agent config
         self.agent.validate()?;
@@ -521,5 +585,88 @@ agent:
         } else {
             panic!("models should be AgentOptionValue::Map");
         }
+    }
+
+    #[test]
+    fn test_validate_workspace_dir_path_traversal() {
+        let yaml = r#"
+version: "0.1"
+name: test
+workspace:
+  dir: ../../.ssh
+docker:
+  image: ubuntu:latest
+agent:
+  name: claude-code
+"#;
+        let config: Config = serde_yaml::from_str(yaml).unwrap();
+        let err = config.validate().unwrap_err();
+        assert!(err.to_string().contains("path traversal"));
+    }
+
+    #[test]
+    fn test_validate_workspace_dir_absolute() {
+        let yaml = r#"
+version: "0.1"
+name: test
+workspace:
+  dir: /etc/passwd
+docker:
+  image: ubuntu:latest
+agent:
+  name: claude-code
+"#;
+        let config: Config = serde_yaml::from_str(yaml).unwrap();
+        let err = config.validate().unwrap_err();
+        assert!(err.to_string().contains("relative path"));
+    }
+
+    #[test]
+    fn test_validate_workspace_dir_valid() {
+        let yaml = r#"
+version: "0.1"
+name: test
+workspace:
+  dir: ./project
+docker:
+  image: ubuntu:latest
+agent:
+  name: claude-code
+"#;
+        let config: Config = serde_yaml::from_str(yaml).unwrap();
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn test_validate_agent_name_path_traversal() {
+        let yaml = r#"
+version: "0.1"
+name: test
+workspace:
+  dir: ./project
+docker:
+  image: ubuntu:latest
+agent:
+  name: ../proxy
+"#;
+        let config: Config = serde_yaml::from_str(yaml).unwrap();
+        let err = config.validate().unwrap_err();
+        assert!(err.to_string().contains("invalid characters"));
+    }
+
+    #[test]
+    fn test_validate_agent_name_valid() {
+        let yaml = r#"
+version: "0.1"
+name: test
+workspace:
+  dir: ./project
+docker:
+  image: ubuntu:latest
+agent:
+  name: claude-code
+"#;
+        let config: Config = serde_yaml::from_str(yaml).unwrap();
+        assert!(config.validate().is_ok());
     }
 }

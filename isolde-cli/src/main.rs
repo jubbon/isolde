@@ -18,7 +18,7 @@ use cli::{print_info, print_warning, Cli, Commands};
 /// Isolde CLI version (from VERSION file)
 const VERSION: &str = env!("ISOLDE_VERSION");
 
-fn main() -> anyhow::Result<()> {
+fn main() {
     let args = Cli::parse();
 
     // Disable colored output if requested
@@ -27,9 +27,20 @@ fn main() -> anyhow::Result<()> {
     }
 
     // Execute the command
-    match args.command {
+    let result = match args.command {
         Some(command) => execute_command(command, args.verbose),
         None => print_usage(),
+    };
+
+    if let Err(e) = result {
+        // Check if this is an ExitCode error (propagated from child process)
+        if let Some(isolde_err) = e.downcast_ref::<isolde_core::Error>() {
+            if let isolde_core::Error::ExitCode(code) = isolde_err {
+                std::process::exit(*code);
+            }
+        }
+        eprintln!("{}: {}", "Error".red().bold(), e);
+        std::process::exit(1);
     }
 }
 
@@ -261,6 +272,7 @@ fn execute_validate(
         commands::ValidateFormat::from_str(&format).unwrap_or(commands::ValidateFormat::Text);
 
     let opts = commands::ValidateOptions {
+        cwd: std::env::current_dir()?,
         quick,
         verbose: validate_verbose,
         warnings_as_errors,
@@ -291,7 +303,7 @@ fn execute_validate(
 
     // Exit with error code if validation failed
     if !report.passed(warnings_as_errors) {
-        std::process::exit(1);
+        return Err(anyhow::anyhow!(isolde_core::Error::ExitCode(1)));
     }
 
     Ok(())
@@ -356,7 +368,7 @@ fn execute_doctor(
 
     // Exit with error code if diagnostics found errors
     if result.error_count > 0 {
-        std::process::exit(1);
+        return Err(anyhow::anyhow!(isolde_core::Error::ExitCode(1)));
     }
 
     Ok(())

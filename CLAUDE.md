@@ -8,6 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - All documentation files (CLAUDE.md, README.md, docs/, etc.) must be written in English
 - All commit messages must be in English
+- **Atomic commits:** Each commit must contain exactly one logical change. Work on all tasks first, run tests, and only when everything passes — split changes into separate atomic commits using targeted `git add` with specific files per logical change.
 - All code comments should be in English
 - This policy applies to all markdown, documentation, and text files in the repository
 

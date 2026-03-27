@@ -43,9 +43,10 @@ pub fn run(opts: RunOptions) -> Result<()> {
 
     // Check if workspace folder exists (if explicitly specified)
     if !workspace.exists() {
-        println!("Error: Workspace folder not found: {}", workspace.display());
-        println!("Please provide a valid workspace folder path.");
-        std::process::exit(1);
+        return Err(Error::Other(format!(
+            "Workspace folder not found: {}. Please provide a valid workspace folder path.",
+            workspace.display()
+        )));
     }
 
     // Check if .devcontainer exists

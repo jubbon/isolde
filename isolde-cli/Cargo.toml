@@ -27,5 +27,3 @@ tempfile = { workspace = true }
 assert_cmd = { workspace = true }
 predicates = { workspace = true }
 
-[build-dependencies]
-semver = "1.0"

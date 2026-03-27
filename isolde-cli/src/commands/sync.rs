@@ -52,24 +52,17 @@ pub fn run(opts: SyncOptions) -> Result<()> {
     let config = Config::from_file(&config_path)?;
     println!("{}", "✔".green());
 
-    // Warn about stub agent features
+    // Guard: warn about unimplemented agents
     let agent = config.agent_name();
-    if !matches!(agent, "claude-code") {
-        let has_install_sh = devcontainer::find_core_features_dir()
-            .ok()
-            .map(|dir| dir.join(agent).join("install.sh").exists())
-            .unwrap_or(false);
-
-        if !has_install_sh {
-            eprintln!(
-                "{} {}",
-                "⚠".yellow(),
-                format!(
-                    "Agent '{}' feature has no install.sh — the agent CLI won't be installed in the container.",
-                    agent
-                ).yellow()
-            );
-        }
+    if !super::is_agent_implemented(agent) {
+        eprintln!(
+            "{} {}",
+            "⚠".yellow(),
+            format!(
+                "Agent '{}' is not yet implemented — the generated devcontainer will not install the agent CLI.",
+                agent
+            ).yellow()
+        );
     }
 
     // Create output directories
@@ -77,7 +70,7 @@ pub fn run(opts: SyncOptions) -> Result<()> {
     let claude_dir = opts.cwd.join(".claude");
     let features_dir = devcontainer_dir.join("features");
 
-    let project_dir = opts.cwd.join("project");
+    let project_dir = opts.cwd.join(config.workspace_dir());
 
     if !opts.dry_run {
         fs::create_dir_all(&devcontainer_dir)

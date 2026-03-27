@@ -437,11 +437,6 @@ impl Commands {
     }
 }
 
-/// Helper function to print an error message with color
-pub fn print_error(message: &str) {
-    eprintln!("{} {}", "✗".red(), message);
-}
-
 /// Helper function to print a warning message with color
 pub fn print_warning(message: &str) {
     eprintln!("{} {}", "⚠".yellow(), message);
