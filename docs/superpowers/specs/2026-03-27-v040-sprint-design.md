@@ -3,7 +3,7 @@
 **Date:** 2026-03-27
 **Status:** Approved
 **Release:** v0.4.0
-**Duration:** 5 days × 1.5 hours = 7.5 hours total
+**Duration:** 3 days × 2 hours = 6 hours total
 
 ## Overview
 
@@ -17,19 +17,17 @@ SemVer minor — new features (multi-agent config, new agent, permissions), no b
 
 | Day | Tasks | ~Time |
 |-----|-------|-------|
-| Day 1 | "Do not edit" banner + OpenCode agent | 1.5h |
-| Day 2 | Multi-agent: config schema + parsing + migration + template refactor | 1.5h |
-| Day 3 | Multi-agent: generator + sync + rendering + tests | 1.5h |
-| Day 4 | Agent permissions preset + auto-sync check | 1.5h |
-| Day 5 | Render tests + security hardening + release | 1.5h |
+| Day 1 (Mon) | "Do not edit" banner + OpenCode agent + Multi-agent config/parsing/template | 2h |
+| Day 2 (Tue) | Multi-agent rendering/sync + Agent permissions + Auto-sync check | 2h |
+| Day 3 (Wed) | Render tests + Security hardening + Release v0.4.0 | 2h |
 
 Dependencies drive the order: banner is independent; OpenCode is needed before multi-agent testing; multi-agent must precede permissions; quality goes last when features are stable.
 
-**Rollback plan:** Each feature can ship independently. If multi-agent is incomplete by Day 4, ship banner + OpenCode + quality as v0.3.2 and defer multi-agent + permissions to the next sprint.
+**Rollback plan:** Each feature can ship independently. If multi-agent is incomplete by Day 2, ship banner + OpenCode + quality as v0.3.2 and defer multi-agent + permissions to the next sprint.
 
 ---
 
-## Day 1: "Do not edit" banner + OpenCode agent
+## Day 1 (Monday): Banner + OpenCode + Multi-agent config
 
 ### 1. "Do not edit" banner in generated files (20 min)
 
@@ -84,7 +82,7 @@ Dependencies drive the order: banner is independent; OpenCode is needed before m
 
 ---
 
-## Day 2: Multi-agent config schema + parsing + template refactor
+### Multi-agent config schema + parsing + template refactor (Day 1 continued)
 
 ### 3. Multi-agent per container — config and templates (1.5h)
 
@@ -162,7 +160,7 @@ Update template files in `templates/*/` directories to use new placeholders. Not
 
 ---
 
-## Day 3: Multi-agent generator + sync + rendering
+## Day 2 (Tuesday): Multi-agent rendering/sync + Permissions + Auto-sync
 
 ### 4. Multi-agent — generator, sync, and rendering (1.5h)
 
@@ -235,7 +233,7 @@ If one agent feature directory doesn't exist (e.g., `gemini` is not implemented)
 
 ---
 
-## Day 4: Agent permissions + auto-sync check
+### Agent permissions + auto-sync check (Day 2 continued)
 
 ### 5. Agent permissions preset (45 min)
 
@@ -333,7 +331,7 @@ Add `permissions: Option<AgentPermissions>` to `AgentConfig`.
 
 ---
 
-## Day 5: Quality + release
+## Day 3 (Wednesday): Quality + release
 
 ### 7. Render tests for devcontainer.rs (30 min)
 
