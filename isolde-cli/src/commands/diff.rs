@@ -605,7 +605,7 @@ fn generate_readme(config: &Config) -> Result<String> {
     Ok(format!(
         r#"# {}
 
-This project was created using the Isolle devcontainer template system.
+This project was created using the Isolde devcontainer template system.
 
 ## Getting Started
 

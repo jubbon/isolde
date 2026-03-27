@@ -547,7 +547,7 @@ pub fn run(opts: InitOptions) -> Result<()> {
     // Check if isolde.yaml already exists
     if config_path.exists() {
         return Err(Error::Other(format!(
-            "isolde.yaml already exists at {}. Use --force to overwrite.",
+            "isolde.yaml already exists at {}. Delete it and re-run `isolde init` to regenerate.",
             config_path.display()
         )));
     }
