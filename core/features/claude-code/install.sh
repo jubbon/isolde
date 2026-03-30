@@ -1,10 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Claude Code CLI Installer for Dev Containers
 # This script installs Anthropic Claude Code CLI
 #
 
-set -e
+set -euo pipefail
 
 # Colors for output
 RED='\033[0;31m'
@@ -349,11 +349,14 @@ configure_claude_provider() {
         fi
     fi
 }
-llm_provider=$(cat "$HOME/.config/devcontainer/provider")
-configure_claude_provider $llm_provider
+if [ -f "$HOME/.config/devcontainer/provider" ]; then
+    llm_provider=$(cat "$HOME/.config/devcontainer/provider")
+    configure_claude_provider "$llm_provider"
+fi
 
 # Load model configurations if they exist
 if [ -f "$HOME/.config/devcontainer/models" ]; then
+    # shellcheck source=/dev/null
     source "$HOME/.config/devcontainer/models"
 fi
 # Claude Code CLI - END
