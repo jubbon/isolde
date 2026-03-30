@@ -4,7 +4,7 @@
 # Manages built-in Claude Code plugins at project scope
 #
 
-set -e
+set -euo pipefail
 
 # Get the feature directory
 FEATURE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

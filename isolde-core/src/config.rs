@@ -7,6 +7,7 @@ pub mod v0_1;
 pub mod version;
 
 pub use v0_1::AgentOptionValue;
+pub use v0_1::AgentPermissions;
 pub use v0_1::IsolationLevel;
 
 use std::collections::{BTreeMap, HashMap};
@@ -76,8 +77,9 @@ impl Config {
         // Route to version-specific parser
         let config = match schema_version {
             SchemaVersion::V0_1 => {
-                let v0_1_config: v0_1::Config = serde_yaml::from_str(s)
+                let mut v0_1_config: v0_1::Config = serde_yaml::from_str(s)
                     .map_err(|e| Error::InvalidTemplate(format!("Failed to parse config: {e}")))?;
+                v0_1_config.normalize();
                 v0_1_config.validate()?;
                 ConfigInner::V0_1(v0_1_config)
             }
@@ -118,32 +120,57 @@ impl Config {
         }
     }
 
-    /// Get agent name (e.g., "claude-code", "codex", "gemini", "aider")
+    /// Get the first agent config (helper for deprecated single-agent accessors).
+    fn first_agent(&self) -> Option<&v0_1::AgentConfig> {
+        match &self.inner {
+            ConfigInner::V0_1(c) => c.agents.as_ref()?.first(),
+        }
+    }
+
+    // DEPRECATED: use agents() instead. Returns first agent for backward compatibility.
     pub fn agent_name(&self) -> &str {
-        match &self.inner {
-            ConfigInner::V0_1(c) => &c.agent.name,
-        }
+        self.first_agent()
+            .map(|a| a.name.as_str())
+            .unwrap_or("claude-code")
     }
 
-    /// Get agent version
+    // DEPRECATED: use agents() instead. Returns first agent for backward compatibility.
     pub fn agent_version(&self) -> &str {
-        match &self.inner {
-            ConfigInner::V0_1(c) => &c.agent.version,
-        }
+        self.first_agent()
+            .map(|a| a.version.as_str())
+            .unwrap_or("latest")
     }
 
-    /// Get agent options (free-form key-value pairs)
+    // DEPRECATED: use agents() instead. Returns first agent for backward compatibility.
     pub fn agent_options(&self) -> &BTreeMap<String, AgentOptionValue> {
-        match &self.inner {
-            ConfigInner::V0_1(c) => &c.agent.options,
-        }
+        static EMPTY: std::sync::OnceLock<BTreeMap<String, AgentOptionValue>> =
+            std::sync::OnceLock::new();
+        self.first_agent()
+            .map(|a| &a.options)
+            .unwrap_or_else(|| EMPTY.get_or_init(BTreeMap::new))
     }
 
-    /// Get a string-valued agent option by key (returns None for map values)
+    // DEPRECATED: use agents() instead. Returns first agent for backward compatibility.
     pub fn agent_option_str(&self, key: &str) -> Option<&str> {
         match self.agent_options().get(key) {
             Some(AgentOptionValue::Str(s)) => Some(s.as_str()),
             _ => None,
+        }
+    }
+
+    /// Get all configured agents
+    pub fn agents(&self) -> Vec<AgentConfigView> {
+        match &self.inner {
+            ConfigInner::V0_1(c) => c
+                .agents
+                .as_ref()
+                .map(|agents| {
+                    agents
+                        .iter()
+                        .map(|a| AgentConfigView { inner: a })
+                        .collect()
+                })
+                .unwrap_or_default(),
         }
     }
 
@@ -268,6 +295,37 @@ pub struct PluginConfigView {
     pub marketplace: String,
     pub name: String,
     pub activate: bool,
+}
+
+/// Agent configuration view
+#[derive(Debug, Clone)]
+pub struct AgentConfigView<'a> {
+    inner: &'a v0_1::AgentConfig,
+}
+
+impl<'a> AgentConfigView<'a> {
+    pub fn name(&self) -> &str {
+        &self.inner.name
+    }
+
+    pub fn version(&self) -> &str {
+        &self.inner.version
+    }
+
+    pub fn options(&self) -> &BTreeMap<String, AgentOptionValue> {
+        &self.inner.options
+    }
+
+    pub fn option_str(&self, key: &str) -> Option<&str> {
+        match self.inner.options.get(key) {
+            Some(AgentOptionValue::Str(s)) => Some(s.as_str()),
+            _ => None,
+        }
+    }
+
+    pub fn permissions(&self) -> Option<&v0_1::AgentPermissions> {
+        self.inner.permissions.as_ref()
+    }
 }
 
 /// Git configuration view
@@ -535,6 +593,59 @@ supported_versions: ["3.12", "3.11", "3.10"]
         let info: TemplateInfo = serde_yaml::from_str(yaml).unwrap();
         assert_eq!(info.name, "Python");
         assert_eq!(info.lang_version_default, "3.12");
+    }
+
+    #[test]
+    fn test_config_agents_accessor() {
+        let yaml = r#"
+version: "0.1"
+name: test-app
+docker:
+  image: ubuntu:latest
+agents:
+  - name: claude-code
+    version: latest
+  - name: opencode
+    version: latest
+"#;
+        let config = Config::from_str(yaml).unwrap();
+        let agents = config.agents();
+        assert_eq!(agents.len(), 2);
+        assert_eq!(agents[0].name(), "claude-code");
+        assert_eq!(agents[1].name(), "opencode");
+    }
+
+    #[test]
+    fn test_config_agents_accessor_single_agent_migration() {
+        let yaml = r#"
+version: "0.1"
+name: test-app
+docker:
+  image: ubuntu:latest
+agent:
+  name: codex
+  version: latest
+"#;
+        let config = Config::from_str(yaml).unwrap();
+        let agents = config.agents();
+        assert_eq!(agents.len(), 1);
+        assert_eq!(agents[0].name(), "codex");
+        // Backward compat
+        assert_eq!(config.agent_name(), "codex");
+    }
+
+    #[test]
+    fn test_config_agents_accessor_defaults() {
+        let yaml = r#"
+version: "0.1"
+name: test-app
+docker:
+  image: ubuntu:latest
+"#;
+        let config = Config::from_str(yaml).unwrap();
+        let agents = config.agents();
+        assert_eq!(agents.len(), 1);
+        assert_eq!(agents[0].name(), "claude-code");
     }
 
     #[test]

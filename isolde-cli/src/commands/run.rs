@@ -49,6 +49,8 @@ pub fn run(opts: RunOptions) -> Result<()> {
         )));
     }
 
+    super::warn_sync_freshness(&workspace);
+
     // Check if .devcontainer exists
     if !workspace.join(".devcontainer").exists() {
         return Err(Error::Other(

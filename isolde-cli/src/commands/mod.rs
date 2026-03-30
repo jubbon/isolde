@@ -28,7 +28,31 @@ pub use validate::{run as run_validate, ValidateFormat, ValidateOptions};
 
 /// Check if an agent has a working install.sh implementation
 pub fn is_agent_implemented(agent: &str) -> bool {
-    matches!(agent, "claude-code" | "codex")
+    matches!(agent, "claude-code" | "codex" | "opencode")
+}
+
+/// Print a warning about stale or missing sync.
+pub fn warn_sync_freshness(workspace: &std::path::Path) {
+    use colored::Colorize;
+    if let Some(warning) = isolde_core::sync_check::check_sync_freshness(workspace) {
+        match warning {
+            isolde_core::sync_check::SyncWarning::NeverSynced => {
+                eprintln!(
+                    "{} {}",
+                    "⚠".yellow(),
+                    "No devcontainer configuration found. Run `isolde sync` first.".yellow()
+                );
+            }
+            isolde_core::sync_check::SyncWarning::ConfigNewer => {
+                eprintln!(
+                    "{} {}",
+                    "⚠".yellow(),
+                    "isolde.yaml has been modified since last sync. Run `isolde sync` to update."
+                        .yellow()
+                );
+            }
+        }
+    }
 }
 
 /// Hint message for container-not-running errors

@@ -12,6 +12,7 @@ pub mod error;
 pub mod generator;
 pub mod mounts;
 pub mod state;
+pub mod sync_check;
 pub mod template;
 pub mod volumes;
 

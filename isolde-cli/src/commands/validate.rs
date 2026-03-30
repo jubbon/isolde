@@ -369,7 +369,9 @@ fn check_config_validity(config: &Config, verbose: bool) -> CheckResult {
     if verbose {
         details.push(format!("Project name: {}", config.name.cyan()));
         details.push(format!("Docker image: {}", config.docker_image().cyan()));
-        details.push(format!("Claude provider: {}", config.agent_name().cyan()));
+        let agents = config.agents();
+        let agent_names: Vec<&str> = agents.iter().map(|a| a.name()).collect();
+        details.push(format!("Agents: {}", agent_names.join(", ").cyan()));
     }
 
     // Agent name is always valid (non-empty is enforced by config validation)

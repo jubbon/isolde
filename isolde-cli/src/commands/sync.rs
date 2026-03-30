@@ -53,16 +53,17 @@ pub fn run(opts: SyncOptions) -> Result<()> {
     println!("{}", "✔".green());
 
     // Guard: warn about unimplemented agents
-    let agent = config.agent_name();
-    if !super::is_agent_implemented(agent) {
-        eprintln!(
-            "{} {}",
-            "⚠".yellow(),
-            format!(
-                "Agent '{}' is not yet implemented — the generated devcontainer will not install the agent CLI.",
-                agent
-            ).yellow()
-        );
+    for agent in config.agents() {
+        if !super::is_agent_implemented(agent.name()) {
+            eprintln!(
+                "{} {}",
+                "⚠".yellow(),
+                format!(
+                    "Agent '{}' is not yet implemented — the generated devcontainer will not install the agent CLI.",
+                    agent.name()
+                ).yellow()
+            );
+        }
     }
 
     // Create output directories
@@ -135,6 +136,26 @@ pub fn run(opts: SyncOptions) -> Result<()> {
         write_file(&output_path, &claude_md, opts.force)?;
     }
     println!("{}", "✔".green());
+
+    // Generate agent settings files from permissions
+    for agent in config.agents() {
+        if let Some((rel_path, content)) = devcontainer::render_agent_settings(&agent)? {
+            print!(
+                "{} ",
+                format!("Generating {}...", rel_path).dimmed()
+            );
+            if !opts.dry_run {
+                let settings_path = opts.cwd.join(&rel_path);
+                if let Some(parent) = settings_path.parent() {
+                    fs::create_dir_all(parent).map_err(|e| {
+                        Error::FileError(std::io::Error::new(std::io::ErrorKind::Other, e))
+                    })?;
+                }
+                write_file(&settings_path, &content, opts.force)?;
+            }
+            println!("{}", "✔".green());
+        }
+    }
 
     // Copy core features
     print!("{} ", "Copying core features...".dimmed());

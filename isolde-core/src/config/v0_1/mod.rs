@@ -31,9 +31,13 @@ pub struct Config {
     /// Docker configuration
     pub docker: DockerConfig,
 
-    /// Coding agent configuration
-    #[serde(default = "default_agent_config")]
-    pub agent: AgentConfig,
+    /// Coding agent configuration (deprecated, use `agents` instead)
+    #[serde(default)]
+    pub agent: Option<AgentConfig>,
+
+    /// List of coding agent configurations
+    #[serde(default)]
+    pub agents: Option<Vec<AgentConfig>>,
 
     /// Runtime configuration (language, package manager, tools)
     pub runtime: Option<RuntimeConfig>,
@@ -63,6 +67,7 @@ fn default_agent_config() -> AgentConfig {
         name: default_agent_name(),
         version: default_agent_version(),
         options: Default::default(),
+        permissions: None,
     }
 }
 
@@ -115,6 +120,24 @@ pub struct AgentConfig {
     /// Agent-specific options (free-form key-value pairs)
     #[serde(default)]
     pub options: BTreeMap<String, AgentOptionValue>,
+
+    /// Agent permissions (optional)
+    #[serde(default)]
+    pub permissions: Option<AgentPermissions>,
+}
+
+/// Agent permissions configuration
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct AgentPermissions {
+    /// Allowed tools for the agent
+    #[serde(default)]
+    pub allowed_tools: Vec<String>,
+    /// Allowed shell commands
+    #[serde(default)]
+    pub allowed_commands: Vec<String>,
+    /// Denied shell commands
+    #[serde(default)]
+    pub deny_commands: Vec<String>,
 }
 
 fn default_agent_name() -> String {
@@ -305,6 +328,25 @@ fn validate_docker_image(image: &str) -> crate::Result<()> {
 }
 
 impl Config {
+    /// Normalize agent configuration: migrate `agent:` → `agents:[]`, apply defaults.
+    /// Must be called before validate().
+    pub fn normalize(&mut self) {
+        match (&self.agent, &self.agents) {
+            (None, None) => {
+                // No agent specified — default to claude-code
+                self.agents = Some(vec![default_agent_config()]);
+            }
+            (Some(_), None) => {
+                // Old format — migrate to agents list + deprecation warning
+                eprintln!("⚠ Deprecation: `agent:` field is deprecated. Use `agents:` list instead.");
+                self.agents = Some(vec![self.agent.take().unwrap()]);
+            }
+            (None, Some(_)) | (Some(_), Some(_)) => {
+                // New format or both present — handled in validate()
+            }
+        }
+    }
+
     /// Validate the v0.1 configuration
     pub fn validate(&self) -> crate::Result<()> {
         // Check schema version
@@ -339,8 +381,31 @@ impl Config {
         }
         validate_docker_image(&self.docker.image)?;
 
-        // Validate agent config
-        self.agent.validate()?;
+        // Reject both agent and agents present
+        if self.agent.is_some() && self.agents.is_some() {
+            return Err(crate::Error::InvalidTemplate(
+                "Use `agents:` list format. `agent:` is deprecated. Cannot use both.".to_string(),
+            ));
+        }
+
+        // Validate agents list
+        if let Some(agents) = &self.agents {
+            let mut seen = std::collections::HashSet::new();
+            for agent in agents {
+                agent.validate()?;
+                if !seen.insert(&agent.name) {
+                    return Err(crate::Error::InvalidTemplate(format!(
+                        "Duplicate agent name '{}' in agents list",
+                        agent.name
+                    )));
+                }
+            }
+        }
+
+        // Validate single agent (backward compat, before normalization)
+        if let Some(agent) = &self.agent {
+            agent.validate()?;
+        }
 
         // Validate plugins reference existing marketplaces
         for plugin in &self.plugins {
@@ -380,7 +445,7 @@ agent:
         assert_eq!(config.name, "test-project");
         assert_eq!(config.workspace.dir, "./project");
         assert_eq!(config.docker.image, "ubuntu:latest");
-        assert_eq!(config.agent.name, "claude-code");
+        assert_eq!(config.agent.as_ref().unwrap().name, "claude-code");
     }
 
     #[test]
@@ -395,8 +460,8 @@ docker:
         assert_eq!(config.version, "0.1");
         assert_eq!(config.name, "minimal");
         assert_eq!(config.workspace.dir, "./project"); // default
-        assert_eq!(config.agent.name, "claude-code"); // default
-        assert_eq!(config.agent.version, "latest"); // default
+        // No agent field → None (normalize() would set defaults, but isn't called here)
+        assert!(config.agent.is_none());
     }
 
     #[test]
@@ -567,13 +632,14 @@ agent:
       sonnet: claude-3-5-sonnet-20241022
 "#;
         let config: Config = serde_yaml::from_str(yaml).unwrap();
-        assert_eq!(config.agent.name, "claude-code");
-        assert_eq!(config.agent.version, "stable");
+        let agent = config.agent.as_ref().unwrap();
+        assert_eq!(agent.name, "claude-code");
+        assert_eq!(agent.version, "stable");
         assert_eq!(
-            config.agent.options.get("provider"),
+            agent.options.get("provider"),
             Some(&AgentOptionValue::Str("anthropic".to_string()))
         );
-        if let Some(AgentOptionValue::Map(m)) = config.agent.options.get("models") {
+        if let Some(AgentOptionValue::Map(m)) = agent.options.get("models") {
             assert_eq!(
                 m.get("haiku").map(String::as_str),
                 Some("claude-3-5-haiku-20241022")
@@ -665,6 +731,158 @@ docker:
   image: ubuntu:latest
 agent:
   name: claude-code
+"#;
+        let config: Config = serde_yaml::from_str(yaml).unwrap();
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn test_config_multi_agent() {
+        let yaml = r#"
+version: "0.1"
+name: test-app
+docker:
+  image: ubuntu:latest
+agents:
+  - name: claude-code
+    version: latest
+  - name: opencode
+    version: latest
+"#;
+        let mut config: Config = serde_yaml::from_str(yaml).unwrap();
+        config.normalize();
+        assert!(config.validate().is_ok());
+        let agents = config.agents.as_ref().unwrap();
+        assert_eq!(agents.len(), 2);
+        assert_eq!(agents[0].name, "claude-code");
+        assert_eq!(agents[1].name, "opencode");
+    }
+
+    #[test]
+    fn test_config_single_agent_migration() {
+        let yaml = r#"
+version: "0.1"
+name: test-app
+docker:
+  image: ubuntu:latest
+agent:
+  name: claude-code
+  version: latest
+"#;
+        let mut config: Config = serde_yaml::from_str(yaml).unwrap();
+        config.normalize();
+        assert!(config.validate().is_ok());
+        let agents = config.agents.as_ref().unwrap();
+        assert_eq!(agents.len(), 1);
+        assert_eq!(agents[0].name, "claude-code");
+        assert!(config.agent.is_none());
+    }
+
+    #[test]
+    fn test_config_no_agent_defaults_to_claude_code() {
+        let yaml = r#"
+version: "0.1"
+name: test-app
+docker:
+  image: ubuntu:latest
+"#;
+        let mut config: Config = serde_yaml::from_str(yaml).unwrap();
+        config.normalize();
+        assert!(config.validate().is_ok());
+        let agents = config.agents.as_ref().unwrap();
+        assert_eq!(agents.len(), 1);
+        assert_eq!(agents[0].name, "claude-code");
+    }
+
+    #[test]
+    fn test_config_both_agent_and_agents_rejected() {
+        let yaml = r#"
+version: "0.1"
+name: test-app
+docker:
+  image: ubuntu:latest
+agent:
+  name: claude-code
+  version: latest
+agents:
+  - name: opencode
+    version: latest
+"#;
+        let config: Config = serde_yaml::from_str(yaml).unwrap();
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_config_duplicate_agent_names_rejected() {
+        let yaml = r#"
+version: "0.1"
+name: test-app
+docker:
+  image: ubuntu:latest
+agents:
+  - name: claude-code
+    version: latest
+  - name: claude-code
+    version: "1.0"
+"#;
+        let mut config: Config = serde_yaml::from_str(yaml).unwrap();
+        config.normalize();
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_config_agent_permissions() {
+        let yaml = r#"
+version: "0.1"
+name: test-app
+docker:
+  image: ubuntu:latest
+agents:
+  - name: claude-code
+    version: latest
+    permissions:
+      allowed_tools: ["bash", "edit", "read"]
+      allowed_commands: ["cargo test"]
+      deny_commands: ["rm -rf /"]
+"#;
+        let mut config: Config = serde_yaml::from_str(yaml).unwrap();
+        config.normalize();
+        assert!(config.validate().is_ok());
+        let agent = &config.agents.as_ref().unwrap()[0];
+        let perms = agent.permissions.as_ref().unwrap();
+        assert_eq!(perms.allowed_tools.len(), 3);
+        assert_eq!(perms.allowed_commands.len(), 1);
+        assert_eq!(perms.deny_commands.len(), 1);
+    }
+
+    #[test]
+    fn test_config_agent_no_permissions() {
+        let yaml = r#"
+version: "0.1"
+name: test-app
+docker:
+  image: ubuntu:latest
+agents:
+  - name: claude-code
+    version: latest
+"#;
+        let mut config: Config = serde_yaml::from_str(yaml).unwrap();
+        config.normalize();
+        assert!(config.validate().is_ok());
+        let agent = &config.agents.as_ref().unwrap()[0];
+        assert!(agent.permissions.is_none());
+    }
+
+    #[test]
+    fn test_config_validate_opencode_agent() {
+        let yaml = r#"
+version: "0.1"
+name: test-app
+docker:
+  image: ubuntu:latest
+agent:
+  name: opencode
+  version: latest
 "#;
         let config: Config = serde_yaml::from_str(yaml).unwrap();
         assert!(config.validate().is_ok());

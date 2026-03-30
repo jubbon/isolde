@@ -4,12 +4,17 @@
 # Creates shared state at ~/.config/devcontainer/proxy for other features
 #
 
-set -e
+set -euo pipefail
 
 FEATURE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Source utility functions
-source "$FEATURE_DIR/proxy.sh"
+if [ -f "$FEATURE_DIR/proxy.sh" ]; then
+    source "$FEATURE_DIR/proxy.sh"
+else
+    echo "[ERROR] proxy.sh not found at $FEATURE_DIR/proxy.sh"
+    exit 1
+fi
 
 # Colors for output
 RED='\033[0;31m'
