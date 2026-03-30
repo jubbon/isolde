@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-03-30
+
+### Added
+
+- Multi-agent support: `agents:` list in `isolde.yaml` for multiple coding agents per container
+- OpenCode agent: feature, template, and full integration (`core/features/opencode/`, `templates/opencode/`)
+- Agent permissions: `permissions` block in agent config with `allowed_tools`, `allowed_commands`, `deny_commands`
+- Settings file generation: `render_agent_settings()` produces `.claude/settings.json` or `opencode.json` from permissions
+- Auto-sync freshness check: warns before `build`/`run` if `isolde.yaml` is newer than generated files
+- "Do not edit" banners in all generated files (Dockerfile, devcontainer.json, CLAUDE.md)
+- Render tests for proxy, codex, opencode, plugins, and multi-agent scenarios
+
+### Changed
+
+- `agent:` field deprecated in favor of `agents:` list (soft migration with deprecation warning)
+- `render_devcontainer_json()` loops over all agents for features, Node.js dedup, and install order
+- `render_claude_md()` shows all agents (singular "Agent" or plural "Agents")
+- `expected_artifacts()` iterates agents for feature directories and settings files
+- Sync command validates all configured agents, not just the first
+
+### Security
+
+- All `install.sh` scripts now use `set -euo pipefail`
+- Added `source` file existence guards in proxy and claude-code features
+- Fixed unquoted variable in generated bashrc (`configure_claude_provider`)
+
 ## [0.3.1] - 2026-03-27
 
 ### Fixed
@@ -114,7 +140,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Claude Code setup wizard prevention on container rebuild
 - User detection and UID/GID handling in devcontainer
 
-[Unreleased]: https://github.com/jubbon/isolde/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/jubbon/isolde/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/jubbon/isolde/compare/v0.3.1...v0.4.0
+[0.3.1]: https://github.com/jubbon/isolde/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/jubbon/isolde/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/jubbon/isolde/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/jubbon/isolde/releases/tag/v0.1.0

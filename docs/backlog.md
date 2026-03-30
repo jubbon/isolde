@@ -34,12 +34,11 @@ This file tracks planned features, improvements, and technical debt for the Isol
 ## Planned Features
 
 ### High Priority
-- [ ] **OpenCode agent support** - Open-source alternative to Claude Code
-- [ ] **Multi-agent per container** - Multiple agents in one devcontainer (e.g., one for design, another for implementation)
-- [ ] **Agent permissions preset** - Pre-configure agent permissions and behavior in `isolde.yaml` (e.g., Claude Code `settings.json` with allowed tools/commands), so new projects don't need manual permission setup
-- [ ] **Auto-sync on config change** - Watch `isolde.yaml` modification time and prompt to re-sync devcontainer when config has changed
-
-- [ ] **"Do not edit" banner in generated files** - Add a comment/header to all files produced by `isolde sync` (devcontainer.json, Dockerfile, etc.) warning that they are auto-generated and should not be edited directly — edit `isolde.yaml` and re-run `isolde sync` instead
+- [x] **OpenCode agent support** - Open-source alternative to Claude Code *(v0.4.0)*
+- [x] **Multi-agent per container** - Multiple agents in one devcontainer *(v0.4.0)*
+- [x] **Agent permissions preset** - Pre-configure agent permissions in `isolde.yaml` *(v0.4.0)*
+- [x] **Auto-sync on config change** - Warn before build/run if config is newer *(v0.4.0)*
+- [x] **"Do not edit" banner in generated files** - Banner in all sync-generated files *(v0.4.0)*
 
 - [ ] **TUI configuration wizard** (`isolde config`) - Interactive terminal UI wizard for editing `isolde.yaml`: add/change coding agent, configure proxy, manage plugins, set isolation level, modify docker image, etc. Allows users to customize their project configuration without manually editing YAML. Consider using [ratatui](https://github.com/ratatui/ratatui) for the TUI framework.
 
