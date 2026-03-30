@@ -119,42 +119,34 @@ impl Config {
         }
     }
 
-    // DEPRECATED: use agents() instead. Returns first agent for backward compatibility.
-    pub fn agent_name(&self) -> &str {
+    /// Get the first agent config (helper for deprecated single-agent accessors).
+    fn first_agent(&self) -> Option<&v0_1::AgentConfig> {
         match &self.inner {
-            ConfigInner::V0_1(c) => c
-                .agents
-                .as_ref()
-                .and_then(|a| a.first())
-                .map(|a| a.name.as_str())
-                .unwrap_or("claude-code"),
+            ConfigInner::V0_1(c) => c.agents.as_ref()?.first(),
         }
     }
 
     // DEPRECATED: use agents() instead. Returns first agent for backward compatibility.
+    pub fn agent_name(&self) -> &str {
+        self.first_agent()
+            .map(|a| a.name.as_str())
+            .unwrap_or("claude-code")
+    }
+
+    // DEPRECATED: use agents() instead. Returns first agent for backward compatibility.
     pub fn agent_version(&self) -> &str {
-        match &self.inner {
-            ConfigInner::V0_1(c) => c
-                .agents
-                .as_ref()
-                .and_then(|a| a.first())
-                .map(|a| a.version.as_str())
-                .unwrap_or("latest"),
-        }
+        self.first_agent()
+            .map(|a| a.version.as_str())
+            .unwrap_or("latest")
     }
 
     // DEPRECATED: use agents() instead. Returns first agent for backward compatibility.
     pub fn agent_options(&self) -> &BTreeMap<String, AgentOptionValue> {
         static EMPTY: std::sync::OnceLock<BTreeMap<String, AgentOptionValue>> =
             std::sync::OnceLock::new();
-        match &self.inner {
-            ConfigInner::V0_1(c) => c
-                .agents
-                .as_ref()
-                .and_then(|a| a.first())
-                .map(|a| &a.options)
-                .unwrap_or_else(|| EMPTY.get_or_init(BTreeMap::new)),
-        }
+        self.first_agent()
+            .map(|a| &a.options)
+            .unwrap_or_else(|| EMPTY.get_or_init(BTreeMap::new))
     }
 
     // DEPRECATED: use agents() instead. Returns first agent for backward compatibility.
