@@ -43,6 +43,8 @@ impl Default for BuildOptions {
 pub fn run(opts: BuildOptions) -> Result<()> {
     let workspace = opts.workspace_folder.unwrap_or_else(|| opts.cwd.clone());
 
+    super::warn_sync_freshness(&workspace);
+
     println!("{}", "🔨 Building devcontainer image...".cyan());
     println!("{}", "─".repeat(50).dimmed());
 
