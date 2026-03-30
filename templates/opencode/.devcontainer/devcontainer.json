@@ -1,0 +1,49 @@
+{
+  "name": "{{PROJECT_NAME}} - OpenCode Environment",
+
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "..",
+    "args": {
+      "USERNAME": "${localEnv:USER}"
+    }
+  },
+
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": false,
+      "installOhMyZsh": false,
+      "upgradePackages": false
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts",
+      "nodeGypDependencies": true,
+      "npxInstallCachedPackages": true
+    },
+    "{{FEATURES_PROXY}}": {
+      "http_proxy": "{{HTTP_PROXY}}",
+      "https_proxy": "{{HTTPS_PROXY}}",
+      "no_proxy": "{{NO_PROXY}}",
+      "enabled": {{PROXY_ENABLED}}
+    },
+    "{{agent_feature_path}}": {{agent_options_json}}
+  },
+
+  "overrideFeatureInstallOrder": {{feature_install_order_json}},
+
+  "customizations": {
+    "vscode": {
+      "extensions": [],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  },
+
+  "mounts": [
+    "source=./project,target=/workspaces/{{PROJECT_NAME}},type=bind,consistency=cached"
+  ],
+
+  "remoteUser": "${localEnv:USER}",
+  "workspaceFolder": "/workspaces/{{PROJECT_NAME}}"
+}

@@ -1,0 +1,10 @@
+name: OpenCode
+description: Development environment with OpenCode AI coding assistant
+version: 1.0.0
+lang_version_default: ""
+features:
+  - name: opencode
+    description: OpenCode AI coding assistant
+supported_versions: []
+devcontainer_features:
+  - ghcr.io/devcontainers/features/common-utils:2
