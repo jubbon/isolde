@@ -920,6 +920,80 @@ agents:
     }
 
     #[test]
+    fn test_render_with_proxy() {
+        let yaml = r#"
+version: "0.1"
+name: proxy-test
+docker:
+  image: ubuntu:latest
+proxy:
+  http: "http://proxy:8080"
+  https: "http://proxy:8080"
+"#;
+        let config = Config::from_str(yaml).unwrap();
+        let host_auth = HostAuthInfo::none();
+        let json_str = render_devcontainer_json(&config, &host_auth).unwrap();
+        assert!(json_str.contains("./features/proxy"));
+    }
+
+    #[test]
+    fn test_render_with_codex_agent() {
+        let yaml = r#"
+version: "0.1"
+name: codex-test
+docker:
+  image: ubuntu:latest
+agent:
+  name: codex
+  version: latest
+"#;
+        let config = Config::from_str(yaml).unwrap();
+        let host_auth = HostAuthInfo::none();
+        let json_str = render_devcontainer_json(&config, &host_auth).unwrap();
+        assert!(json_str.contains("./features/codex"));
+    }
+
+    #[test]
+    fn test_render_with_opencode_agent() {
+        let yaml = r#"
+version: "0.1"
+name: opencode-test
+docker:
+  image: ubuntu:latest
+agent:
+  name: opencode
+  version: latest
+"#;
+        let config = Config::from_str(yaml).unwrap();
+        let host_auth = HostAuthInfo::none();
+        let json_str = render_devcontainer_json(&config, &host_auth).unwrap();
+        assert!(json_str.contains("./features/opencode"));
+    }
+
+    #[test]
+    fn test_render_with_plugins() {
+        let yaml = r#"
+version: "0.1"
+name: plugin-test
+docker:
+  image: ubuntu:latest
+agent:
+  name: claude-code
+  version: latest
+marketplaces:
+  omc:
+    url: "https://registry.example.com"
+plugins:
+  - marketplace: omc
+    name: test-plugin
+    activate: true
+"#;
+        let config = Config::from_str(yaml).unwrap();
+        let artifacts = expected_artifacts(&config);
+        assert!(artifacts.contains(&".devcontainer/features/plugin-manager".to_string()));
+    }
+
+    #[test]
     fn test_expected_artifacts() {
         let config = minimal_config();
         let artifacts = expected_artifacts(&config);
