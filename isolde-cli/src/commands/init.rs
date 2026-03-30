@@ -784,6 +784,7 @@ mod tests {
     fn test_is_agent_implemented() {
         assert!(is_agent_implemented("claude-code"));
         assert!(is_agent_implemented("codex"));
+        assert!(is_agent_implemented("opencode"));
         assert!(!is_agent_implemented("gemini"));
         assert!(!is_agent_implemented("aider"));
     }

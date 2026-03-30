@@ -28,7 +28,7 @@ pub use validate::{run as run_validate, ValidateFormat, ValidateOptions};
 
 /// Check if an agent has a working install.sh implementation
 pub fn is_agent_implemented(agent: &str) -> bool {
-    matches!(agent, "claude-code" | "codex")
+    matches!(agent, "claude-code" | "codex" | "opencode")
 }
 
 /// Hint message for container-not-running errors
