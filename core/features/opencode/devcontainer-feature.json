@@ -1,0 +1,17 @@
+{
+    "id": "opencode",
+    "version": "1.0.0",
+    "name": "OpenCode CLI",
+    "description": "Installs OpenCode AI coding assistant",
+    "options": {
+        "version": {
+            "type": "string",
+            "default": "latest",
+            "description": "OpenCode version to install"
+        }
+    },
+    "installsAfter": [
+        "ghcr.io/devcontainers/features/common-utils",
+        "ghcr.io/devcontainers/features/node"
+    ]
+}
