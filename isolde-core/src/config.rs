@@ -7,6 +7,7 @@ pub mod v0_1;
 pub mod version;
 
 pub use v0_1::AgentOptionValue;
+pub use v0_1::AgentPermissions;
 pub use v0_1::IsolationLevel;
 
 use std::collections::{BTreeMap, HashMap};
@@ -320,6 +321,10 @@ impl<'a> AgentConfigView<'a> {
             Some(AgentOptionValue::Str(s)) => Some(s.as_str()),
             _ => None,
         }
+    }
+
+    pub fn permissions(&self) -> Option<&v0_1::AgentPermissions> {
+        self.inner.permissions.as_ref()
     }
 }
 

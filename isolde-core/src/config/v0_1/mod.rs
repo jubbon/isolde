@@ -67,6 +67,7 @@ fn default_agent_config() -> AgentConfig {
         name: default_agent_name(),
         version: default_agent_version(),
         options: Default::default(),
+        permissions: None,
     }
 }
 
@@ -119,6 +120,24 @@ pub struct AgentConfig {
     /// Agent-specific options (free-form key-value pairs)
     #[serde(default)]
     pub options: BTreeMap<String, AgentOptionValue>,
+
+    /// Agent permissions (optional)
+    #[serde(default)]
+    pub permissions: Option<AgentPermissions>,
+}
+
+/// Agent permissions configuration
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct AgentPermissions {
+    /// Allowed tools for the agent
+    #[serde(default)]
+    pub allowed_tools: Vec<String>,
+    /// Allowed shell commands
+    #[serde(default)]
+    pub allowed_commands: Vec<String>,
+    /// Denied shell commands
+    #[serde(default)]
+    pub deny_commands: Vec<String>,
 }
 
 fn default_agent_name() -> String {
@@ -809,6 +828,49 @@ agents:
         let mut config: Config = serde_yaml::from_str(yaml).unwrap();
         config.normalize();
         assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_config_agent_permissions() {
+        let yaml = r#"
+version: "0.1"
+name: test-app
+docker:
+  image: ubuntu:latest
+agents:
+  - name: claude-code
+    version: latest
+    permissions:
+      allowed_tools: ["bash", "edit", "read"]
+      allowed_commands: ["cargo test"]
+      deny_commands: ["rm -rf /"]
+"#;
+        let mut config: Config = serde_yaml::from_str(yaml).unwrap();
+        config.normalize();
+        assert!(config.validate().is_ok());
+        let agent = &config.agents.as_ref().unwrap()[0];
+        let perms = agent.permissions.as_ref().unwrap();
+        assert_eq!(perms.allowed_tools.len(), 3);
+        assert_eq!(perms.allowed_commands.len(), 1);
+        assert_eq!(perms.deny_commands.len(), 1);
+    }
+
+    #[test]
+    fn test_config_agent_no_permissions() {
+        let yaml = r#"
+version: "0.1"
+name: test-app
+docker:
+  image: ubuntu:latest
+agents:
+  - name: claude-code
+    version: latest
+"#;
+        let mut config: Config = serde_yaml::from_str(yaml).unwrap();
+        config.normalize();
+        assert!(config.validate().is_ok());
+        let agent = &config.agents.as_ref().unwrap()[0];
+        assert!(agent.permissions.is_none());
     }
 
     #[test]
