@@ -124,7 +124,9 @@ impl TemplateEngine {
 
     /// Build template context from an Isolde configuration
     ///
-    /// This converts the high-level configuration into template variables
+    /// This converts the high-level configuration into template variables.
+    /// For multi-agent configs, uses the first (primary) agent for init templates.
+    /// Multi-agent rendering is handled by the sync path in devcontainer.rs.
     pub fn build_context(config: &Config) -> TemplateContext {
         let agent_name = config.agent_name().to_string();
         let agent_feature_path = format!("./features/{}", agent_name);
